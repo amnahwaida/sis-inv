@@ -90,6 +90,7 @@ func main() {
 			// All logged in users can view items
 			items.GET("", itemHandler.List)
 			items.GET("/:id", itemHandler.Get)
+			items.GET("/code/:code", itemHandler.GetByCode)
 			items.GET("/:id/history", itemHandler.GetHistory)
 			
 			// Only Admins can modify items
@@ -109,7 +110,7 @@ func main() {
 		transactions.Use(middleware.AuthMiddleware())
 		{
 			// All logged in staff can borrow/return and view their own
-			transactions.POST("/borrow", trxHandler.BorrowStaff)
+			transactions.POST("/borrow", trxHandler.Borrow)
 			transactions.POST("/return", trxHandler.Return)
 			transactions.GET("/my", trxHandler.MyBorrowings)
 		}

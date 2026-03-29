@@ -128,6 +128,22 @@ export const useItemStore = defineStore('items', () => {
     }
   }
 
+  async function fetchItemByCode(code) {
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await api.get(`/items/code/${code}`)
+      if (data.success) {
+        return data.data
+      }
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Gagal mengambil detail barang'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     items,
     currentItem,
@@ -136,6 +152,7 @@ export const useItemStore = defineStore('items', () => {
     error,
     fetchItems,
     fetchItem,
+    fetchItemByCode,
     fetchItemHistory,
     createItem,
     updateItem,

@@ -205,6 +205,38 @@ func (h *ItemHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, utils.SuccessResponse(i, ""))
 }
 
+func (h *ItemHandler) GetByCode(c *gin.Context) {
+	code := c.Param("code")
+
+	var i models.Item
+	var pDate, wDate *string
+
+	err := h.db.QueryRow(context.Background(),
+		`SELECT i.id, i.code, i.qr_code_data, i.name, i.category_id, c.name as category_name,
+		        i.location, i.condition, i.status, i.borrower_type, 
+		        i.purchase_date::text, i.purchase_price, i.warranty_end_date::text,
+		        i.notes, i.photo_url, i.created_at, i.updated_at
+		 FROM items i
+		 LEFT JOIN categories c ON i.category_id = c.id
+		 WHERE i.code = $1`, code,
+	).Scan(
+		&i.ID, &i.Code, &i.QRCodeData, &i.Name, &i.CategoryID, &i.CategoryName,
+		&i.Location, &i.Condition, &i.Status, &i.BorrowerType,
+		&pDate, &i.PurchasePrice, &wDate,
+		&i.Notes, &i.PhotoURL, &i.CreatedAt, &i.UpdatedAt,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Item not found"))
+		return
+	}
+	
+	if pDate != nil && *pDate != "" { i.PurchaseDate = pDate }
+	if wDate != nil && *wDate != "" { i.WarrantyEndDate = wDate }
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(i, ""))
+}
+
 func (h *ItemHandler) Create(c *gin.Context) {
 	var req models.CreateItemRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

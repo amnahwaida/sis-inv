@@ -23,18 +23,25 @@ export const useTransactionStore = defineStore('transactions', () => {
     }
   }
 
-  async function borrowItem(itemCode, expectedDays, notes) {
+  /**
+   * 
+   * @param {Object} borrowData
+   * {
+   *   item_code: string,
+   *   borrower_type: 'STAFF' | 'STUDENT',
+   *   expected_return_days: number,
+   *   purpose: string,
+   *   student_name?: string,
+   *   student_nis?: string,
+   *   student_class?: string
+   * }
+   */
+  async function borrowItem(borrowData) {
     loading.value = true
     error.value = null
     try {
-      const payload = {
-        item_code: itemCode,
-        expected_return_days: expectedDays,
-        notes: notes
-      }
-      const { data } = await api.post('/transactions/borrow', payload)
+      const { data } = await api.post('/transactions/borrow', borrowData)
       if (data.success) {
-        // Refresh borrowings list optionally or just let the caller do it
         return data.data
       }
     } catch (err) {
