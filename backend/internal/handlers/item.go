@@ -433,9 +433,12 @@ func (h *ItemHandler) GetHistory(c *gin.Context) {
 	query := `
 		SELECT t.id, t.borrower_type, 
 		       COALESCE(u.full_name, t.student_name) as borrower_name,
+		       t.student_class,
+		       staff.full_name as staff_name,
 		       t.borrowed_at, t.returned_at, t.status, t.return_condition, t.purpose, t.return_notes
 		FROM transactions t
 		LEFT JOIN users u ON t.user_id = u.id
+		LEFT JOIN users staff ON t.borrowed_by = staff.id
 		WHERE t.item_id = $1
 		ORDER BY t.borrowed_at DESC
 		LIMIT 20
@@ -451,6 +454,8 @@ func (h *ItemHandler) GetHistory(c *gin.Context) {
 		ID              string     `json:"id"`
 		BorrowerType    string     `json:"borrower_type"`
 		BorrowerName    string     `json:"borrower_name"`
+		StudentClass    *string    `json:"student_class"`
+		StaffName       string     `json:"staff_name"`
 		BorrowedAt      time.Time  `json:"borrowed_at"`
 		ReturnedAt      *time.Time `json:"returned_at"`
 		Status          string     `json:"status"`
@@ -463,9 +468,10 @@ func (h *ItemHandler) GetHistory(c *gin.Context) {
 	for rows.Next() {
 		var hLite TransactionHistoryLite
 		if err := rows.Scan(
-			&hLite.ID, &hLite.BorrowerType, &hLite.BorrowerName,
+			&hLite.ID, &hLite.BorrowerType, &hLite.BorrowerName, &hLite.StudentClass, &hLite.StaffName,
 			&hLite.BorrowedAt, &hLite.ReturnedAt, &hLite.Status, &hLite.ReturnCondition, &hLite.Purpose, &hLite.ReturnNotes,
 		); err != nil {
+			fmt.Printf("Scan error in history: %v\n", err)
 			continue
 		}
 		history = append(history, hLite)

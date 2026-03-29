@@ -104,8 +104,21 @@
                 <tbody class="divide-y divide-gray-100 bg-white">
                   <tr v-for="h in history" :key="h.id" class="hover:bg-gray-50/50 transition-colors align-top">
                     <td class="px-4 py-3 min-w-0">
-                      <div class="font-medium text-gray-900 truncate" :title="h.borrower_name">{{ h.borrower_name }}</div>
-                      <div class="text-[10px] text-gray-400 font-medium uppercase tracking-tight">{{ h.borrower_type }}</div>
+                      <div class="flex flex-col">
+                        <div class="font-bold text-gray-900 truncate" :title="h.borrower_name">
+                          {{ h.borrower_name }}
+                          <span v-if="h.student_class" class="text-[10px] font-normal text-gray-400 ml-1">({{ h.student_class }})</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                          <span class="text-[9px] font-black uppercase tracking-tighter px-1 rounded border" 
+                                :class="h.borrower_type === 'STAFF' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-amber-50 text-amber-600 border-amber-100'">
+                            {{ h.borrower_type }}
+                          </span>
+                          <span v-if="h.borrower_type === 'STUDENT'" class="text-[9px] text-gray-400 flex items-center gap-1">
+                            Fac: <span class="font-bold italic">{{ h.staff_name }}</span>
+                          </span>
+                        </div>
+                      </div>
                       <div v-if="h.purpose || h.return_notes" class="mt-1.5 leading-relaxed">
                         <div class="text-xs space-y-1" :class="{'line-clamp-2': !isExpanded(h.id)}">
                           <p v-if="h.purpose" class="text-gray-500 italic break-words">

@@ -123,6 +123,21 @@ func main() {
 		{
 			dashboard.GET("/summary", dashHandler.GetSummary)
 		}
+
+		// Categories Management
+		catHandler := handlers.NewCategoryHandler(db)
+		categories := v1.Group("/categories")
+		categories.Use(middleware.AuthMiddleware())
+		{
+			categories.GET("", catHandler.List)
+			// Only Admins can modify categories
+			adminCats := categories.Group("")
+			adminCats.Use(middleware.RoleMiddleware("ADMIN"))
+			{
+				adminCats.POST("", catHandler.Create)
+				adminCats.DELETE("/:id", catHandler.Delete)
+			}
+		}
 	}
 
 	// Start server

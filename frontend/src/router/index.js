@@ -44,6 +44,12 @@ const routes = [
         component: () => import('../views/UsersView.vue'),
         meta: { roles: ['ADMIN'] },
       },
+      {
+        path: 'categories',
+        name: 'Categories',
+        component: () => import('../views/CategoriesView.vue'),
+        meta: { roles: ['ADMIN'] },
+      },
     ],
   },
 ]

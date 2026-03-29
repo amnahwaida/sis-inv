@@ -16,14 +16,20 @@
         <div class="flex-1">
           <input type="text" class="input-field" placeholder="Cari nama / kode barang..." v-model="filters.search" @input="debouncedFetch" />
         </div>
-        <select class="input-field md:w-40" v-model="filters.status" @change="fetchData">
+        <select class="input-field md:w-44" v-model="filters.status" @change="fetchData">
           <option value="">Semua Status</option>
           <option value="AVAILABLE">Tersedia</option>
           <option value="BORROWED">Dipinjam</option>
           <option value="MAINTENANCE">Perbaikan</option>
           <option value="LOST">Hilang</option>
         </select>
-        <select class="input-field md:w-40" v-model="filters.condition" @change="fetchData">
+        <select class="input-field md:w-44" v-model="filters.category_id" @change="fetchData">
+          <option value="">Semua Kategori</option>
+          <option v-for="cat in categoryStore.categories" :key="cat.id" :value="cat.id">
+            {{ cat.name }}
+          </option>
+        </select>
+        <select class="input-field md:w-44" v-model="filters.condition" @change="fetchData">
           <option value="">Semua Kondisi</option>
           <option value="GOOD">Baik</option>
           <option value="DAMAGED">Rusak</option>
@@ -142,12 +148,14 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useItemStore } from '../stores/item'
+import { useCategoryStore } from '../stores/category'
 import ItemFormModal from '../components/ItemFormModal.vue'
 import ItemQrModal from '../components/ItemQrModal.vue'
 import ItemDetailModal from '../components/ItemDetailModal.vue'
 
 const authStore = useAuthStore()
 const itemStore = useItemStore()
+const categoryStore = useCategoryStore()
 
 const isModalOpen = ref(false)
 const isQrModalOpen = ref(false)
@@ -157,6 +165,7 @@ const selectedItem = ref(null)
 const filters = ref({
   search: '',
   status: '',
+  category_id: '',
   condition: '',
   page: 1
 })
@@ -245,6 +254,7 @@ const getConditionLabel = (condition) => {
 }
 
 onMounted(() => {
+  categoryStore.fetchCategories()
   fetchData()
 })
 </script>
