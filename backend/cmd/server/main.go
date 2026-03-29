@@ -81,6 +81,47 @@ func main() {
 			users.PUT("/:id", userHandler.Update)
 			users.DELETE("/:id", userHandler.Delete)
 		}
+
+		// Items Management
+		itemHandler := handlers.NewItemHandler(db)
+		items := v1.Group("/items")
+		items.Use(middleware.AuthMiddleware())
+		{
+			// All logged in users can view items
+			items.GET("", itemHandler.List)
+			items.GET("/:id", itemHandler.Get)
+			items.GET("/:id/history", itemHandler.GetHistory)
+			
+			// Only Admins can modify items
+			adminItems := items.Group("")
+			adminItems.Use(middleware.RoleMiddleware("ADMIN"))
+			{
+				adminItems.POST("", itemHandler.Create)
+				adminItems.PUT("/:id", itemHandler.Update)
+				adminItems.DELETE("/:id", itemHandler.Delete)
+				adminItems.POST("/:id/qr", itemHandler.GenerateQRCode)
+			}
+		}
+
+		// Transactions Management
+		trxHandler := handlers.NewTransactionHandler(db)
+		transactions := v1.Group("/transactions")
+		transactions.Use(middleware.AuthMiddleware())
+		{
+			// All logged in staff can borrow/return and view their own
+			transactions.POST("/borrow", trxHandler.BorrowStaff)
+			transactions.POST("/return", trxHandler.Return)
+			transactions.GET("/my", trxHandler.MyBorrowings)
+		}
+
+		// Dashboard
+		dashHandler := handlers.NewDashboardHandler(db)
+		dashboard := v1.Group("/dashboard")
+		// In a real app we might cache this or separate per role, but here we just require auth
+		dashboard.Use(middleware.AuthMiddleware())
+		{
+			dashboard.GET("/summary", dashHandler.GetSummary)
+		}
 	}
 
 	// Start server

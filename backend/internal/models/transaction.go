@@ -1,60 +1,34 @@
 package models
 
-import (
-	"time"
-)
+import "time"
 
 type Transaction struct {
-	ID              string     `json:"id"`
-	ItemID          string     `json:"item_id"`
-	ItemName        *string    `json:"item_name,omitempty"`
-	ItemCode        *string    `json:"item_code,omitempty"`
-	BorrowerType    string     `json:"borrower_type"`
-	UserID          *string    `json:"user_id,omitempty"`
-	UserName        *string    `json:"user_name,omitempty"`
-	StudentNIS      *string    `json:"student_nis,omitempty"`
-	StudentName     *string    `json:"student_name,omitempty"`
-	StudentClass    *string    `json:"student_class,omitempty"`
-	BorrowedBy      string     `json:"borrowed_by"`
-	BorrowedByName  *string    `json:"borrowed_by_name,omitempty"`
-	BorrowedAt      time.Time  `json:"borrowed_at"`
-	DueDate         time.Time  `json:"due_date"`
-	ReturnedAt      *time.Time `json:"returned_at,omitempty"`
-	Status          string     `json:"status"`
-	Purpose         *string    `json:"purpose,omitempty"`
-	ReturnCondition *string    `json:"return_condition,omitempty"`
-	ReturnNotes     *string    `json:"return_notes,omitempty"`
-	ReturnPhotoURL  *string    `json:"return_photo_url,omitempty"`
-	CreatedAt       time.Time  `json:"created_at"`
-	UpdatedAt       time.Time  `json:"updated_at"`
+	ID           string     `json:"id" db:"id"`
+	ItemID       string     `json:"item_id" db:"item_id"`
+	UserID       string     `json:"user_id" db:"user_id"`
+	Status       string     `json:"status" db:"status"` // BORROWED, RETURNED, CANCELLED
+	BorrowDate   time.Time  `json:"borrow_date" db:"borrow_date"`
+	ExpectedDate *time.Time `json:"expected_return_date,omitempty" db:"expected_return_date"`
+	ReturnDate   *time.Time `json:"actual_return_date,omitempty" db:"actual_return_date"`
+	ReturnCond   *string    `json:"return_condition,omitempty" db:"return_condition"`
+	BorrowNotes  *string    `json:"borrow_notes,omitempty" db:"borrow_notes"`
+	ReturnNotes  *string    `json:"return_notes,omitempty" db:"return_notes"`
+	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at" db:"updated_at"`
+
+	// Joined fields
+	Item   *Item `json:"item,omitempty"`
+	User   *User `json:"user,omitempty"`
 }
 
-type BorrowStaffRequest struct {
-	ItemCode string  `json:"item_code" binding:"required"`
-	Purpose  *string `json:"purpose"`
-	DueDate  string  `json:"due_date" binding:"required"`
-}
-
-type BorrowStudentRequest struct {
-	ItemCode     string  `json:"item_code" binding:"required"`
-	StudentNIS   string  `json:"student_nis" binding:"required"`
-	StudentName  string  `json:"student_name" binding:"required"`
-	StudentClass string  `json:"student_class" binding:"required"`
-	Purpose      *string `json:"purpose"`
+type BorrowRequest struct {
+	ItemCode         string  `json:"item_code" binding:"required"`
+	ExpectedReturnDays int   `json:"expected_return_days"` // e.g. 7 days
+	Notes            string  `json:"notes"`
 }
 
 type ReturnRequest struct {
-	ItemCode        string  `json:"item_code" binding:"required"`
-	ReturnCondition string  `json:"return_condition" binding:"required,oneof=GOOD DAMAGED"`
-	ReturnNotes     *string `json:"return_notes"`
-}
-
-type Student struct {
-	ID        int       `json:"id"`
-	NIS       string    `json:"nis"`
-	FullName  string    `json:"full_name"`
-	Class     *string   `json:"class,omitempty"`
-	IsActive  bool      `json:"is_active"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ItemCode      string `json:"item_code" binding:"required"`
+	Condition     string `json:"condition" binding:"required,oneof=GOOD DAMAGED IN_REPAIR LOST"`
+	Notes         string `json:"notes"`
 }

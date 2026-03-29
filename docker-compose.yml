@@ -17,5 +17,17 @@ services:
       timeout: 5s
       retries: 5
 
+  # Simple sidecar to run the backup script periodically
+  backup-cron:
+    image: docker:cli
+    container_name: sisinv_backup
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./scripts:/scripts
+      - ./backups:/backups
+    # Run the backup script every day at 01:00 AM using sh and watch
+    entrypoint: /bin/sh -c "while true; do sleep 86400; sh /scripts/backup.sh; done"
+
 volumes:
   pgdata:

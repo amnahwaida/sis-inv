@@ -24,6 +24,21 @@ const routes = [
         component: () => import('../views/ItemsView.vue'),
       },
       {
+        path: 'borrow',
+        name: 'Borrow',
+        component: () => import('../views/BorrowView.vue'),
+      },
+      {
+        path: 'return',
+        name: 'Return',
+        component: () => import('../views/ReturnView.vue'),
+      },
+      {
+        path: 'my-borrowings',
+        name: 'My Borrowings',
+        component: () => import('../views/MyBorrowingsView.vue'),
+      },
+      {
         path: 'users',
         name: 'Users',
         component: () => import('../views/UsersView.vue'),
