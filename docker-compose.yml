@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: sisinv_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-sekolah_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-sekolah_secret_2024}
+      POSTGRES_DB: ${DB_NAME:-inventaris_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-sekolah_admin} -d ${DB_NAME:-inventaris_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
