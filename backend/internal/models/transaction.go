@@ -42,4 +42,5 @@ type ReturnRequest struct {
 	ItemCode      string `json:"item_code" binding:"required"`
 	Condition     string `json:"condition" binding:"required,oneof=GOOD DAMAGED IN_REPAIR LOST"`
 	Notes         string `json:"notes"`
+	PhotoURL      string `json:"photo_url"`
 }

@@ -37,6 +37,15 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function changePassword(oldPassword, newPassword) {
+    const { data } = await api.put('/auth/password', { 
+      old_password: oldPassword, 
+      new_password: newPassword 
+    })
+    if (data.success) return data.message
+    throw new Error(data.error || 'Gagal mengubah password')
+  }
+
   function logout() {
     accessToken.value = ''
     user.value = null
@@ -55,6 +64,7 @@ export const useAuthStore = defineStore('auth', () => {
     isHead,
     login,
     fetchMe,
+    changePassword,
     logout,
   }
 })

@@ -57,11 +57,21 @@ func main() {
 	// Middleware
 	r.Use(middleware.CORSMiddleware())
 
+	// Static files for uploads
+	if _, err := os.Stat("uploads"); os.IsNotExist(err) {
+		_ = os.Mkdir("uploads", 0755)
+	}
+	r.Static("/uploads", "./uploads")
+
 	// API v1 routes
 	v1 := r.Group("/api/v1")
 	{
 		// System (public)
 		v1.GET("/system/health", systemHandler.HealthCheck)
+
+		// Upload (Auth only)
+		uploadHandler := handlers.NewUploadHandler()
+		v1.POST("/upload", middleware.AuthMiddleware(), uploadHandler.UploadFile)
 
 		// Auth
 		auth := v1.Group("/auth")
@@ -81,6 +91,10 @@ func main() {
 			users.PUT("/:id", userHandler.Update)
 			users.DELETE("/:id", userHandler.Delete)
 		}
+
+		// Students
+		studentHandler := handlers.NewStudentHandler(db)
+		v1.GET("/students/search", middleware.AuthMiddleware(), studentHandler.Search)
 
 		// Items Management
 		itemHandler := handlers.NewItemHandler(db)
@@ -113,6 +127,7 @@ func main() {
 			transactions.POST("/borrow", trxHandler.Borrow)
 			transactions.POST("/return", trxHandler.Return)
 			transactions.GET("/my", trxHandler.MyBorrowings)
+			transactions.GET("/student/:nis", trxHandler.GetStudentHistory)
 		}
 
 		// Dashboard
@@ -137,6 +152,28 @@ func main() {
 				adminCats.POST("", catHandler.Create)
 				adminCats.DELETE("/:id", catHandler.Delete)
 			}
+		}
+
+		// Locations Management
+		locHandler := handlers.NewLocationHandler(db)
+		locations := v1.Group("/locations")
+		locations.Use(middleware.AuthMiddleware())
+		{
+			locations.GET("", locHandler.List)
+			// Only Admins can modify locations
+			adminLocs := locations.Group("")
+			adminLocs.Use(middleware.RoleMiddleware("ADMIN"))
+			{
+				adminLocs.POST("", locHandler.Create)
+				adminLocs.DELETE("/:id", locHandler.Delete)
+			}
+		}
+		// Reports
+		reportHandler := handlers.NewReportHandler(db)
+		reports := v1.Group("/reports")
+		reports.Use(middleware.AuthMiddleware())
+		{
+			reports.GET("/export/items", reportHandler.ExportItems)
 		}
 	}
 

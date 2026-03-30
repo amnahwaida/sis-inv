@@ -50,6 +50,28 @@ const routes = [
         component: () => import('../views/CategoriesView.vue'),
         meta: { roles: ['ADMIN'] },
       },
+      {
+        path: 'locations',
+        name: 'Locations',
+        component: () => import('../views/LocationsView.vue'),
+        meta: { roles: ['ADMIN'] },
+      },
+      {
+        path: 'print-labels',
+        name: 'Cetak Label',
+        component: () => import('../views/PrintQRView.vue'),
+        meta: { roles: ['ADMIN'] },
+      },
+      {
+        path: 'student-history',
+        name: 'Riwayat Siswa',
+        component: () => import('../views/StudentHistoryView.vue'),
+      },
+      {
+        path: 'settings',
+        name: 'Pengaturan',
+        component: () => import('../views/SettingsView.vue'),
+      },
     ],
   },
 ]

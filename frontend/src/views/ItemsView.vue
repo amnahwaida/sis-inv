@@ -2,12 +2,31 @@
   <div class="animate-fade-in space-y-6">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold text-gray-900">Daftar Barang</h1>
-      <button v-if="authStore.isAdmin" @click="openAddModal" class="btn-primary flex items-center gap-2">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        Tambah Barang
-      </button>
+      <div class="flex gap-3">
+        <button 
+          v-if="authStore.isAdmin" 
+          @click="goToPrint" 
+          :disabled="selectedIds.length === 0"
+          class="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          Cetak Label ({{ selectedIds.length }})
+        </button>
+        <button v-if="authStore.isAdmin" @click="handleExportExcel" class="btn-secondary bg-green-50 text-green-700 border-green-200 hover:bg-green-100 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Export Excel
+        </button>
+        <button v-if="authStore.isAdmin" @click="openAddModal" class="btn-primary flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Tambah Barang
+        </button>
+      </div>
     </div>
 
     <!-- Search & Filter -->
@@ -16,20 +35,26 @@
         <div class="flex-1">
           <input type="text" class="input-field" placeholder="Cari nama / kode barang..." v-model="filters.search" @input="debouncedFetch" />
         </div>
-        <select class="input-field md:w-44" v-model="filters.status" @change="fetchData">
+        <select class="input-field md:w-36" v-model="filters.status" @change="fetchData">
           <option value="">Semua Status</option>
           <option value="AVAILABLE">Tersedia</option>
           <option value="BORROWED">Dipinjam</option>
           <option value="MAINTENANCE">Perbaikan</option>
           <option value="LOST">Hilang</option>
         </select>
-        <select class="input-field md:w-44" v-model="filters.category_id" @change="fetchData">
+        <select class="input-field md:w-36" v-model="filters.category_id" @change="fetchData">
           <option value="">Semua Kategori</option>
           <option v-for="cat in categoryStore.categories" :key="cat.id" :value="cat.id">
             {{ cat.name }}
           </option>
         </select>
-        <select class="input-field md:w-44" v-model="filters.condition" @change="fetchData">
+        <select class="input-field md:w-36" v-model="filters.location_id" @change="fetchData">
+          <option value="">Semua Lokasi</option>
+          <option v-for="loc in locationStore.locations" :key="loc.id" :value="loc.id">
+            {{ loc.name }}
+          </option>
+        </select>
+        <select class="input-field md:w-36" v-model="filters.condition" @change="fetchData">
           <option value="">Semua Kondisi</option>
           <option value="GOOD">Baik</option>
           <option value="DAMAGED">Rusak</option>
@@ -50,6 +75,9 @@
         <table class="w-full">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
+              <th v-if="authStore.isAdmin" class="w-10 px-6 py-3">
+                <input type="checkbox" @change="toggleSelectAll" :checked="isAllSelected" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+              </th>
               <th class="text-left text-xs font-semibold text-gray-600 uppercase px-6 py-3">Kode / Nama</th>
               <th class="text-left text-xs font-semibold text-gray-600 uppercase px-6 py-3">Kategori & Lokasi</th>
               <th class="text-left text-xs font-semibold text-gray-600 uppercase px-6 py-3">Status</th>
@@ -59,14 +87,17 @@
           </thead>
           <tbody class="divide-y divide-gray-100">
             <template v-if="itemStore.items.length > 0">
-              <tr v-for="item in itemStore.items" :key="item.id" class="hover:bg-gray-50 transition-colors">
+              <tr v-for="item in itemStore.items" :key="item.id" class="hover:bg-gray-50 transition-colors" :class="{'bg-indigo-50/50': selectedIds.includes(item.id)}">
+                <td v-if="authStore.isAdmin" class="px-6 py-4">
+                  <input type="checkbox" v-model="selectedIds" :value="item.id" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                </td>
                 <td class="px-6 py-4">
                   <div class="font-medium text-gray-900">{{ item.name }}</div>
                   <div class="text-sm text-gray-500 font-mono">{{ item.code }}</div>
                 </td>
                 <td class="px-6 py-4">
                   <div class="text-sm text-gray-900">{{ item.category_name || '-' }}</div>
-                  <div class="text-sm text-gray-500">{{ item.location || '-' }}</div>
+                  <div class="text-sm text-gray-500">{{ item.location_name || item.location || '-' }}</div>
                 </td>
                 <td class="px-6 py-4">
                   <span class="px-2.5 py-1 rounded-full text-xs font-medium" :class="{
@@ -145,27 +176,74 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import api from '../utils/api'
 import { useItemStore } from '../stores/item'
 import { useCategoryStore } from '../stores/category'
+import { useLocationStore } from '../stores/location'
 import ItemFormModal from '../components/ItemFormModal.vue'
 import ItemQrModal from '../components/ItemQrModal.vue'
 import ItemDetailModal from '../components/ItemDetailModal.vue'
 
+const router = useRouter()
 const authStore = useAuthStore()
 const itemStore = useItemStore()
 const categoryStore = useCategoryStore()
+const locationStore = useLocationStore()
 
 const isModalOpen = ref(false)
 const isQrModalOpen = ref(false)
 const isDetailModalOpen = ref(false)
 const selectedItem = ref(null)
+const selectedIds = ref([])
+
+const isAllSelected = computed(() => {
+  if (itemStore.items.length === 0) return false
+  return itemStore.items.every(item => selectedIds.value.includes(item.id))
+})
+
+const toggleSelectAll = (e) => {
+  const currentPageIds = itemStore.items.map(i => i.id)
+  if (e.target.checked) {
+    // Add only if not already there
+    const uniqueBatch = currentPageIds.filter(id => !selectedIds.value.includes(id))
+    selectedIds.value = [...selectedIds.value, ...uniqueBatch]
+  } else {
+    // Remove only items from current page
+    selectedIds.value = selectedIds.value.filter(id => !currentPageIds.includes(id))
+  }
+}
+
+const goToPrint = () => {
+  if (selectedIds.value.length === 0) return
+  router.push({
+    path: '/print-labels',
+    query: { ids: selectedIds.value.join(',') }
+  })
+}
+
+const handleExportExcel = async () => {
+  try {
+    const response = await api.get('/reports/export/items', { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `SIS-INV_Laporan-Barang_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (err) {
+    alert('Gagal mendownload laporan Excel')
+  }
+}
 
 const filters = ref({
   search: '',
   status: '',
   category_id: '',
+  location_id: '',
   condition: '',
   page: 1
 })
@@ -255,6 +333,7 @@ const getConditionLabel = (condition) => {
 
 onMounted(() => {
   categoryStore.fetchCategories()
+  locationStore.fetchLocations()
   fetchData()
 })
 </script>

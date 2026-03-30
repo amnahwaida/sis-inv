@@ -19,6 +19,8 @@ type Item struct {
 	Name            string     `json:"name"`
 	CategoryID      *int       `json:"category_id,omitempty"`
 	CategoryName    *string    `json:"category_name,omitempty"`
+	LocationID      *int       `json:"location_id,omitempty"`
+	LocationName    *string    `json:"location_name,omitempty"`
 	Location        *string    `json:"location,omitempty"`
 	Condition       string     `json:"condition"`
 	Status          string     `json:"status"`
@@ -32,10 +34,18 @@ type Item struct {
 	UpdatedAt       time.Time  `json:"updated_at"`
 }
 
+type Location struct {
+	ID          int       `json:"id"`
+	Name        string    `json:"name"`
+	Description *string   `json:"description,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
 type CreateItemRequest struct {
 	Code            string   `json:"code" binding:"required"`
 	Name            string   `json:"name" binding:"required"`
 	CategoryID      *int     `json:"category_id"`
+	LocationID      *int     `json:"location_id"`
 	Location        *string  `json:"location"`
 	Condition       string   `json:"condition" binding:"omitempty,oneof=GOOD DAMAGED LOST IN_REPAIR"`
 	BorrowerType    string   `json:"borrower_type" binding:"omitempty,oneof=STAFF_ONLY STUDENT_ALLOWED"`
@@ -49,6 +59,7 @@ type CreateItemRequest struct {
 type UpdateItemRequest struct {
 	Name            *string  `json:"name"`
 	CategoryID      *int     `json:"category_id"`
+	LocationID      *int     `json:"location_id"`
 	Location        *string  `json:"location"`
 	Condition       *string  `json:"condition" binding:"omitempty,oneof=GOOD DAMAGED LOST IN_REPAIR"`
 	Status          *string  `json:"status" binding:"omitempty,oneof=AVAILABLE BORROWED MAINTENANCE LOST"`

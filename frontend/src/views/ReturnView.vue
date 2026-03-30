@@ -76,6 +76,36 @@
             <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Catatan Kondisi</label>
             <textarea v-model="form.notes" rows="3" class="input-field rounded-xl border-gray-200" placeholder="Jelaskan kondisi fisik barang (Opsional)"></textarea>
           </div>
+
+          <!-- Photo Upload -->
+          <div class="space-y-3">
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Foto Bukti Kondisi</label>
+            <div class="flex items-center justify-center w-full">
+              <label v-if="!form.photo_url" class="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-100 border-dashed rounded-2xl cursor-pointer bg-gray-50/50 hover:bg-gray-100/50 transition-all group">
+                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                  <div class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-gray-400 group-hover:text-primary-600 transition-colors mb-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <p class="mb-1 text-xs font-bold text-gray-500 uppercase tracking-widest">Ambil Foto / Upload</p>
+                  <p class="text-[10px] text-gray-400">PNG, JPG atau JPEG (Max. 5MB)</p>
+                </div>
+                <input type="file" @change="uploadPhoto" class="hidden" accept="image/*" capture="environment" />
+              </label>
+              
+              <div v-else class="relative w-full group overflow-hidden rounded-2xl border-4 border-white shadow-xl">
+                <img :src="getFullImageUrl(form.photo_url)" class="w-full h-64 object-cover" />
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <button @click="form.photo_url = ''" type="button" class="btn-primary bg-red-600 hover:bg-red-700 border-none px-4 py-2">
+                    Hapus & Ganti Foto
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p v-if="uploading" class="text-[10px] font-black text-primary-600 animate-pulse text-center uppercase tracking-widest">Mengunggah file...</p>
+          </div>
           
           <div v-if="transactionStore.error" class="p-4 bg-red-50 border border-red-100 text-red-700 text-xs rounded-xl flex items-center gap-3">
             <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -99,8 +129,8 @@
 
           <div class="pt-6 border-t border-gray-100 flex gap-4">
             <button @click="resetScan" type="button" class="btn-secondary px-8 rounded-xl font-bold">Batal</button>
-            <button type="submit" :disabled="transactionStore.loading || !!successMsg" class="flex-1 btn-primary justify-center py-4 rounded-xl font-bold text-lg shadow-xl shadow-primary-200 transition-all">
-              {{ transactionStore.loading ? 'Memproses...' : 'Konfirmasi Pengembalian' }}
+            <button type="submit" :disabled="transactionStore.loading || uploading || !!successMsg" class="flex-1 btn-primary justify-center py-4 rounded-xl font-bold text-lg shadow-xl shadow-primary-200 transition-all">
+              {{ transactionStore.loading ? 'Memproses...' : (uploading ? 'Menunggu Upload...' : 'Konfirmasi Pengembalian') }}
             </button>
           </div>
         </form>
@@ -114,20 +144,22 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTransactionStore } from '../stores/transaction'
 import QrScanner from '../components/QrScanner.vue'
+import api from '../utils/api'
 
 const transactionStore = useTransactionStore()
 const route = useRoute()
 
 const scannedItemCode = ref('')
 const successMsg = ref(false)
+const uploading = ref(false)
 
 const form = ref({
   condition: 'GOOD',
-  notes: ''
+  notes: '',
+  photo_url: ''
 })
 
 onMounted(() => {
-  // If navigated from "Kembalikan" button in my-borrowings, code will be in query
   if (route.query.code) {
     scannedItemCode.value = route.query.code
   }
@@ -139,11 +171,50 @@ const handleScan = (code) => {
   transactionStore.error = null
 }
 
+const getFullImageUrl = (url) => {
+  if (!url) return ''
+  return url
+}
+
+const uploadPhoto = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  if (file.size > 5 * 1024 * 1024) {
+    alert('File terlalu besar! Maksimal 5MB.')
+    return
+  }
+
+  uploading.value = true
+  const formData = new FormData()
+  formData.append('file', file)
+
+  try {
+    const response = await api.post('/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    if (response.data.success) {
+      form.value.photo_url = response.data.data.url
+    } else {
+      alert('Gagal upload: ' + response.data.message)
+    }
+  } catch (err) {
+    alert('Gagal mengunggah gambar: ' + (err.response?.data?.error || err.message))
+  } finally {
+    uploading.value = false
+  }
+}
+
 const resetScan = () => {
   scannedItemCode.value = ''
   successMsg.value = false
-  form.value.condition = 'GOOD'
-  form.value.notes = ''
+  form.value = {
+    condition: 'GOOD',
+    notes: '',
+    photo_url: ''
+  }
 }
 
 const submitReturn = async () => {
@@ -151,7 +222,8 @@ const submitReturn = async () => {
     await transactionStore.returnItem(
       scannedItemCode.value, 
       form.value.condition, 
-      form.value.notes
+      form.value.notes,
+      form.value.photo_url
     )
     successMsg.value = true
   } catch (err) {

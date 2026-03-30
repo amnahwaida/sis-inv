@@ -52,14 +52,15 @@ export const useTransactionStore = defineStore('transactions', () => {
     }
   }
 
-  async function returnItem(itemCode, condition, notes) {
+  async function returnItem(itemCode, condition, notes, photoUrl) {
     loading.value = true
     error.value = null
     try {
       const payload = {
         item_code: itemCode,
         condition: condition || 'GOOD',
-        notes: notes
+        notes: notes,
+        photo_url: photoUrl
       }
       const { data } = await api.post('/transactions/return', payload)
       if (data.success) {

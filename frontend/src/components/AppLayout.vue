@@ -2,7 +2,7 @@
   <div class="flex h-screen bg-gray-50">
     <!-- Sidebar -->
     <aside 
-      :class="[sidebarOpen ? 'translate-x-0' : '-translate-x-full', 'lg:translate-x-0']"
+      :class="[sidebarOpen ? 'translate-x-0' : '-translate-x-full', 'lg:translate-x-0', 'no-print']"
       class="fixed inset-y-0 left-0 z-30 w-64 bg-gray-900 transition-transform duration-300 ease-in-out lg:static lg:inset-0"
     >
       <!-- Logo -->
@@ -62,7 +62,7 @@
     <!-- Main -->
     <div class="flex-1 flex flex-col overflow-hidden">
       <!-- Top bar -->
-      <header class="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-4 lg:px-6">
+      <header class="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-4 lg:px-6 no-print">
         <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-1.5 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -72,7 +72,7 @@
       </header>
 
       <!-- Page content -->
-      <main class="flex-1 overflow-y-auto p-4 lg:p-6">
+      <main class="flex-1 overflow-y-auto p-4 lg:p-6 print:p-0">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" />
@@ -104,9 +104,12 @@ const IconDashboard = { render: () => h('svg', { fill: 'none', stroke: 'currentC
 const IconItems = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' })]) }
 const IconUsers = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' })]) }
 const IconCategories = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z' })]) }
+const IconLocations = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z' }), h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M15 11a3 3 0 11-6 0 3 3 0 016 0z' })]) }
 const IconBorrow = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 4v16m8-8H4' })]) }
 const IconReturn = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' })]) }
 const IconMyBorrowings = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' })]) }
+const IconStudent = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 14l9-5-9-5-9 5 9 5z' }), h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z' }), h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222' })]) }
+const IconSettings = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' }), h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z' })]) }
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: IconDashboard, roles: ['ADMIN', 'TEACHER', 'HEAD'] },
@@ -114,8 +117,11 @@ const navItems = [
   { to: '/borrow', label: 'Pinjam', icon: IconBorrow, roles: ['ADMIN', 'TEACHER', 'HEAD'] },
   { to: '/return', label: 'Pengembalian', icon: IconReturn, roles: ['ADMIN', 'TEACHER', 'HEAD'] },
   { to: '/my-borrowings', label: 'Peminjaman Saya', icon: IconMyBorrowings, roles: ['ADMIN', 'TEACHER', 'HEAD'] },
+  { to: '/student-history', label: 'Cek Riwayat Siswa', icon: IconStudent, roles: ['ADMIN', 'TEACHER'] },
   { to: '/users', label: 'Kelola User', icon: IconUsers, roles: ['ADMIN'] },
   { to: '/categories', label: 'Kategori', icon: IconCategories, roles: ['ADMIN'] },
+  { to: '/locations', label: 'Lokasi', icon: IconLocations, roles: ['ADMIN'] },
+  { to: '/settings', label: 'Pengaturan', icon: IconSettings, roles: ['ADMIN', 'TEACHER', 'HEAD'] },
 ]
 
 const filteredNav = computed(() =>
@@ -134,5 +140,10 @@ async function handleLogout() {
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+@media print {
+  .no-print {
+    display: none !important;
+  }
 }
 </style>

@@ -32,11 +32,12 @@ func (h *ItemHandler) List(c *gin.Context) {
 	// Base query
 	query := `
 		SELECT i.id, i.code, i.qr_code_data, i.name, i.category_id, c.name as category_name,
-		       i.location, i.condition, i.status, i.borrower_type, 
+		       i.location_id, l.name as location_name, i.location, i.condition, i.status, i.borrower_type, 
 		       i.purchase_date::text, i.purchase_price, i.warranty_end_date::text,
 		       i.notes, i.photo_url, i.created_at, i.updated_at
 		FROM items i
 		LEFT JOIN categories c ON i.category_id = c.id
+		LEFT JOIN locations l ON i.location_id = l.id
 		WHERE 1=1
 	`
 	args := []interface{}{}
@@ -102,7 +103,7 @@ func (h *ItemHandler) List(c *gin.Context) {
 		
 		if err := rows.Scan(
 			&i.ID, &i.Code, &i.QRCodeData, &i.Name, &i.CategoryID, &i.CategoryName,
-			&i.Location, &i.Condition, &i.Status, &i.BorrowerType,
+			&i.LocationID, &i.LocationName, &i.Location, &i.Condition, &i.Status, &i.BorrowerType,
 			&pDate, &i.PurchasePrice, &wDate,
 			&i.Notes, &i.PhotoURL, &i.CreatedAt, &i.UpdatedAt,
 		); err != nil {
@@ -181,15 +182,16 @@ func (h *ItemHandler) Get(c *gin.Context) {
 
 	err := h.db.QueryRow(context.Background(),
 		`SELECT i.id, i.code, i.qr_code_data, i.name, i.category_id, c.name as category_name,
-		        i.location, i.condition, i.status, i.borrower_type, 
+		        i.location_id, l.name as location_name, i.location, i.condition, i.status, i.borrower_type, 
 		        i.purchase_date::text, i.purchase_price, i.warranty_end_date::text,
 		        i.notes, i.photo_url, i.created_at, i.updated_at
 		 FROM items i
 		 LEFT JOIN categories c ON i.category_id = c.id
+		 LEFT JOIN locations l ON i.location_id = l.id
 		 WHERE i.id = $1`, id,
 	).Scan(
 		&i.ID, &i.Code, &i.QRCodeData, &i.Name, &i.CategoryID, &i.CategoryName,
-		&i.Location, &i.Condition, &i.Status, &i.BorrowerType,
+		&i.LocationID, &i.LocationName, &i.Location, &i.Condition, &i.Status, &i.BorrowerType,
 		&pDate, &i.PurchasePrice, &wDate,
 		&i.Notes, &i.PhotoURL, &i.CreatedAt, &i.UpdatedAt,
 	)
@@ -213,15 +215,16 @@ func (h *ItemHandler) GetByCode(c *gin.Context) {
 
 	err := h.db.QueryRow(context.Background(),
 		`SELECT i.id, i.code, i.qr_code_data, i.name, i.category_id, c.name as category_name,
-		        i.location, i.condition, i.status, i.borrower_type, 
+		        i.location_id, l.name as location_name, i.location, i.condition, i.status, i.borrower_type, 
 		        i.purchase_date::text, i.purchase_price, i.warranty_end_date::text,
 		        i.notes, i.photo_url, i.created_at, i.updated_at
 		 FROM items i
 		 LEFT JOIN categories c ON i.category_id = c.id
+		 LEFT JOIN locations l ON i.location_id = l.id
 		 WHERE i.code = $1`, code,
 	).Scan(
 		&i.ID, &i.Code, &i.QRCodeData, &i.Name, &i.CategoryID, &i.CategoryName,
-		&i.Location, &i.Condition, &i.Status, &i.BorrowerType,
+		&i.LocationID, &i.LocationName, &i.Location, &i.Condition, &i.Status, &i.BorrowerType,
 		&pDate, &i.PurchasePrice, &wDate,
 		&i.Notes, &i.PhotoURL, &i.CreatedAt, &i.UpdatedAt,
 	)
@@ -254,10 +257,10 @@ func (h *ItemHandler) Create(c *gin.Context) {
 
 	var itemID string
 	err := h.db.QueryRow(context.Background(),
-		`INSERT INTO items (code, name, category_id, location, condition, borrower_type, 
+		`INSERT INTO items (code, name, category_id, location_id, location, condition, borrower_type, 
 		                   purchase_date, purchase_price, warranty_end_date, notes, photo_url)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
-		req.Code, req.Name, req.CategoryID, req.Location, req.Condition, req.BorrowerType,
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
+		req.Code, req.Name, req.CategoryID, req.LocationID, req.Location, req.Condition, req.BorrowerType,
 		req.PurchaseDate, req.PurchasePrice, req.WarrantyEndDate, req.Notes, req.PhotoURL,
 	).Scan(&itemID)
 
@@ -290,6 +293,11 @@ func (h *ItemHandler) Update(c *gin.Context) {
 	if req.CategoryID != nil {
 		query += fmt.Sprintf(", category_id = $%d", argIdx)
 		args = append(args, *req.CategoryID)
+		argIdx++
+	}
+	if req.LocationID != nil {
+		query += fmt.Sprintf(", location_id = $%d", argIdx)
+		args = append(args, *req.LocationID)
 		argIdx++
 	}
 	if req.Location != nil {
@@ -435,7 +443,7 @@ func (h *ItemHandler) GetHistory(c *gin.Context) {
 		       COALESCE(u.full_name, t.student_name) as borrower_name,
 		       t.student_class,
 		       staff.full_name as staff_name,
-		       t.borrowed_at, t.returned_at, t.status, t.return_condition, t.purpose, t.return_notes
+		       t.borrowed_at, t.returned_at, t.status, t.return_condition, t.purpose, t.return_notes, t.return_photo_url
 		FROM transactions t
 		LEFT JOIN users u ON t.user_id = u.id
 		LEFT JOIN users staff ON t.borrowed_by = staff.id
@@ -462,6 +470,7 @@ func (h *ItemHandler) GetHistory(c *gin.Context) {
 		ReturnCondition *string    `json:"return_condition"`
 		Purpose         string     `json:"purpose"`
 		ReturnNotes     *string    `json:"return_notes"`
+		ReturnPhotoURL  *string    `json:"return_photo_url"`
 	}
 
 	var history []TransactionHistoryLite
@@ -469,7 +478,7 @@ func (h *ItemHandler) GetHistory(c *gin.Context) {
 		var hLite TransactionHistoryLite
 		if err := rows.Scan(
 			&hLite.ID, &hLite.BorrowerType, &hLite.BorrowerName, &hLite.StudentClass, &hLite.StaffName,
-			&hLite.BorrowedAt, &hLite.ReturnedAt, &hLite.Status, &hLite.ReturnCondition, &hLite.Purpose, &hLite.ReturnNotes,
+			&hLite.BorrowedAt, &hLite.ReturnedAt, &hLite.Status, &hLite.ReturnCondition, &hLite.Purpose, &hLite.ReturnNotes, &hLite.ReturnPhotoURL,
 		); err != nil {
 			fmt.Printf("Scan error in history: %v\n", err)
 			continue

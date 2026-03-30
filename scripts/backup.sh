@@ -1,50 +1,47 @@
 #!/bin/bash
+# SIS-INV: Automated PostgreSQL Backup Script
+# Based on PRD F06.3
 
 # Configuration
-BACKUP_DIR="./backups"
-DB_CONTAINER="sis-inv-db-1"
+PROJECT_ROOT="/home/vannyezha/project/sis_inv"
+BACKUP_DIR="$PROJECT_ROOT/backups"
+DATE=$(date +%Y%m%d_%H%M%S)
+RETENTION_DAYS=30
+
+# Database credentials (from .env)
 DB_USER="sekolah_admin"
 DB_NAME="inventaris_db"
-RETENTION_DAYS=7
+DB_PASS="sekolah_secret_2024"
+DB_HOST="localhost"
+DB_PORT="5432"
 
-# Date format for the backup file
-DATE=$(date +"%Y-%m-%d_%H-%M-%S")
-BACKUP_FILE="$BACKUP_DIR/db_backup_$DATE.sql.gz"
+# Create backup directory if not exists
+mkdir -p $BACKUP_DIR
 
-# Colors for output
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+# Set password for pg_dump to avoid prompt
+export PGPASSWORD=$DB_PASS
 
-echo "Starting database backup at $DATE"
+echo "[$(date)] Starting SIS-INV database backup..."
 
-# Create backup directory if it doesn't exist
-mkdir -p "$BACKUP_DIR"
+# Database backup to SQL file
+BACKUP_FILE="$BACKUP_DIR/db_$DATE.sql"
+docker exec sisinv_db pg_dump -U $DB_USER $DB_NAME > $BACKUP_FILE
 
-# Enable pipefail so if pg_dump fails, the whole pipe fails
-set -o pipefail
-
-# Try to find the exact container name
-ACTUAL_CONTAINER=$(docker ps -a --format '{{.Names}}' | grep "db" | grep "sis" | head -n 1)
-if [ -z "$ACTUAL_CONTAINER" ]; then
-    echo -e "${RED}✗ Error: Database container not found!${NC}"
-    exit 1
-fi
-
-echo "Found database container: $ACTUAL_CONTAINER"
-
-# Run pg_dump inside the container and pipe it through gzip on the host
-if docker exec "$ACTUAL_CONTAINER" pg_dump -U "$DB_USER" "$DB_NAME" | gzip > "$BACKUP_FILE"; then
-    echo -e "${GREEN}✓ Backup successful! Saved to: $BACKUP_FILE${NC}"
+if [ $? -eq 0 ]; then
+    # Compress backup
+    gzip $BACKUP_FILE
+    echo "[$(date)] Database backup completed: db_$DATE.sql.gz"
 else
-    echo -e "${RED}✗ Backup failed!${NC}"
-    rm -f "$BACKUP_FILE" # Clean up empty file
+    echo "[$(date)] ❌ FAILED to create database backup"
     exit 1
 fi
 
-# Clean up old backups strictly older than $RETENTION_DAYS days
-echo "Cleaning up backups older than $RETENTION_DAYS days..."
-find "$BACKUP_DIR" -type f -name "db_backup_*.sql.gz" -mtime +$RETENTION_DAYS -exec rm {} \;
+# Clean up old backups (older than 30 days)
+echo "[$(date)] Cleaning up old backups (>${RETENTION_DAYS} days)..."
+find $BACKUP_DIR -name "*.sql.gz" -mtime +$RETENTION_DAYS -delete
 
-echo -e "${GREEN}✓ Cleanup complete.${NC}"
-exit 0
+# Unset password
+unset PGPASSWORD
+
+echo "[$(date)] SIS-INV Backup Process Finished Successfully."
+echo "[$(date)] ---" >> $BACKUP_DIR/backup.log

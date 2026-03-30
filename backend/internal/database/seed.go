@@ -61,5 +61,29 @@ func SeedDefaultAdmin(pool *pgxpool.Pool) error {
 	}
 
 	log.Println("✅ Default categories seeded")
+
+	// Seed default students
+	students := []struct {
+		NIS   string
+		Name  string
+		Class string
+	}{
+		{"12345", "Budi Santoso", "12 IPA 1"},
+		{"12346", "Siti Aminah", "12 IPA 2"},
+		{"12347", "Andi Wijaya", "11 IPS 1"},
+		{"12348", "Dewi Lestari", "10 TG 1"},
+	}
+
+	for _, s := range students {
+		_, err := pool.Exec(context.Background(),
+			`INSERT INTO students (nis, full_name, class) VALUES ($1, $2, $3) ON CONFLICT (nis) DO NOTHING`,
+			s.NIS, s.Name, s.Class,
+		)
+		if err != nil {
+			log.Printf("⚠️  Failed to seed student %s: %v", s.Name, err)
+		}
+	}
+	log.Println("✅ Default students seeded")
+
 	return nil
 }

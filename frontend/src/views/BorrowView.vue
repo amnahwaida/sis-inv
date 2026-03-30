@@ -80,9 +80,28 @@
 
           <!-- Student Fields Conditional -->
           <div v-if="form.borrower_type === 'STUDENT'" class="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in bg-primary-50/30 p-4 rounded-2xl border border-primary-50">
-            <div class="md:col-span-2">
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Nama Siswa *</label>
-              <input v-model="form.student_name" required class="input-field rounded-xl border-gray-200" placeholder="Masukkan nama lengkap siswa" />
+            <div class="md:col-span-2 relative">
+              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Nama Siswa / Cari NIS *</label>
+              <input 
+                v-model="form.student_name" 
+                required 
+                class="input-field rounded-xl border-gray-200" 
+                placeholder="Ketik nama atau NIS untuk mencari..." 
+                @input="debouncedSearch"
+              />
+              
+              <!-- Auto-suggest Dropdown -->
+              <div v-if="searchResults.length > 0" class="absolute z-50 w-full mt-1 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden divide-y divide-gray-50">
+                <div 
+                  v-for="s in searchResults" 
+                  :key="s.nis"
+                  @click="selectStudent(s)"
+                  class="px-4 py-3 hover:bg-primary-50 cursor-pointer transition-colors"
+                >
+                  <div class="text-sm font-bold text-primary-900">{{ s.full_name }}</div>
+                  <div class="text-[10px] text-gray-400 font-mono">NIS: {{ s.nis }} • {{ s.class }}</div>
+                </div>
+              </div>
             </div>
             <div>
               <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">NIS Siswa</label>
@@ -148,6 +167,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import api from '../utils/api'
 import { useTransactionStore } from '../stores/transaction'
 import { useItemStore } from '../stores/item'
 import QrScanner from '../components/QrScanner.vue'
@@ -168,6 +188,34 @@ const form = ref({
   expected_return_days: 7,
   purpose: ''
 })
+
+const searchResults = ref([])
+let searchTimeout
+
+const debouncedSearch = () => {
+  clearTimeout(searchTimeout)
+  if (!form.value.student_name) {
+    searchResults.value = []
+    return
+  }
+  searchTimeout = setTimeout(async () => {
+    try {
+      const { data } = await api.get(`/students/search?q=${form.value.student_name}`)
+      if (data.success) {
+        searchResults.value = data.data
+      }
+    } catch {
+      searchResults.value = []
+    }
+  }, 300)
+}
+
+const selectStudent = (student) => {
+  form.value.student_name = student.full_name
+  form.value.student_nis = student.nis
+  form.value.student_class = student.class
+  searchResults.value = []
+}
 
 const handleScan = async (code) => {
   scannedItemCode.value = code

@@ -74,10 +74,15 @@ func (h *TransactionHandler) Borrow(c *gin.Context) {
 
 	// Determine expected return date (due_date)
 	var dueDate time.Time
-	if req.ExpectedReturnDays > 0 {
-		dueDate = time.Now().AddDate(0, 0, req.ExpectedReturnDays)
+	if req.BorrowerType == "STUDENT" {
+		// Mandatory 6 hours for students as per PRD F04.4
+		dueDate = time.Now().Add(6 * time.Hour)
 	} else {
-		dueDate = time.Now().AddDate(0, 0, 7) // Default 7 days
+		if req.ExpectedReturnDays > 0 {
+			dueDate = time.Now().AddDate(0, 0, req.ExpectedReturnDays)
+		} else {
+			dueDate = time.Now().AddDate(0, 0, 7) // Default 7 days
+		}
 	}
 
 	// Create transaction record
@@ -180,9 +185,10 @@ func (h *TransactionHandler) Return(c *gin.Context) {
 		    returned_to = $1,
 		    return_condition = $2, 
 		    return_notes = $3, 
+		    return_photo_url = $4,
 		    updated_at = NOW() 
-		WHERE id = $4
-	`, userId, req.Condition, req.Notes, trxId)
+		WHERE id = $5
+	`, userId, req.Condition, req.Notes, utils.NullString(req.PhotoURL), trxId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to update transaction"))
 		return
@@ -262,4 +268,64 @@ func (h *TransactionHandler) MyBorrowings(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(borrowings, "Fetched active borrowings successfully"))
+}
+
+// GetStudentHistory returns all transactions for a specific student (F04.6)
+func (h *TransactionHandler) GetStudentHistory(c *gin.Context) {
+	nis := c.Param("nis")
+	if nis == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Student NIS is required"))
+		return
+	}
+
+	query := `
+		SELECT 
+			t.id, t.status, t.borrowed_at, t.returned_at, t.due_date,
+			t.student_name, t.student_class, t.purpose,
+			i.code as item_code, i.name as item_name,
+			u.full_name as teacher_name
+		FROM transactions t
+		JOIN items i ON t.item_id = i.id
+		JOIN users u ON t.borrowed_by = u.id
+		WHERE t.student_nis = $1
+		ORDER BY t.borrowed_at DESC
+	`
+
+	rows, err := h.db.Query(context.Background(), query, nis)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to fetch student history"))
+		return
+	}
+	defer rows.Close()
+
+	var history []map[string]interface{}
+	for rows.Next() {
+		var id, status, itemCode, itemName, teacherName string
+		var studentName, studentClass, purpose *string
+		var borrowedAt time.Time
+		var returnedAt, dueDate *time.Time
+
+		err := rows.Scan(
+			&id, &status, &borrowedAt, &returnedAt, &dueDate,
+			&studentName, &studentClass, &purpose,
+			&itemCode, &itemName, &teacherName,
+		)
+		if err == nil {
+			history = append(history, map[string]interface{}{
+				"id":            id,
+				"status":        status,
+				"borrowed_at":   borrowedAt,
+				"returned_at":   returnedAt,
+				"due_date":      dueDate,
+				"student_name":  studentName,
+				"student_class": studentClass,
+				"purpose":       purpose,
+				"item_code":     itemCode,
+				"item_name":     itemName,
+				"teacher_name":  teacherName,
+			})
+		}
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(history, "Fetched student history successfully"))
 }

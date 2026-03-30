@@ -21,3 +21,7 @@ pgdata/
 # OS
 .DS_Store
 Thumbs.db
+
+# Data and Backups
+backend/uploads/
+backups/

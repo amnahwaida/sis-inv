@@ -23,7 +23,10 @@
           <!-- Basic Info Card -->
           <div class="bg-white border text-sm border-gray-100 rounded-xl p-5 shadow-sm space-y-4">
             <div class="flex items-center gap-4 border-b border-gray-50 pb-4">
-              <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-bold text-xl uppercase">
+              <div v-if="itemData.photo_url" class="w-20 h-20 rounded-xl overflow-hidden shadow-sm border border-gray-100 flex-shrink-0">
+                <img :src="getFullImageUrl(itemData.photo_url)" class="w-full h-full object-cover" />
+              </div>
+              <div v-else class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-bold text-xl uppercase flex-shrink-0">
                 {{ itemData.name.charAt(0) }}
               </div>
               <div>
@@ -53,7 +56,7 @@
               </div>
               <div>
                 <span class="block text-xs font-medium text-gray-500 uppercase">Lokasi Asal</span>
-                <span class="block mt-1 font-medium text-gray-900">{{ itemData.location || '-' }}</span>
+                <span class="block mt-1 font-medium text-gray-900">{{ itemData.location_name || itemData.location || '-' }}</span>
               </div>
               <div>
                 <span class="block text-xs font-medium text-gray-500 uppercase">Aturan Peminjaman</span>
@@ -150,15 +153,23 @@
                           {{ h.status === 'ACTIVE' ? 'DIPINJAM' : h.status === 'RETURNED' ? 'KEMBALI' : 'TERLAMBAT' }}
                         </span>
                         <!-- Return Condition Sub-info -->
-                        <span v-if="h.status === 'RETURNED' && h.return_condition" class="text-[9px] font-medium text-gray-500 flex items-center gap-1">
-                          <span class="w-1.5 h-1.5 rounded-full" :class="{
-                            'bg-green-500': h.return_condition === 'GOOD',
-                            'bg-red-500': h.return_condition === 'DAMAGED',
-                            'bg-yellow-500': h.return_condition === 'IN_REPAIR',
-                            'bg-gray-900': h.return_condition === 'LOST'
-                          }"></span>
-                          {{ getConditionLabel(h.return_condition) }}
-                        </span>
+                        <div class="flex flex-col gap-1">
+                          <span v-if="h.status === 'RETURNED' && h.return_condition" class="text-[9px] font-medium text-gray-500 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full" :class="{
+                              'bg-green-500': h.return_condition === 'GOOD',
+                              'bg-red-500': h.return_condition === 'DAMAGED',
+                              'bg-yellow-500': h.return_condition === 'IN_REPAIR',
+                              'bg-gray-900': h.return_condition === 'LOST'
+                            }"></span>
+                            {{ getConditionLabel(h.return_condition) }}
+                          </span>
+                          <!-- Photo Thumbnail -->
+                          <div v-if="h.return_photo_url" class="mt-1">
+                            <a :href="getFullImageUrl(h.return_photo_url)" target="_blank" class="block w-10 h-10 rounded-lg overflow-hidden border border-gray-100 shadow-sm hover:scale-110 transition-transform">
+                              <img :src="getFullImageUrl(h.return_photo_url)" class="w-full h-full object-cover" />
+                            </a>
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td class="px-4 py-3 text-right tabular-nums whitespace-nowrap">
@@ -239,6 +250,11 @@ const getStatusLabel = (status) => {
     'LOST': 'Hilang'
   }
   return map[status] || status
+}
+
+const getFullImageUrl = (url) => {
+  if (!url) return ''
+  return url // Use relative path via proxy
 }
 
 const getConditionLabel = (condition) => {
