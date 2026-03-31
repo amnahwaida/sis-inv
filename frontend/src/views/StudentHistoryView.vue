@@ -53,17 +53,19 @@
 
     <!-- Results -->
     <div v-if="hasSearched && !loading" class="space-y-6">
-      <!-- Student Info Summary Header -->
-      <div v-if="history.length > 0" class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-6">
-        <div class="w-16 h-16 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center text-2xl font-bold">
-          {{ history[0].student_name?.[0] || 'S' }}
+      <!-- Student Info Summary Header (Now shows even with empty history if selected from search) -->
+      <div v-if="selectedStudent" class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-6 animate-scale-up">
+        <div class="w-16 h-16 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center text-2xl font-bold shadow-inner">
+          {{ selectedStudent.full_name?.[0] || 'S' }}
         </div>
         <div>
-          <h2 class="text-xl font-bold text-gray-900">{{ history[0].student_name }}</h2>
-          <div class="flex items-center gap-3 mt-1">
-            <span class="px-2.5 py-0.5 bg-gray-100 text-gray-600 rounded-md text-xs font-bold font-mono">NIS: {{ nis }}</span>
-            <span class="px-2.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-md text-xs font-bold">{{ history[0].student_class }}</span>
-            <span class="text-xs text-gray-400">• Ditemukan {{ history.length }} transaksi</span>
+          <h2 class="text-xl font-black text-gray-900 tracking-tight">{{ selectedStudent.full_name }}</h2>
+          <div class="flex items-center gap-3 mt-1.5">
+            <span class="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg text-[10px] font-black font-mono tracking-wider ring-1 ring-gray-200">NIS: {{ selectedStudent.nis }}</span>
+            <span class="px-2.5 py-1 bg-primary-50 text-primary-700 rounded-lg text-[10px] font-black tracking-wider ring-1 ring-primary-100">{{ selectedStudent.class }}</span>
+            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-tighter ml-1">
+              {{ history.length > 0 ? `Ditemukan ${history.length} transaksi` : 'Belum ada riwayat transaksi' }}
+            </span>
           </div>
         </div>
       </div>
@@ -148,9 +150,11 @@ const history = ref([])
 const hasSearched = ref(false)
 const error = ref('')
 const searchResults = ref([])
+const selectedStudent = ref(null)
 
 let searchTimeout
 const debouncedSearch = () => {
+  selectedStudent.value = null // Clear selected student on manual type
   clearTimeout(searchTimeout)
   if (!nis.value) {
     searchResults.value = []
@@ -170,6 +174,7 @@ const debouncedSearch = () => {
 
 const selectStudent = (student) => {
   nis.value = student.nis
+  selectedStudent.value = student
   searchResults.value = []
   handleSearch()
 }
