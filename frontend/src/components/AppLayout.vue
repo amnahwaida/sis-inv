@@ -62,13 +62,23 @@
     <!-- Main -->
     <div class="flex-1 flex flex-col overflow-hidden">
       <!-- Top bar -->
-      <header class="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-4 lg:px-6 no-print">
-        <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-1.5 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      <header class="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between gap-4 lg:px-6 no-print">
+        <div class="flex items-center gap-4">
+          <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-1.5 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <h2 class="text-lg font-semibold text-gray-800">{{ $route.name }}</h2>
+        </div>
+        
+        <!-- Offline Indicator -->
+        <div v-if="isOffline" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50 border border-red-100 text-red-600 text-[10px] font-black uppercase tracking-widest animate-pulse">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 00-12.728 0M12 18v.01M15.536 8.464a5 5 0 00-7.072 0M12 14v-2" />
           </svg>
-        </button>
-        <h2 class="text-lg font-semibold text-gray-800">{{ $route.name }}</h2>
+          Offline
+        </div>
       </header>
 
       <!-- Page content -->
@@ -84,13 +94,28 @@
 </template>
 
 <script setup>
-import { ref, computed, h } from 'vue'
+import { ref, computed, h, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const sidebarOpen = ref(false)
+const isOffline = ref(!navigator.onLine)
+
+const updateOnlineStatus = () => {
+  isOffline.value = !navigator.onLine
+}
+
+onMounted(() => {
+  window.addEventListener('online', updateOnlineStatus)
+  window.addEventListener('offline', updateOnlineStatus)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('online', updateOnlineStatus)
+  window.removeEventListener('offline', updateOnlineStatus)
+})
 
 const userInitials = computed(() => {
   const name = authStore.user?.full_name || ''

@@ -269,6 +269,9 @@ func (h *ItemHandler) Create(c *gin.Context) {
 		return
 	}
 
+	actorId, _ := c.Get("userID")
+	utils.LogAudit(h.db, actorId.(string), "CREATE_ITEM", "ITEM", itemID, "Created item: "+req.Code, c.ClientIP())
+
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{"id": itemID}, "Item successfully created"))
 }
 
@@ -397,6 +400,9 @@ func (h *ItemHandler) Delete(c *gin.Context) {
 		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Item not found"))
 		return
 	}
+
+	actorId, _ := c.Get("userID")
+	utils.LogAudit(h.db, actorId.(string), "DELETE_ITEM", "ITEM", id, "Archived/Deleted item", c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Item successfully deleted"))
 }

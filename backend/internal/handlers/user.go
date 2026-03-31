@@ -72,6 +72,9 @@ func (h *UserHandler) Create(c *gin.Context) {
 		return
 	}
 
+	actorId, _ := c.Get("userID")
+	utils.LogAudit(h.db, actorId.(string), "CREATE_USER", "USER", userID, "Created user: "+req.Username, c.ClientIP())
+
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{"id": userID}, "User berhasil dibuat"))
 }
 
