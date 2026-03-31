@@ -194,6 +194,7 @@ func main() {
 			reports.GET("/active-borrowings", reportHandler.ActiveBorrowings)
 			reports.GET("/overdue", reportHandler.OverdueReport)
 			reports.GET("/history", reportHandler.TransactionHistory)
+			reports.GET("/audit", reportHandler.AuditLogs)
 		}
 	}
 

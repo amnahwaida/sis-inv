@@ -385,3 +385,53 @@ func (h *ReportHandler) TransactionHistory(c *gin.Context) {
 	if result == nil { result = []map[string]interface{}{} }
 	c.JSON(http.StatusOK, utils.SuccessResponse(result, ""))
 }
+
+// AuditLogs returns the last 100 system audit logs (F06.3)
+func (h *ReportHandler) AuditLogs(c *gin.Context) {
+	ctx := context.Background()
+
+	query := `
+		SELECT 
+			a.id, a.action, a.entity_type, a.entity_id, a.description, 
+			a.ip_address, a.created_at,
+			u.full_name as user_name
+		FROM audit_logs a
+		LEFT JOIN users u ON a.user_id = u.id
+		ORDER BY a.created_at DESC
+		LIMIT 100
+	`
+
+	rows, err := h.db.Query(ctx, query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal mengambil log audit"))
+		return
+	}
+	defer rows.Close()
+
+	var result []map[string]interface{}
+	for rows.Next() {
+		var id int
+		var action, entityType, description, userName string
+		var entityId *string
+		var ipAddress *string
+		var createdAt time.Time
+
+		if err := rows.Scan(&id, &action, &entityType, &entityId, &description, &ipAddress, &createdAt, &userName); err != nil {
+			continue
+		}
+
+		result = append(result, map[string]interface{}{
+			"id":          id,
+			"action":      action,
+			"entity_type": entityType,
+			"entity_id":   entityId,
+			"description": description,
+			"ip_address":  ipAddress,
+			"created_at":  createdAt,
+			"user_name":   userName,
+		})
+	}
+
+	if result == nil { result = []map[string]interface{}{} }
+	c.JSON(http.StatusOK, utils.SuccessResponse(result, ""))
+}
