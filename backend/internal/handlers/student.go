@@ -129,6 +129,10 @@ func (h *StudentHandler) Update(c *gin.Context) {
 
 func (h *StudentHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
+	// Get student info for audit
+	var stName, stNis string
+	_ = h.db.QueryRow(context.Background(), "SELECT full_name, nis FROM students WHERE id = $1", id).Scan(&stName, &stNis)
+
 	_, err := h.db.Exec(context.Background(), "DELETE FROM students WHERE id = $1", id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal menghapus data: Siswa mungkin sudah memiliki transaksi"))
@@ -136,7 +140,7 @@ func (h *StudentHandler) Delete(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "DELETE_STUDENT", "STUDENT", "00000000-0000-0000-0000-000000000000", "Deleted student ID: "+id, c.ClientIP())
+	utils.LogAudit(h.db, actorId.(string), "DELETE_STUDENT", "STUDENT", id, fmt.Sprintf("Deleted student: %s (NIS: %s)", stName, stNis), c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Siswa berhasil dihapus"))
 }

@@ -158,9 +158,9 @@ func (h *UserHandler) Update(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	auditDesc := "Updated user profile/status."
+	auditDesc := "Updated user profile/status for: " + oldName
 	if len(changes) > 0 {
-		auditDesc = "Updated user. Changes: " + strings.Join(changes, " | ")
+		auditDesc = fmt.Sprintf("Updated user %s. Changes: %s", oldName, strings.Join(changes, " | "))
 	}
 	utils.LogAudit(h.db, actorId.(string), "UPDATE_USER", "USER", id, auditDesc, c.ClientIP())
 
@@ -184,8 +184,15 @@ func (h *UserHandler) Delete(c *gin.Context) {
 		return
 	}
 
+	// Get target username for log
+	var targetName string
+	err = h.db.QueryRow(context.Background(), "SELECT full_name FROM users WHERE id = $1", id).Scan(&targetName)
+	if err != nil {
+		targetName = id // Fallback to ID
+	}
+
 	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "DISABLE_USER", "USER", id, "Disabled user login access", c.ClientIP())
+	utils.LogAudit(h.db, actorId.(string), "DISABLE_USER", "USER", id, "Disabled user login access for: "+targetName, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "User berhasil dinonaktifkan"))
 }
