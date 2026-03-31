@@ -518,3 +518,103 @@ func (h *ReportHandler) ExportAuditLogs(c *gin.Context) {
 	c.Header("Content-Disposition", "attachment; filename="+fileName)
 	f.Write(c.Writer)
 }
+
+// ExportMaintenanceLogs exports the maintenance logs to Excel
+func (h *ReportHandler) ExportMaintenanceLogs(c *gin.Context) {
+	ctx := context.Background()
+	statusFilter := c.Query("status")
+
+	query := `
+		SELECT 
+			m.id, i.code, i.name, u.full_name as reported_by, 
+			m.issue_description, m.vendor, m.cost, m.status, 
+			m.reported_at, m.completed_at, m.notes
+		FROM maintenance_logs m
+		JOIN items i ON m.item_id = i.id
+		LEFT JOIN users u ON m.reported_by = u.id
+		WHERE 1=1
+	`
+	args := []interface{}{}
+	if statusFilter != "" {
+		query += " AND m.status = $1"
+		args = append(args, statusFilter)
+	}
+	query += " ORDER BY m.reported_at DESC"
+
+	rows, err := h.db.Query(ctx, query, args...)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal mengambil data perbaikan untuk export"))
+		return
+	}
+	defer rows.Close()
+
+	f := excelize.NewFile()
+	defer func() {
+		if err := f.Close(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+
+	sheet := "Log Perbaikan"
+	idx, _ := f.NewSheet(sheet)
+	f.DeleteSheet("Sheet1")
+
+	hdrs := []string{"No", "Kode Barang", "Nama Barang", "Pelapor", "Deskripsi Keluhan", "Vendor/Teknisi", "Biaya", "Status", "Tgl Lapor", "Tgl Selesai", "Catatan"}
+	for i, hd := range hdrs {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheet, cell, hd)
+	}
+	style, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true, Color: "FFFFFF"},
+		Fill: excelize.Fill{Type: "pattern", Color: []string{"4F46E5"}, Pattern: 1},
+		Alignment: &excelize.Alignment{Horizontal: "center"},
+	})
+	f.SetRowStyle(sheet, 1, 1, style)
+
+	row := 2
+	for rows.Next() {
+		var id int
+		var itemCode, itemName, issueDescription, status string
+		var reportedBy, vendor, notes *string
+		var cost *float64
+		var reportedAt time.Time
+		var completedAt *time.Time
+
+		if err := rows.Scan(&id, &itemCode, &itemName, &reportedBy, &issueDescription, &vendor, &cost, &status, &reportedAt, &completedAt, &notes); err != nil {
+			continue
+		}
+
+		pelapor := "-"
+		if reportedBy != nil { pelapor = *reportedBy }
+		vnd := "-"
+		if vendor != nil && *vendor != "" { vnd = *vendor }
+		cst := 0.0
+		if cost != nil { cst = *cost }
+		nts := "-"
+		if notes != nil && *notes != "" { nts = *notes }
+
+		f.SetCellValue(sheet, fmt.Sprintf("A%d", row), row-1)
+		f.SetCellValue(sheet, fmt.Sprintf("B%d", row), itemCode)
+		f.SetCellValue(sheet, fmt.Sprintf("C%d", row), itemName)
+		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), pelapor)
+		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), issueDescription)
+		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), vnd)
+		f.SetCellValue(sheet, fmt.Sprintf("G%d", row), cst)
+		f.SetCellValue(sheet, fmt.Sprintf("H%d", row), status)
+		f.SetCellValue(sheet, fmt.Sprintf("I%d", row), reportedAt.Format("2006-01-02 15:04:05"))
+		if completedAt != nil {
+			f.SetCellValue(sheet, fmt.Sprintf("J%d", row), completedAt.Format("2006-01-02 15:04:05"))
+		} else {
+			f.SetCellValue(sheet, fmt.Sprintf("J%d", row), "-")
+		}
+		f.SetCellValue(sheet, fmt.Sprintf("K%d", row), nts)
+		
+		row++
+	}
+
+	f.SetActiveSheet(idx)
+	fileName := fmt.Sprintf("SIS-INV_Log-Perbaikan_%s.xlsx", time.Now().Format("20060102_1504"))
+	c.Header("Content-Type", "application/octet-stream")
+	c.Header("Content-Disposition", "attachment; filename="+fileName)
+	f.Write(c.Writer)
+}

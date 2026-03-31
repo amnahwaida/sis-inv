@@ -19,6 +19,10 @@
             <option value="DONE" class="text-gray-900">Selesai</option>
             <option value="CANCELLED" class="text-gray-900">Dibatalkan</option>
           </select>
+          <button @click="exportExcel" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-sm active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            EXPORT EXCEL
+          </button>
           <button @click="showCreateModal = true" class="bg-white text-primary-900 hover:bg-primary-50 px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-xl shadow-black/10 active:scale-95">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
             LAPOR KERUSAKAN
@@ -338,6 +342,24 @@ async function fetchLogs() {
     if (data.success) logs.value = data.data
   } catch (e) { console.error(e) }
   finally { loading.value = false }
+}
+
+async function exportExcel() {
+  try {
+    const params = filterStatus.value ? `?status=${filterStatus.value}` : ''
+    const response = await api.get(`/reports/export/maintenance${params}`, { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+    link.setAttribute('download', `SIS-INV_Log-Perbaikan_${dateStr}.xlsx`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (e) {
+    console.error("Failed to export Excel", e)
+    alert("Gagal mengunduh file Excel")
+  }
 }
 
 const debounceItemSearch = () => {
