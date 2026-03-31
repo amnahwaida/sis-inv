@@ -304,7 +304,7 @@ func (h *TransactionHandler) GetStudentHistory(c *gin.Context) {
 		FROM transactions t
 		JOIN items i ON t.item_id = i.id
 		JOIN users u ON t.borrowed_by = u.id
-		WHERE t.student_nis = $1
+		WHERE t.student_nis = $1 OR t.student_name ILIKE $1
 		ORDER BY t.borrowed_at DESC
 	`
 
