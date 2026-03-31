@@ -435,3 +435,86 @@ func (h *ReportHandler) AuditLogs(c *gin.Context) {
 	if result == nil { result = []map[string]interface{}{} }
 	c.JSON(http.StatusOK, utils.SuccessResponse(result, ""))
 }
+
+// ExportAuditLogs exports the audit logs to Excel
+func (h *ReportHandler) ExportAuditLogs(c *gin.Context) {
+	ctx := context.Background()
+
+	query := `
+		SELECT 
+			a.id, a.action, a.entity_type, a.description, 
+			a.ip_address, a.created_at,
+			u.full_name as user_name
+		FROM audit_logs a
+		LEFT JOIN users u ON a.user_id = u.id
+		ORDER BY a.created_at DESC
+	`
+
+	rows, err := h.db.Query(ctx, query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal mengambil log audit untuk export"))
+		return
+	}
+	defer rows.Close()
+
+	f := excelize.NewFile()
+	defer func() {
+		if err := f.Close(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+
+	sheet := "Log Audit"
+	idx, _ := f.NewSheet(sheet)
+	f.DeleteSheet("Sheet1")
+
+	hdrs := []string{"No", "Waktu", "Pelaku", "Aksi", "Entitas", "Deskripsi", "Alamat IP"}
+	for i, hd := range hdrs {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheet, cell, hd)
+	}
+	style, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true, Color: "FFFFFF"},
+		Fill: excelize.Fill{Type: "pattern", Color: []string{"4F46E5"}, Pattern: 1},
+		Alignment: &excelize.Alignment{Horizontal: "center"},
+	})
+	f.SetRowStyle(sheet, 1, 1, style)
+
+	row := 2
+	for rows.Next() {
+		var id int
+		var action, entityType, description string
+		var userName *string
+		var ipAddress *string
+		var createdAt time.Time
+
+		if err := rows.Scan(&id, &action, &entityType, &description, &ipAddress, &createdAt, &userName); err != nil {
+			continue
+		}
+
+		pelaku := "System"
+		if userName != nil {
+			pelaku = *userName
+		}
+		
+		ip := "127.0.0.1"
+		if ipAddress != nil {
+			ip = *ipAddress
+		}
+
+		f.SetCellValue(sheet, fmt.Sprintf("A%d", row), row-1)
+		f.SetCellValue(sheet, fmt.Sprintf("B%d", row), createdAt.Format("2006-01-02 15:04:05"))
+		f.SetCellValue(sheet, fmt.Sprintf("C%d", row), pelaku)
+		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), action)
+		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), entityType)
+		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), description)
+		f.SetCellValue(sheet, fmt.Sprintf("G%d", row), ip)
+		row++
+	}
+
+	f.SetActiveSheet(idx)
+	fileName := fmt.Sprintf("SIS-INV_Log-Audit_%s.xlsx", time.Now().Format("20060102_1504"))
+	c.Header("Content-Type", "application/octet-stream")
+	c.Header("Content-Disposition", "attachment; filename="+fileName)
+	f.Write(c.Writer)
+}

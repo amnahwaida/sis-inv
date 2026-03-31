@@ -7,7 +7,11 @@
         <p class="text-sm text-gray-500 mt-1">Rekam jejak aktivitas krusial dalam sistem (Terbatas untuk Admin).</p>
       </div>
       <div class="flex items-center gap-2">
-        <button @click="fetchLogs" class="p-2 text-primary-600 hover:bg-primary-50 rounded-xl transition-all" title="Refresh">
+        <button @click="exportExcel" class="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 hover:bg-green-600 hover:text-white rounded-xl font-bold text-sm transition-all shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Export Excel
+        </button>
+        <button @click="fetchLogs" class="p-2 text-primary-600 hover:bg-primary-50 rounded-xl transition-all border border-gray-100 shadow-sm bg-white" title="Refresh">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
         </button>
       </div>
@@ -82,6 +86,23 @@ async function fetchLogs() {
     console.error(e)
   } finally {
     loading.value = false
+  }
+}
+
+async function exportExcel() {
+  try {
+    const response = await api.get('/reports/export/audit', { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+    link.setAttribute('download', `SIS-INV_Log-Audit_${dateStr}.xlsx`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (e) {
+    console.error("Failed to export Excel", e)
+    alert("Gagal mengunduh file Excel")
   }
 }
 
