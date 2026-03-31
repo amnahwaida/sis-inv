@@ -55,7 +55,7 @@
               </button>
               <button 
                 type="button"
-                @click="form.borrower_type = 'STUDENT'; form.expected_return_days = 0.5"
+                @click="form.borrower_type = 'STUDENT'; form.expected_return_days = 0.25"
                 :disabled="itemDetail.borrower_type === 'STAFF_ONLY'"
                 class="flex-1 py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
                 :class="[
@@ -117,6 +117,7 @@
             <div>
               <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Estimasi Dikembalikan *</label>
               <select v-if="form.borrower_type === 'STUDENT'" v-model="form.expected_return_days" class="input-field rounded-xl border-gray-200" required>
+                <option :value="0.25">6 Jam (Otomatis)</option>
                 <option :value="0.5">12 Jam (Hari Ini)</option>
                 <option :value="1">1 Hari (Besok)</option>
                 <option :value="2">2 Hari</option>
