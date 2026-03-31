@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -284,6 +285,22 @@ func (h *ItemHandler) Update(c *gin.Context) {
 		return
 	}
 
+	ctx := context.Background()
+
+	// 1. Fetch current data for audit comparison
+	var (
+		oldName, oldCode, oldCond, oldStatus, oldBorrowerType, oldLocation string
+		oldPrice                                                           float64
+	)
+	err := h.db.QueryRow(ctx, "SELECT name, code, condition, status, borrower_type, location, purchase_price FROM items WHERE id = $1", id).
+		Scan(&oldName, &oldCode, &oldCond, &oldStatus, &oldBorrowerType, &oldLocation, &oldPrice)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Item not found"))
+		return
+	}
+
+	changes := []string{}
 	query := "UPDATE items SET updated_at = $1"
 	args := []interface{}{time.Now()}
 	argIdx := 2
@@ -292,61 +309,79 @@ func (h *ItemHandler) Update(c *gin.Context) {
 		query += fmt.Sprintf(", name = $%d", argIdx)
 		args = append(args, *req.Name)
 		argIdx++
+		if *req.Name != oldName {
+			changes = append(changes, fmt.Sprintf("Name: %s -> %s", oldName, *req.Name))
+		}
 	}
 	if req.CategoryID != nil {
 		query += fmt.Sprintf(", category_id = $%d", argIdx)
 		args = append(args, *req.CategoryID)
 		argIdx++
+		changes = append(changes, "Category updated")
 	}
 	if req.LocationID != nil {
 		query += fmt.Sprintf(", location_id = $%d", argIdx)
 		args = append(args, *req.LocationID)
 		argIdx++
+		changes = append(changes, "Location ID updated")
 	}
 	if req.Location != nil {
 		query += fmt.Sprintf(", location = $%d", argIdx)
 		args = append(args, *req.Location)
 		argIdx++
+		if *req.Location != oldLocation {
+			changes = append(changes, fmt.Sprintf("Location: %s -> %s", oldLocation, *req.Location))
+		}
 	}
 	if req.Condition != nil {
 		query += fmt.Sprintf(", condition = $%d", argIdx)
 		args = append(args, *req.Condition)
 		argIdx++
+		if *req.Condition != oldCond {
+			changes = append(changes, fmt.Sprintf("Condition: %s -> %s", oldCond, *req.Condition))
+		}
 	}
 	if req.Status != nil {
 		query += fmt.Sprintf(", status = $%d", argIdx)
 		args = append(args, *req.Status)
 		argIdx++
+		if *req.Status != oldStatus {
+			changes = append(changes, fmt.Sprintf("Status: %s -> %s", oldStatus, *req.Status))
+		}
 	}
 	if req.BorrowerType != nil {
 		query += fmt.Sprintf(", borrower_type = $%d", argIdx)
 		args = append(args, *req.BorrowerType)
 		argIdx++
+		if *req.BorrowerType != oldBorrowerType {
+			changes = append(changes, fmt.Sprintf("Borrower: %s -> %s", oldBorrowerType, *req.BorrowerType))
+		}
 	}
 	if req.PurchaseDate != nil {
 		query += fmt.Sprintf(", purchase_date = $%d", argIdx)
 		args = append(args, *req.PurchaseDate)
 		argIdx++
+		changes = append(changes, "Purchase date updated")
 	}
 	if req.PurchasePrice != nil {
 		query += fmt.Sprintf(", purchase_price = $%d", argIdx)
 		args = append(args, *req.PurchasePrice)
 		argIdx++
-	}
-	if req.WarrantyEndDate != nil {
-		query += fmt.Sprintf(", warranty_end_date = $%d", argIdx)
-		args = append(args, *req.WarrantyEndDate)
-		argIdx++
+		if *req.PurchasePrice != oldPrice {
+			changes = append(changes, fmt.Sprintf("Price: %.2f -> %.2f", oldPrice, *req.PurchasePrice))
+		}
 	}
 	if req.Notes != nil {
 		query += fmt.Sprintf(", notes = $%d", argIdx)
 		args = append(args, *req.Notes)
 		argIdx++
+		changes = append(changes, "Notes updated")
 	}
 	if req.PhotoURL != nil {
 		query += fmt.Sprintf(", photo_url = $%d", argIdx)
 		args = append(args, *req.PhotoURL)
 		argIdx++
+		changes = append(changes, "Photo updated")
 	}
 
 	query += fmt.Sprintf(" WHERE id = $%d", argIdx)
@@ -364,7 +399,11 @@ func (h *ItemHandler) Update(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "UPDATE_ITEM", "ITEM", id, "Updated item details", c.ClientIP())
+	auditDesc := "Updated item."
+	if len(changes) > 0 {
+		auditDesc = "Updated item. Changes: " + strings.Join(changes, " | ")
+	}
+	utils.LogAudit(h.db, actorId.(string), "UPDATE_ITEM", "ITEM", id, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Item successfully updated"))
 }

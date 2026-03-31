@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -87,6 +88,20 @@ func (h *UserHandler) Update(c *gin.Context) {
 		return
 	}
 
+	ctx := context.Background()
+
+	// 1. Fetch current user data for audit
+	var oldName, oldRole, oldNip, oldEmail, oldPhone string
+	var oldActive bool
+	err := h.db.QueryRow(ctx, "SELECT full_name, role, COALESCE(nip, ''), email, COALESCE(phone, ''), is_active FROM users WHERE id = $1", id).
+		Scan(&oldName, &oldRole, &oldNip, &oldEmail, &oldPhone, &oldActive)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "User tidak ditemukan"))
+		return
+	}
+
+	changes := []string{}
 	query := "UPDATE users SET updated_at = $1"
 	args := []interface{}{time.Now()}
 	argIdx := 2
@@ -95,31 +110,37 @@ func (h *UserHandler) Update(c *gin.Context) {
 		query += fmt.Sprintf(", full_name = $%d", argIdx)
 		args = append(args, *req.FullName)
 		argIdx++
+		if *req.FullName != oldName { changes = append(changes, fmt.Sprintf("Name: %s -> %s", oldName, *req.FullName)) }
 	}
 	if req.Role != nil {
 		query += fmt.Sprintf(", role = $%d", argIdx)
 		args = append(args, *req.Role)
 		argIdx++
+		if *req.Role != oldRole { changes = append(changes, fmt.Sprintf("Role: %s -> %s", oldRole, *req.Role)) }
 	}
 	if req.NIP != nil {
 		query += fmt.Sprintf(", nip = $%d", argIdx)
 		args = append(args, *req.NIP)
 		argIdx++
+		if *req.NIP != oldNip { changes = append(changes, fmt.Sprintf("NIP: %s -> %s", oldNip, *req.NIP)) }
 	}
 	if req.Email != nil {
 		query += fmt.Sprintf(", email = $%d", argIdx)
 		args = append(args, *req.Email)
 		argIdx++
+		if *req.Email != oldEmail { changes = append(changes, fmt.Sprintf("Email: %s -> %s", oldEmail, *req.Email)) }
 	}
 	if req.Phone != nil {
 		query += fmt.Sprintf(", phone = $%d", argIdx)
 		args = append(args, *req.Phone)
 		argIdx++
+		if *req.Phone != oldPhone { changes = append(changes, fmt.Sprintf("Phone: %s -> %s", oldPhone, *req.Phone)) }
 	}
 	if req.IsActive != nil {
 		query += fmt.Sprintf(", is_active = $%d", argIdx)
 		args = append(args, *req.IsActive)
 		argIdx++
+		if *req.IsActive != oldActive { changes = append(changes, fmt.Sprintf("Active: %v -> %v", oldActive, *req.IsActive)) }
 	}
 
 	query += fmt.Sprintf(" WHERE id = $%d", argIdx)
@@ -137,7 +158,11 @@ func (h *UserHandler) Update(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "UPDATE_USER", "USER", id, "Updated user profile/status", c.ClientIP())
+	auditDesc := "Updated user profile/status."
+	if len(changes) > 0 {
+		auditDesc = "Updated user. Changes: " + strings.Join(changes, " | ")
+	}
+	utils.LogAudit(h.db, actorId.(string), "UPDATE_USER", "USER", id, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "User berhasil diupdate"))
 }

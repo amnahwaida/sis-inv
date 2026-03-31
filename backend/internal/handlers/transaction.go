@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -234,7 +235,8 @@ func (h *TransactionHandler) Return(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "RETURN_ITEM", "ITEM", itemId, "Returned item: "+req.ItemCode+" with condition: "+req.Condition, c.ClientIP())
+	auditDesc := fmt.Sprintf("Returned item: %s. Condition: %s. Notes: %s", req.ItemCode, req.Condition, req.Notes)
+	utils.LogAudit(h.db, actorId.(string), "RETURN_ITEM", "ITEM", itemId, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{"new_status": newItemStatus}, "Item returned successfully"))
 }

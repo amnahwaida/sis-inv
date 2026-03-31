@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vannyezha/sis-inv/internal/utils"
@@ -88,7 +90,26 @@ func (h *StudentHandler) Update(c *gin.Context) {
 		return
 	}
 
-	_, err := h.db.Exec(context.Background(),
+	ctx := context.Background()
+
+	// Fetch old data for audit
+	var oldNis, oldName, oldClass string
+	var oldActive bool
+	err := h.db.QueryRow(ctx, "SELECT nis, full_name, class, is_active FROM students WHERE id = $1", id).
+		Scan(&oldNis, &oldName, &oldClass, &oldActive)
+	
+	if err != nil {
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Data siswa tidak ditemukan"))
+		return
+	}
+
+	changes := []string{}
+	if req.NIS != oldNis { changes = append(changes, fmt.Sprintf("NIS: %s -> %s", oldNis, req.NIS)) }
+	if req.FullName != oldName { changes = append(changes, fmt.Sprintf("Nama: %s -> %s", oldName, req.FullName)) }
+	if req.Class != oldClass { changes = append(changes, fmt.Sprintf("Kelas: %s -> %s", oldClass, req.Class)) }
+	if req.IsActive != oldActive { changes = append(changes, fmt.Sprintf("Aktif: %v -> %v", oldActive, req.IsActive)) }
+
+	_, err = h.db.Exec(ctx,
 		`UPDATE students SET nis = $1, full_name = $2, class = $3, is_active = $4, updated_at = NOW() WHERE id = $5`,
 		req.NIS, req.FullName, req.Class, req.IsActive, id)
 	if err != nil {
@@ -97,7 +118,11 @@ func (h *StudentHandler) Update(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "UPDATE_STUDENT", "STUDENT", "00000000-0000-0000-0000-000000000000", "Updated student NIS: "+req.NIS, c.ClientIP())
+	auditDesc := "Updated student profile."
+	if len(changes) > 0 {
+		auditDesc = "Updated student. Changes: " + strings.Join(changes, " | ")
+	}
+	utils.LogAudit(h.db, actorId.(string), "UPDATE_STUDENT", "STUDENT", id, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Siswa berhasil diperbarui"))
 }

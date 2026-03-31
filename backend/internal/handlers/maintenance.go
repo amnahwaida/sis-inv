@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -165,13 +166,22 @@ func (h *MaintenanceHandler) UpdateStatus(c *gin.Context) {
 		return
 	}
 
-	// Get item_id from the maintenance log
+	// Get current maintenance log for audit and itemId
+	var currentStatus, currentVendor, currentNotes string
+	var currentCost float64
 	var itemId string
-	err := h.db.QueryRow(ctx, "SELECT item_id FROM maintenance_logs WHERE id = $1", id).Scan(&itemId)
+	err := h.db.QueryRow(ctx, "SELECT status, COALESCE(vendor, ''), COALESCE(notes, ''), COALESCE(cost, 0), item_id FROM maintenance_logs WHERE id = $1", id).
+		Scan(&currentStatus, &currentVendor, &currentNotes, &currentCost, &itemId)
+	
 	if err != nil {
 		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Log perbaikan tidak ditemukan"))
 		return
 	}
+
+	changes := []string{}
+	if req.Status != currentStatus { changes = append(changes, fmt.Sprintf("Status: %s -> %s", currentStatus, req.Status)) }
+	if req.Vendor != currentVendor && req.Vendor != "" { changes = append(changes, fmt.Sprintf("Vendor: %s -> %s", currentVendor, req.Vendor)) }
+	if req.Cost != currentCost { changes = append(changes, fmt.Sprintf("Biaya: %.2f -> %.2f", currentCost, req.Cost)) }
 
 	// Update maintenance log
 	query := `UPDATE maintenance_logs SET status = $1, notes = $2, cost = $3, vendor = $4`
@@ -199,7 +209,11 @@ func (h *MaintenanceHandler) UpdateStatus(c *gin.Context) {
 	}
 
 	userId, _ := c.Get("userID")
-	utils.LogAudit(h.db, userId.(string), "UPDATE_MAINTENANCE", "MAINTENANCE", itemId, "Updated maintenance status to: "+req.Status, c.ClientIP())
+	auditDesc := "Updated maintenance record."
+	if len(changes) > 0 {
+		auditDesc = "Updated maintenance. Changes: " + strings.Join(changes, " | ")
+	}
+	utils.LogAudit(h.db, userId.(string), "UPDATE_MAINTENANCE", "MAINTENANCE", itemId, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Status perbaikan berhasil diupdate"))
 }
