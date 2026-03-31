@@ -4,7 +4,46 @@
 
 @layer base {
   body {
-    @apply text-gray-800;
+    @apply text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-900 transition-colors duration-300;
+  }
+
+  /* Global dark typography overrides */
+  h1, h2, h3, h4, h5, h6 {
+    @apply dark:text-gray-100;
+  }
+
+  /* Tables */
+  table {
+    @apply dark:text-gray-200;
+  }
+  thead {
+    @apply dark:bg-gray-700/50;
+  }
+  thead th {
+    @apply dark:text-gray-300 dark:border-gray-600;
+  }
+  tbody tr {
+    @apply dark:hover:bg-gray-700/50;
+  }
+  tbody td {
+    @apply dark:border-gray-700;
+  }
+  tbody {
+    @apply dark:divide-gray-700;
+  }
+
+  /* Form elements global dark */
+  select, input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="search"], textarea {
+    @apply dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:placeholder-gray-400;
+  }
+  select option {
+    @apply dark:bg-gray-800 dark:text-gray-200;
+  }
+  input[type="checkbox"] {
+    @apply dark:bg-gray-700 dark:border-gray-500;
+  }
+  label {
+    @apply dark:text-gray-300;
   }
 }
 
@@ -12,7 +51,8 @@
   .btn {
     @apply px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 
            focus:outline-none focus:ring-2 focus:ring-offset-2 
-           disabled:opacity-50 disabled:cursor-not-allowed;
+           disabled:opacity-50 disabled:cursor-not-allowed
+           dark:focus:ring-offset-gray-800;
   }
   .btn-primary {
     @apply btn bg-primary-600 text-white hover:bg-primary-700 
@@ -20,7 +60,9 @@
   }
   .btn-secondary {
     @apply btn bg-gray-100 text-gray-700 hover:bg-gray-200 
-           focus:ring-gray-400 border border-gray-200;
+           focus:ring-gray-400 border border-gray-200
+           dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 
+           dark:border-gray-600;
   }
   .btn-danger {
     @apply btn bg-red-600 text-white hover:bg-red-700 
@@ -34,23 +76,94 @@
     @apply w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white
            text-sm transition-all duration-200
            focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500
-           placeholder:text-gray-400;
+           placeholder:text-gray-400
+           dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 
+           dark:placeholder:text-gray-400 dark:focus:border-primary-400;
   }
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6;
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6
+           dark:bg-gray-800 dark:border-gray-700 dark:shadow-gray-900/20
+           transition-colors duration-300;
   }
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
-  .badge-available  { @apply bg-green-100 text-green-800; }
-  .badge-borrowed   { @apply bg-blue-100 text-blue-800; }
-  .badge-overdue    { @apply bg-orange-100 text-orange-800; }
-  .badge-damaged    { @apply bg-red-100 text-red-800; }
-  .badge-lost       { @apply bg-red-200 text-red-900; }
-  .badge-maintenance { @apply bg-purple-100 text-purple-800; }
+  .badge-available  { @apply bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400; }
+  .badge-borrowed   { @apply bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400; }
+  .badge-overdue    { @apply bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-400; }
+  .badge-damaged    { @apply bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400; }
+  .badge-lost       { @apply bg-red-200 text-red-900 dark:bg-red-900/50 dark:text-red-300; }
+  .badge-maintenance { @apply bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-400; }
 }
 
-/* Animations */
+/* ========================================
+   GLOBAL DARK MODE OVERRIDES
+   ======================================== */
+
+/* Text colors used across views */
+.dark .text-gray-900 { color: #f3f4f6 !important; }
+.dark .text-gray-800 { color: #e5e7eb !important; }
+.dark .text-gray-700 { color: #d1d5db !important; }
+.dark .text-gray-600 { color: #9ca3af !important; }
+.dark .text-gray-500 { color: #9ca3af !important; }
+
+/* Background overrides for common patterns */
+.dark .bg-white { background-color: #1f2937 !important; }
+.dark .bg-gray-50 { background-color: #111827 !important; }
+.dark .bg-gray-100 { background-color: #1f2937 !important; }
+
+/* Border overrides */
+.dark .border-gray-100 { border-color: #374151 !important; }
+.dark .border-gray-200 { border-color: #374151 !important; }
+.dark .border-gray-300 { border-color: #4b5563 !important; }
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: #374151 !important; }
+
+/* Hover states */
+.dark .hover\:bg-gray-50:hover { background-color: #374151 !important; }
+.dark .hover\:bg-gray-100:hover { background-color: #374151 !important; }
+
+/* Card loading overlays */
+.dark .bg-white\/80 { background-color: rgba(31, 41, 55, 0.8) !important; }
+
+/* Special backgrounds (keep gradient cards intact) */
+.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.15) !important; }
+.dark .bg-yellow-50 { background-color: rgba(234, 179, 8, 0.15) !important; }
+.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.15) !important; }
+.dark .bg-green-50 { background-color: rgba(34, 197, 94, 0.15) !important; }
+.dark .bg-indigo-50 { background-color: rgba(99, 102, 241, 0.15) !important; }
+.dark .bg-teal-50 { background-color: rgba(20, 184, 166, 0.15) !important; }
+.dark .bg-primary-50 { background-color: rgba(59, 130, 246, 0.12) !important; }
+.dark .bg-purple-50 { background-color: rgba(168, 85, 247, 0.15) !important; }
+.dark .bg-gray-50\/50 { background-color: rgba(55, 65, 81, 0.5) !important; }
+
+/* Modal backdrop */
+.dark .bg-black\/60 { background-color: rgba(0, 0, 0, 0.75) !important; }
+
+/* Router-link and anchor text */
+.dark .text-indigo-600 { color: #818cf8 !important; }
+.dark .text-blue-600 { color: #60a5fa !important; }
+.dark .text-green-600 { color: #4ade80 !important; }
+.dark .text-emerald-600 { color: #34d399 !important; }
+.dark .text-red-600 { color: #f87171 !important; }
+
+/* Pagination buttons dark */
+.dark .border-gray-300 { border-color: #4b5563 !important; }
+
+/* ========================================
+   SCROLLBAR (Dark-aware)
+   ======================================== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+.dark ::-webkit-scrollbar-track { background: #1f2937; }
+.dark ::-webkit-scrollbar-thumb { background: #4b5563; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -66,6 +179,11 @@
   50%      { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
 }
 
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
 }
@@ -74,8 +192,6 @@
   animation: slideInLeft 0.3s ease-out;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.animate-scale-up {
+  animation: scaleUp 0.3s ease-out;
+}

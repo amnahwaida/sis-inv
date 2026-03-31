@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen bg-gray-50">
+  <div class="flex h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
     <!-- Sidebar -->
     <aside 
       :class="[sidebarOpen ? 'translate-x-0' : '-translate-x-full', 'lg:translate-x-0', 'no-print']"
@@ -16,6 +16,17 @@
           <h1 class="text-white font-bold text-lg leading-tight">SIS-INV</h1>
           <p class="text-gray-500 text-xs">Inventaris Sekolah</p>
         </div>
+      </div>
+
+      <!-- Install Button Section -->
+      <div v-if="installPrompt" class="px-4 py-3 border-b border-gray-800 animate-pulse">
+        <button 
+          @click="handleInstall"
+          class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-xs font-black transition-all shadow-lg shadow-primary-600/20"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M15.536 8.464a5 5 0 00-7.072 0M12 14v-2" /></svg>
+          INSTAL APLIKASI
+        </button>
       </div>
 
       <!-- Nav -->
@@ -62,22 +73,31 @@
     <!-- Main -->
     <div class="flex-1 flex flex-col overflow-hidden">
       <!-- Top bar -->
-      <header class="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between gap-4 lg:px-6 no-print">
+      <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between gap-4 lg:px-6 no-print transition-colors duration-300">
         <div class="flex items-center gap-4">
-          <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-1.5 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
+          <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <h2 class="text-lg font-semibold text-gray-800">{{ $route.name }}</h2>
+          <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">{{ $route.name }}</h2>
         </div>
         
-        <!-- Offline Indicator -->
-        <div v-if="isOffline" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50 border border-red-100 text-red-600 text-[10px] font-black uppercase tracking-widest animate-pulse">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 00-12.728 0M12 18v.01M15.536 8.464a5 5 0 00-7.072 0M12 14v-2" />
-          </svg>
-          Offline
+        <!-- Right Header Items -->
+        <div class="flex items-center gap-3">
+          <!-- Dark Mode Toggle -->
+          <button @click="toggleDarkMode" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Toggle Dark Mode">
+            <svg v-if="!isDark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+          </button>
+          
+          <!-- Offline Indicator -->
+          <div v-if="isOffline" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50 border border-red-100 text-red-600 text-[10px] font-black uppercase tracking-widest animate-pulse">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 00-12.728 0M12 18v.01M15.536 8.464a5 5 0 00-7.072 0M12 14v-2" />
+            </svg>
+            Offline
+          </div>
         </div>
       </header>
 
@@ -102,6 +122,20 @@ const router = useRouter()
 const authStore = useAuthStore()
 const sidebarOpen = ref(false)
 const isOffline = ref(!navigator.onLine)
+const installPrompt = ref(null)
+
+const isDark = ref(localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches))
+
+const toggleDarkMode = () => {
+  isDark.value = !isDark.value
+  if (isDark.value) {
+    document.documentElement.classList.add('dark')
+    localStorage.setItem('theme', 'dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+    localStorage.setItem('theme', 'light')
+  }
+}
 
 const updateOnlineStatus = () => {
   isOffline.value = !navigator.onLine
@@ -110,6 +144,18 @@ const updateOnlineStatus = () => {
 onMounted(() => {
   window.addEventListener('online', updateOnlineStatus)
   window.addEventListener('offline', updateOnlineStatus)
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the mini-infobar from appearing on mobile
+    e.preventDefault()
+    // Stash the event so it can be triggered later.
+    installPrompt.value = e
+  })
+  
+  if (isDark.value) {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
 })
 
 onUnmounted(() => {
@@ -162,6 +208,20 @@ const filteredNav = computed(() =>
 async function handleLogout() {
   authStore.logout()
   router.push('/login')
+}
+
+async function handleInstall() {
+  if (!installPrompt.value) return
+  
+  // Show the install prompt
+  installPrompt.value.prompt()
+  
+  // Wait for the user to respond to the prompt
+  const { outcome } = await installPrompt.value.userChoice
+  if (outcome === 'accepted') {
+    console.log('User accepted the install prompt')
+  }
+  installPrompt.value = null
 }
 </script>
 

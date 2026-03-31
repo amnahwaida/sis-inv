@@ -50,8 +50,20 @@ const initScanner = async () => {
   loading.value = true
   error.value = ''
   
+  // Debug check for secure context
+  if (!window.isSecureContext) {
+    error.value = 'Browser mendeteksi koneksi tidak aman (Bukan HTTPS). Scanner hanya berfungsi di HTTPS.'
+    loading.value = false
+    return
+  }
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    error.value = 'Browser Anda tidak mendukung akses kamera langsung (MediaDevices API tidak ditemukan).'
+    loading.value = false
+    return
+  }
+
   try {
-    // Check if permissions exist
     const devices = await Html5Qrcode.getCameras()
     if (devices && devices.length) {
       startScanning()
@@ -60,7 +72,8 @@ const initScanner = async () => {
       loading.value = false
     }
   } catch (err) {
-    error.value = 'Akses kamera ditolak atau tidak didukung oleh browser Anda. Silakan gunakan input manual.'
+    console.error("Scanner Error:", err)
+    error.value = 'Gagal mengakses kamera. Pastikan Anda telah memberikan izin kamera di pengaturan HP untuk aplikasi ini.'
     loading.value = false
   }
 }

@@ -7,8 +7,6 @@ services:
       POSTGRES_USER: ${DB_USER:-sekolah_admin}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-sekolah_secret_2024}
       POSTGRES_DB: ${DB_NAME:-inventaris_db}
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -16,9 +14,60 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - sis-network
 
-  # Simple sidecar to run the backup script periodically
-  backup-cron:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sisinv_backend
+    restart: unless-stopped
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-sekolah_admin}
+      - DB_PASSWORD=${DB_PASSWORD:-sekolah_secret_2024}
+      - DB_NAME=${DB_NAME:-inventaris_db}
+      - JWT_SECRET=${JWT_SECRET:-sis-inv-dev-jwt-secret-key-2024}
+      - GIN_MODE=release
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/uploads:/app/uploads
+    networks:
+      - sis-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sisinv_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - sis-network
+    # We don't strictly need to expose ports 80/8080 to the host if using Cloudflare Tunnel,
+    # but it's good for local testing.
+    ports:
+      - "80:80"
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared_tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=eyJhIjoiYzVhMDA5ODM4Y2MyYmZjMWJlYzFhZTE5YzE3ZjI4ZmYiLCJ0IjoiM2Y1NmYwNDUtZWNjYy00ZGIzLTgyZmYtNGQyODgzZTNhZjgxIiwicyI6Ik1HUXdZVGcxTURBdE5EaGhNUzAwTW1VM0xXSmpZbVl0Tm1JMVpUZ3pOemN6TVdJeiJ9
+    depends_on:
+      - frontend
+    networks:
+      - sis-network
+
+  # Backup logic
+  backup:
     image: docker:cli
     container_name: sisinv_backup
     restart: unless-stopped
@@ -26,8 +75,13 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./scripts:/scripts
       - ./backups:/backups
-    # Run the backup script every day at 01:00 AM using sh and watch
     entrypoint: /bin/sh -c "while true; do sleep 86400; sh /scripts/backup.sh; done"
+    networks:
+      - sis-network
+
+networks:
+  sis-network:
+    driver: bridge
 
 volumes:
   pgdata:

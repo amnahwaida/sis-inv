@@ -11,22 +11,24 @@
           <p class="text-primary-100/70 text-sm font-medium">Manajemen pemeliharaan & perbaikan aset sekolah</p>
         </div>
         
-        <div class="flex items-center gap-3 backdrop-blur-md bg-white/10 p-2 rounded-2xl border border-white/10">
-          <select v-model="filterStatus" @change="fetchLogs" class="bg-transparent border-none text-white text-xs font-bold focus:ring-0 cursor-pointer pr-8">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 backdrop-blur-md bg-white/10 p-2 md:p-1.5 rounded-2xl border border-white/10 w-full md:w-auto mt-4 md:mt-0">
+          <select v-model="filterStatus" @change="fetchLogs" class="bg-transparent border-none text-white text-xs font-bold focus:ring-0 cursor-pointer pr-8 w-full sm:w-auto">
             <option value="" class="text-gray-900">Semua Status</option>
             <option value="PENDING" class="text-gray-900">Menunggu</option>
             <option value="IN_PROGRESS" class="text-gray-900">Dikerjakan</option>
             <option value="DONE" class="text-gray-900">Selesai</option>
             <option value="CANCELLED" class="text-gray-900">Dibatalkan</option>
           </select>
-          <button @click="exportExcel" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-sm active:scale-95">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            EXPORT EXCEL
-          </button>
-          <button @click="showCreateModal = true" class="bg-white text-primary-900 hover:bg-primary-50 px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-xl shadow-black/10 active:scale-95">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
-            LAPOR KERUSAKAN
-          </button>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <button @click="exportExcel" class="flex-1 sm:flex-none justify-center bg-white/20 hover:bg-white/30 text-white px-4 py-2.5 rounded-xl text-[10px] sm:text-xs font-black transition-all flex items-center gap-2 shadow-sm active:scale-95 whitespace-nowrap">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2-2z"/></svg>
+              EXCEL
+            </button>
+            <button @click="showCreateModal = true" class="flex-1 sm:flex-none justify-center bg-white text-primary-900 hover:bg-primary-50 px-4 md:px-6 py-2.5 rounded-xl text-[10px] sm:text-xs font-black transition-all flex items-center gap-2 shadow-xl shadow-black/10 active:scale-95 whitespace-nowrap">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+              LAPOR KERUSAKAN
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -34,14 +36,14 @@
     <!-- Stats Cards Grid -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
       <div v-for="(count, key) in statsMap" :key="key" 
-           class="group relative overflow-hidden bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500">
+           class="group relative overflow-hidden bg-white dark:bg-gray-800 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl transition-all duration-500">
         <div :class="['absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-opacity', count.color]"></div>
         <div class="relative flex items-center gap-4">
           <div :class="['w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg', count.gradient]">
             <component :is="count.icon" class="w-6 h-6" />
           </div>
           <div>
-            <p class="text-3xl font-black text-gray-900 leading-none">{{ count.value }}</p>
+            <p class="text-3xl font-black text-gray-900 dark:text-white leading-none">{{ count.value }}</p>
             <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">{{ count.label }}</p>
           </div>
         </div>
@@ -49,16 +51,16 @@
     </div>
 
     <!-- Main Content Card -->
-    <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden transition-colors duration-300">
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead>
-            <tr class="bg-gray-50/50">
+            <tr class="bg-gray-50/50 dark:bg-gray-700/50">
               <th v-for="h in ['Barang', 'Masalah', 'Catatan', 'Vendor', 'Biaya', 'Status', 'Tanggal', '']" :key="h"
-                  class="text-left py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{{ h }}</th>
+                  class="text-left py-5 px-8 text-[10px] font-black text-gray-400 dark:text-gray-300 uppercase tracking-[0.2em]">{{ h }}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-50">
+          <tbody class="divide-y divide-gray-50 dark:divide-gray-700">
             <tr v-if="loading" class="animate-pulse">
               <td colspan="8" class="px-8 py-12 text-center text-gray-400 font-bold uppercase tracking-widest text-xs italic">Menyelaraskan Data...</td>
             </tr>
@@ -71,27 +73,27 @@
                 <p class="text-gray-400 text-sm mt-1 max-w-xs mx-auto">Semua riwayat perbaikan barang akan muncul di daftar ini.</p>
               </td>
             </tr>
-            <tr v-for="log in logs" :key="log.id" class="group hover:bg-gray-50/80 transition-all duration-300">
+            <tr v-for="log in logs" :key="log.id" class="group hover:bg-gray-50/80 dark:hover:bg-gray-700/50 transition-all duration-300">
               <td class="px-8 py-6">
                 <div class="flex items-center gap-4">
-                  <div class="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 group-hover:bg-primary-100 group-hover:text-primary-600 transition-colors">
+                  <div class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center text-gray-400 dark:text-gray-500 group-hover:bg-primary-100 group-hover:text-primary-600 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                   </div>
                   <div>
-                    <div class="font-black text-gray-900 text-sm">{{ log.item_name }}</div>
-                    <div class="text-[10px] text-gray-400 font-bold font-mono tracking-tighter">{{ log.item_code }}</div>
+                    <div class="font-black text-gray-900 dark:text-gray-100 text-sm">{{ log.item_name }}</div>
+                    <div class="text-[10px] text-gray-400 dark:text-gray-500 font-bold font-mono tracking-tighter">{{ log.item_code }}</div>
                   </div>
                 </div>
               </td>
               <td class="px-8 py-6">
-                <p class="text-xs text-gray-600 leading-relaxed font-medium max-w-[200px] truncate" :title="log.issue_description">{{ log.issue_description }}</p>
+                <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed font-medium max-w-[200px] truncate" :title="log.issue_description">{{ log.issue_description }}</p>
               </td>
               <td class="px-8 py-6">
-                <p class="text-xs text-gray-500 leading-relaxed italic max-w-[150px] truncate" :title="log.notes || '-'">{{ log.notes || '-' }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed italic max-w-[150px] truncate" :title="log.notes || '-'">{{ log.notes || '-' }}</p>
               </td>
-              <td class="px-8 py-6 text-xs font-bold text-gray-700">{{ log.vendor || '---' }}</td>
+              <td class="px-8 py-6 text-xs font-bold text-gray-700 dark:text-gray-300">{{ log.vendor || '---' }}</td>
               <td class="px-8 py-6">
-                <span class="text-sm font-black text-gray-900">{{ log.cost ? formatCurrency(log.cost) : 'Rp 0' }}</span>
+                <span class="text-sm font-black text-gray-900 dark:text-gray-100">{{ log.cost ? formatCurrency(log.cost) : 'Rp 0' }}</span>
               </td>
               <td class="px-8 py-6">
                 <span class="px-3 py-1 rounded-lg font-black uppercase text-[9px] tracking-widest shadow-sm inline-block" :class="getStatusBadge(log.status)">
@@ -124,7 +126,7 @@
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="showCreateModal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4" @click.self="showCreateModal = false">
-          <div class="bg-white rounded-[3rem] shadow-2xl w-full max-w-xl overflow-hidden animate-scale-up border border-white/20">
+          <div class="bg-white dark:bg-gray-800 rounded-[3rem] shadow-2xl w-full max-w-xl overflow-hidden animate-scale-up border border-white/20 dark:border-gray-700">
             <!-- Modal Header -->
             <div class="px-10 py-8 bg-gradient-to-br from-primary-900 to-black text-white relative">
               <div class="absolute top-0 right-0 w-32 h-32 bg-primary-500/10 rounded-full blur-2xl"></div>
