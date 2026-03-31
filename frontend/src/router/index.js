@@ -45,6 +45,12 @@ const routes = [
         meta: { roles: ['ADMIN'] },
       },
       {
+        path: 'students',
+        name: 'Students',
+        component: () => import('../views/StudentsView.vue'),
+        meta: { roles: ['ADMIN'] },
+      },
+      {
         path: 'categories',
         name: 'Categories',
         component: () => import('../views/CategoriesView.vue'),

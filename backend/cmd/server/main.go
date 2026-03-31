@@ -94,7 +94,21 @@ func main() {
 
 		// Students
 		studentHandler := handlers.NewStudentHandler(db)
-		v1.GET("/students/search", middleware.AuthMiddleware(), studentHandler.Search)
+		students := v1.Group("/students")
+		students.Use(middleware.AuthMiddleware())
+		{
+			students.GET("/search", studentHandler.Search)
+			
+			// Admin only CRUD
+			adminStudents := students.Group("")
+			adminStudents.Use(middleware.RoleMiddleware("ADMIN"))
+			{
+				adminStudents.GET("", studentHandler.List)
+				adminStudents.POST("", studentHandler.Create)
+				adminStudents.PUT("/:id", studentHandler.Update)
+				adminStudents.DELETE("/:id", studentHandler.Delete)
+			}
+		}
 
 		// Items Management
 		itemHandler := handlers.NewItemHandler(db)
