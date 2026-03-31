@@ -190,6 +190,9 @@ func main() {
 		reports.Use(middleware.AuthMiddleware())
 		{
 			reports.GET("/export/items", reportHandler.ExportItems)
+			reports.GET("/export/transactions", reportHandler.ExportTransactions)
+			reports.GET("/active-borrowings", reportHandler.ActiveBorrowings)
+			reports.GET("/overdue", reportHandler.OverdueReport)
 		}
 	}
 

@@ -118,6 +118,7 @@ const navItems = [
   { to: '/return', label: 'Pengembalian', icon: IconReturn, roles: ['ADMIN', 'TEACHER', 'HEAD'] },
   { to: '/my-borrowings', label: 'Peminjaman Saya', icon: IconMyBorrowings, roles: ['ADMIN', 'TEACHER', 'HEAD'] },
   { to: '/student-history', label: 'Cek Riwayat Siswa', icon: IconStudent, roles: ['ADMIN', 'TEACHER'] },
+  { to: '/reports', label: 'Laporan', icon: IconMyBorrowings, roles: ['ADMIN', 'HEAD'] },
   { to: '/users', label: 'Kelola User', icon: IconUsers, roles: ['ADMIN'] },
   { to: '/students', label: 'Kelola Siswa', icon: IconStudent, roles: ['ADMIN'] },
   { to: '/categories', label: 'Kategori', icon: IconCategories, roles: ['ADMIN'] },

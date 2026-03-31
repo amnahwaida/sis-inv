@@ -74,6 +74,12 @@ const routes = [
         component: () => import('../views/StudentHistoryView.vue'),
       },
       {
+        path: 'reports',
+        name: 'Laporan',
+        component: () => import('../views/ReportsView.vue'),
+        meta: { roles: ['ADMIN', 'HEAD'] },
+      },
+      {
         path: 'settings',
         name: 'Pengaturan',
         component: () => import('../views/SettingsView.vue'),
