@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/csv"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -68,6 +69,9 @@ func (h *StudentHandler) Create(c *gin.Context) {
 		return
 	}
 
+	actorId, _ := c.Get("userID")
+	utils.LogAudit(h.db, actorId.(string), "CREATE_STUDENT", "STUDENT", "00000000-0000-0000-0000-000000000000", "Added student NIS: "+req.NIS, c.ClientIP())
+
 	c.JSON(http.StatusCreated, utils.SuccessResponse(nil, "Siswa berhasil ditambahkan"))
 }
 
@@ -92,6 +96,9 @@ func (h *StudentHandler) Update(c *gin.Context) {
 		return
 	}
 
+	actorId, _ := c.Get("userID")
+	utils.LogAudit(h.db, actorId.(string), "UPDATE_STUDENT", "STUDENT", "00000000-0000-0000-0000-000000000000", "Updated student NIS: "+req.NIS, c.ClientIP())
+
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Siswa berhasil diperbarui"))
 }
 
@@ -102,6 +109,10 @@ func (h *StudentHandler) Delete(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal menghapus data: Siswa mungkin sudah memiliki transaksi"))
 		return
 	}
+
+	actorId, _ := c.Get("userID")
+	utils.LogAudit(h.db, actorId.(string), "DELETE_STUDENT", "STUDENT", "00000000-0000-0000-0000-000000000000", "Deleted student ID: "+id, c.ClientIP())
+
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Siswa berhasil dihapus"))
 }
 
@@ -229,6 +240,9 @@ func (h *StudentHandler) ImportCSV(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal menyimpan data ke database"))
 		return
 	}
+
+	actorId, _ := c.Get("userID")
+	utils.LogAudit(h.db, actorId.(string), "IMPORT_STUDENTS", "STUDENT", "00000000-0000-0000-0000-000000000000", fmt.Sprintf("Imported %d students via CSV", imported), c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{"total": imported}, "Berhasil mengimpor data siswa"))
 }

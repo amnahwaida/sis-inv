@@ -134,6 +134,9 @@ func (h *TransactionHandler) Borrow(c *gin.Context) {
 		return
 	}
 
+	actorId, _ := c.Get("userID")
+	utils.LogAudit(h.db, actorId.(string), "BORROW_ITEM", "ITEM", itemId, "Borrowed item: "+req.ItemCode+" to "+req.BorrowerType, c.ClientIP())
+
 	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{
 		"transaction_id": trxId,
 		"item_name":      itemName,
@@ -229,6 +232,9 @@ func (h *TransactionHandler) Return(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to commit transaction"))
 		return
 	}
+
+	actorId, _ := c.Get("userID")
+	utils.LogAudit(h.db, actorId.(string), "RETURN_ITEM", "ITEM", itemId, "Returned item: "+req.ItemCode+" with condition: "+req.Condition, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{"new_status": newItemStatus}, "Item returned successfully"))
 }

@@ -136,6 +136,9 @@ func (h *UserHandler) Update(c *gin.Context) {
 		return
 	}
 
+	actorId, _ := c.Get("userID")
+	utils.LogAudit(h.db, actorId.(string), "UPDATE_USER", "USER", id, "Updated user profile/status", c.ClientIP())
+
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "User berhasil diupdate"))
 }
 
@@ -155,6 +158,9 @@ func (h *UserHandler) Delete(c *gin.Context) {
 		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "User tidak ditemukan"))
 		return
 	}
+
+	actorId, _ := c.Get("userID")
+	utils.LogAudit(h.db, actorId.(string), "DISABLE_USER", "USER", id, "Disabled user login access", c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "User berhasil dinonaktifkan"))
 }

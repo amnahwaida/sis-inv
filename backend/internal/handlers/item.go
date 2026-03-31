@@ -363,6 +363,9 @@ func (h *ItemHandler) Update(c *gin.Context) {
 		return
 	}
 
+	actorId, _ := c.Get("userID")
+	utils.LogAudit(h.db, actorId.(string), "UPDATE_ITEM", "ITEM", id, "Updated item details", c.ClientIP())
+
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Item successfully updated"))
 }
 
