@@ -196,6 +196,17 @@ func main() {
 			reports.GET("/history", reportHandler.TransactionHistory)
 			reports.GET("/audit", reportHandler.AuditLogs)
 		}
+
+		// Maintenance / Log Perbaikan
+		maintHandler := handlers.NewMaintenanceHandler(db)
+		maintenance := v1.Group("/maintenance")
+		maintenance.Use(middleware.AuthMiddleware())
+		{
+			maintenance.GET("", maintHandler.List)
+			maintenance.POST("", maintHandler.Create)
+			maintenance.PUT("/:id", maintHandler.UpdateStatus)
+			maintenance.DELETE("/:id", maintHandler.Delete)
+		}
 	}
 
 	// Start server
