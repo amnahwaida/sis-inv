@@ -193,6 +193,7 @@ func main() {
 			reports.GET("/export/transactions", reportHandler.ExportTransactions)
 			reports.GET("/active-borrowings", reportHandler.ActiveBorrowings)
 			reports.GET("/overdue", reportHandler.OverdueReport)
+			reports.GET("/history", reportHandler.TransactionHistory)
 		}
 	}
 

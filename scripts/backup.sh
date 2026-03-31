@@ -25,7 +25,7 @@ echo "[$(date)] Starting SIS-INV database backup..."
 
 # Database backup to SQL file
 BACKUP_FILE="$BACKUP_DIR/db_$DATE.sql"
-docker exec sisinv_db pg_dump -U $DB_USER $DB_NAME > $BACKUP_FILE
+docker exec -e PGPASSWORD=$DB_PASS sisinv_db pg_dump -U $DB_USER $DB_NAME > $BACKUP_FILE
 
 if [ $? -eq 0 ]; then
     # Compress backup

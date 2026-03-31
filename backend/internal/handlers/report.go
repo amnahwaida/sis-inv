@@ -331,3 +331,57 @@ func (h *ReportHandler) OverdueReport(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, utils.SuccessResponse(result, ""))
 }
+
+// TransactionHistory returns all transactions with a limit of 100 (F05.2)
+func (h *ReportHandler) TransactionHistory(c *gin.Context) {
+	ctx := context.Background()
+
+	query := `
+		SELECT 
+			t.borrower_type, t.student_name, t.student_class,
+			t.status, t.borrowed_at, t.returned_at,
+			i.code as item_code, i.name as item_name,
+			u.full_name as teacher_name
+		FROM transactions t
+		JOIN items i ON t.item_id = i.id
+		JOIN users u ON t.borrowed_by = u.id
+		ORDER BY t.borrowed_at DESC
+		LIMIT 100
+	`
+
+	rows, err := h.db.Query(ctx, query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal mengambil riwayat"))
+		return
+	}
+	defer rows.Close()
+
+	var result []map[string]interface{}
+	for rows.Next() {
+		var borrowerType, status, itemCode, itemName, teacherName string
+		var studentName, studentClass *string
+		var borrowedAt time.Time
+		var returnedAt *time.Time
+
+		if err := rows.Scan(&borrowerType, &studentName, &studentClass,
+			&status, &borrowedAt, &returnedAt,
+			&itemCode, &itemName, &teacherName); err != nil {
+			continue
+		}
+
+		result = append(result, map[string]interface{}{
+			"borrower_type": borrowerType,
+			"student_name":  studentName,
+			"student_class": studentClass,
+			"status":        status,
+			"borrowed_at":   borrowedAt,
+			"returned_at":   returnedAt,
+			"item_code":     itemCode,
+			"item_name":     itemName,
+			"teacher_name":  teacherName,
+		})
+	}
+
+	if result == nil { result = []map[string]interface{}{} }
+	c.JSON(http.StatusOK, utils.SuccessResponse(result, ""))
+}
