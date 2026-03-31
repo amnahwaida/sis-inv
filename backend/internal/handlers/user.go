@@ -93,7 +93,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 	// 1. Fetch current user data for audit
 	var oldName, oldRole, oldNip, oldEmail, oldPhone string
 	var oldActive bool
-	err := h.db.QueryRow(ctx, "SELECT full_name, role, COALESCE(nip, ''), email, COALESCE(phone, ''), is_active FROM users WHERE id = $1", id).
+	err := h.db.QueryRow(ctx, "SELECT full_name, role, COALESCE(nip, ''), COALESCE(email, ''), COALESCE(phone, ''), is_active FROM users WHERE id = $1", id).
 		Scan(&oldName, &oldRole, &oldNip, &oldEmail, &oldPhone, &oldActive)
 
 	if err != nil {

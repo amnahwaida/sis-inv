@@ -93,7 +93,7 @@
               </td>
               <td class="px-8 py-6 whitespace-nowrap text-[11px] font-bold text-gray-400">{{ formatDate(log.reported_at) }}</td>
               <td class="px-8 py-6 text-right">
-                <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div class="flex items-center justify-end gap-2 transition-all duration-300">
                   <button v-if="log.status === 'PENDING'" @click="updateLog(log, 'IN_PROGRESS')"
                     class="p-2 text-blue-600 bg-blue-50 rounded-xl hover:bg-blue-600 hover:text-white transition-all transform hover:scale-110" title="Kerjakan">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>

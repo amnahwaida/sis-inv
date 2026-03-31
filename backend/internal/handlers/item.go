@@ -292,7 +292,7 @@ func (h *ItemHandler) Update(c *gin.Context) {
 		oldName, oldCode, oldCond, oldStatus, oldBorrowerType, oldLocation string
 		oldPrice                                                           float64
 	)
-	err := h.db.QueryRow(ctx, "SELECT name, code, condition, status, borrower_type, location, purchase_price FROM items WHERE id = $1", id).
+	err := h.db.QueryRow(ctx, "SELECT name, code, condition, status, borrower_type, COALESCE(location, ''), COALESCE(purchase_price, 0) FROM items WHERE id = $1", id).
 		Scan(&oldName, &oldCode, &oldCond, &oldStatus, &oldBorrowerType, &oldLocation, &oldPrice)
 
 	if err != nil {

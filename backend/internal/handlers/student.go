@@ -95,7 +95,7 @@ func (h *StudentHandler) Update(c *gin.Context) {
 	// Fetch old data for audit
 	var oldNis, oldName, oldClass string
 	var oldActive bool
-	err := h.db.QueryRow(ctx, "SELECT nis, full_name, class, is_active FROM students WHERE id = $1", id).
+	err := h.db.QueryRow(ctx, "SELECT nis, full_name, COALESCE(class, ''), is_active FROM students WHERE id = $1", id).
 		Scan(&oldNis, &oldName, &oldClass, &oldActive)
 	
 	if err != nil {
@@ -140,7 +140,11 @@ func (h *StudentHandler) Delete(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "DELETE_STUDENT", "STUDENT", id, fmt.Sprintf("Deleted student: %s (NIS: %s)", stName, stNis), c.ClientIP())
+	// Since students.id is SERIAL (int) and audit_logs.entity_id is UUID,
+	// we use a NULL or a fixed UUID for student entity_id in audit log to prevent cast errors,
+	// or we pass the string ID only if our LogAudit handles non-UUID strings (currently it doesn't).
+	// For now, we'll use a placeholder UUID: '00000000-0000-0000-0000-000000000000'
+	utils.LogAudit(h.db, actorId.(string), "DELETE_STUDENT", "STUDENT", "00000000-0000-0000-0000-000000000000", fmt.Sprintf("Deleted student: %s (NIS: %s)", stName, stNis), c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Siswa berhasil dihapus"))
 }
