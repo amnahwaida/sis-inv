@@ -115,10 +115,37 @@
           <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-5">
             <h2 class="text-lg font-black text-gray-900">Lapor Kerusakan Barang</h2>
 
-            <div>
-              <label class="label">Kode Barang</label>
-              <input v-model="form.item_code" class="input" placeholder="Contoh: PC-LAB-001" />
+            <div class="relative">
+              <label class="label">Cari Barang (Nama/Kode)</label>
+              <input 
+                v-model="form.search_query" 
+                class="input" 
+                placeholder="Ketik nama atau kode barang..." 
+                @input="debounceItemSearch"
+              />
+              
+              <!-- Auto-suggest Dropdown -->
+              <div v-if="suggestedItems.length > 0" class="absolute z-60 w-full mt-1 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden divide-y divide-gray-50 max-h-60 overflow-y-auto">
+                <div 
+                  v-for="item in suggestedItems" 
+                  :key="item.id"
+                  @click="selectItem(item)"
+                  class="px-4 py-3 hover:bg-primary-50 cursor-pointer transition-colors"
+                >
+                  <div class="text-xs font-black text-primary-900">{{ item.name }}</div>
+                  <div class="text-[10px] text-gray-500 font-mono">{{ item.code }} • {{ item.location }}</div>
+                </div>
+              </div>
+
+              <!-- Selected Item Indicator -->
+              <div v-if="form.item_code" class="mt-2 p-2 bg-primary-50 rounded-lg flex justify-between items-center border border-primary-100 animate-fade-in">
+                <div class="text-[10px] font-bold text-primary-700">TERPILIH: {{ form.item_code }}</div>
+                <button @click="form.item_code = ''; form.search_query = ''" class="text-primary-600 hover:text-primary-800">
+                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                </button>
+              </div>
             </div>
+
             <div>
               <label class="label">Deskripsi Kerusakan</label>
               <textarea v-model="form.issue_description" class="input" rows="3" placeholder="Jelaskan kerusakannya..."></textarea>
@@ -126,7 +153,7 @@
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="label">Vendor / Tukang</label>
-                <input v-model="form.vendor" class="input" placeholder="Nama tukang/toko" />
+                <input v-model="form.vendor" class="input" placeholder="Nama tukang/toko (Opsional)" />
               </div>
               <div>
                 <label class="label">Estimasi Biaya (Rp)</label>
@@ -138,11 +165,11 @@
               <input v-model="form.notes" class="input" placeholder="Opsional" />
             </div>
 
-            <div v-if="formError" class="text-red-500 text-xs font-bold">{{ formError }}</div>
+            <div v-if="formError" class="p-2 border border-red-100 bg-red-50 text-red-500 text-[10px] font-bold rounded-lg">{{ formError }}</div>
 
             <div class="flex gap-3">
               <button @click="showCreateModal = false" class="flex-1 btn-secondary text-sm py-2.5">Batal</button>
-              <button @click="submitCreate" :disabled="submitting" class="flex-1 btn-primary text-sm py-2.5">
+              <button @click="submitCreate" :disabled="submitting || !form.item_code" class="flex-1 btn-primary text-sm py-2.5">
                 {{ submitting ? 'Menyimpan...' : 'Simpan' }}
               </button>
             </div>
@@ -155,9 +182,17 @@
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="showFinishModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" @click.self="showFinishModal = false">
-          <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-5">
-            <h2 class="text-lg font-black text-gray-900">Selesaikan Perbaikan</h2>
-            <p class="text-sm text-gray-500">{{ finishTarget?.item_name }} ({{ finishTarget?.item_code }})</p>
+          <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-5 border border-white/50">
+            <h2 class="text-lg font-black text-gray-900 leading-tight">Selesaikan Perbaikan</h2>
+            <div class="bg-gray-50 p-3 rounded-2xl flex items-center gap-3">
+               <div class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-primary-600">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+               </div>
+               <div>
+                  <div class="text-xs font-black text-gray-900">{{ finishTarget?.item_name }}</div>
+                  <div class="text-[10px] text-gray-500 font-mono">{{ finishTarget?.item_code }}</div>
+               </div>
+            </div>
 
             <div class="grid grid-cols-2 gap-3">
               <div>
@@ -171,7 +206,7 @@
             </div>
             <div>
               <label class="label">Catatan Hasil Perbaikan</label>
-              <textarea v-model="finishForm.notes" class="input" rows="2" placeholder="Komponen diganti, dll..."></textarea>
+              <textarea v-model="finishForm.notes" class="input" rows="2" placeholder="Komponen diganti, perbaikan selesai..."></textarea>
             </div>
 
             <div class="flex gap-3">
@@ -200,8 +235,11 @@ const submitting = ref(false)
 const formError = ref('')
 const finishTarget = ref(null)
 
-const form = ref({ item_code: '', issue_description: '', cost: 0, vendor: '', notes: '' })
+const form = ref({ item_code: '', search_query: '', issue_description: '', cost: 0, vendor: '', notes: '' })
 const finishForm = ref({ cost: 0, vendor: '', notes: '' })
+
+const suggestedItems = ref([])
+let searchTimeout = null
 
 const statusLabels = { PENDING: 'Menunggu', IN_PROGRESS: 'Dikerjakan', DONE: 'Selesai', CANCELLED: 'Dibatalkan' }
 
@@ -225,18 +263,47 @@ async function fetchLogs() {
   finally { loading.value = false }
 }
 
+const debounceItemSearch = () => {
+  clearTimeout(searchTimeout)
+  if (!form.value.search_query) {
+    suggestedItems.value = []
+    return
+  }
+  searchTimeout = setTimeout(async () => {
+    try {
+      const { data } = await api.get(`/items?search=${form.value.search_query}&page_size=10`)
+      if (data.success) {
+        // Only show items that are NOT currently in maintenance or borrowed (optional, but safer)
+        suggestedItems.value = data.data.items
+      }
+    } catch (e) { console.error(e) }
+  }, 300)
+}
+
+const selectItem = (item) => {
+  form.value.item_code = item.code
+  form.value.search_query = item.name
+  suggestedItems.value = []
+}
+
 async function submitCreate() {
   if (!form.value.item_code || !form.value.issue_description) {
-    formError.value = 'Kode barang dan deskripsi kerusakan wajib diisi.'
+    formError.value = 'Barang dan deskripsi kerusakan wajib diisi.'
     return
   }
   formError.value = ''
   submitting.value = true
   try {
-    const { data } = await api.post('/maintenance', form.value)
+    const { data } = await api.post('/maintenance', {
+      item_code: form.value.item_code,
+      issue_description: form.value.issue_description,
+      cost: form.value.cost,
+      vendor: form.value.vendor,
+      notes: form.value.notes
+    })
     if (data.success) {
       showCreateModal.value = false
-      form.value = { item_code: '', issue_description: '', cost: 0, vendor: '', notes: '' }
+      form.value = { item_code: '', search_query: '', issue_description: '', cost: 0, vendor: '', notes: '' }
       fetchLogs()
     }
   } catch (e) {
