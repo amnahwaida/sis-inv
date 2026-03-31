@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"time"
 
@@ -109,6 +110,22 @@ func (h *TransactionHandler) Borrow(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to create transaction record: "+err.Error()))
 		return
+	}
+
+	// NEW: If student borrowing, auto-register/update student in students table
+	if req.BorrowerType == "STUDENT" && req.StudentNIS != "" {
+		_, err = tx.Exec(ctx, `
+			INSERT INTO students (nis, full_name, class, updated_at)
+			VALUES ($1, $2, $3, NOW())
+			ON CONFLICT (nis) DO UPDATE SET 
+				full_name = EXCLUDED.full_name,
+				class = EXCLUDED.class,
+				updated_at = NOW()
+		`, req.StudentNIS, req.StudentName, req.StudentClass)
+		if err != nil {
+			log.Printf("⚠️  Failed to auto-register student: %v", err)
+			// We don't fail the whole transaction for this, as the borrow itself succeeded
+		}
 	}
 
 	err = tx.Commit(ctx)
