@@ -9,34 +9,28 @@ import (
 )
 
 func SeedDefaultAdmin(pool *pgxpool.Pool) error {
+	ctx := context.Background()
+
+	// 1. Seed Admin User
 	var count int
-	err := pool.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE role = 'ADMIN'").Scan(&count)
-	if err != nil {
-		return err
+	_ = pool.QueryRow(ctx, "SELECT COUNT(*) FROM users WHERE role = 'ADMIN'").Scan(&count)
+	if count == 0 {
+		hash, err := utils.HashPassword("admin123")
+		if err == nil {
+			_, err = pool.Exec(ctx,
+				`INSERT INTO users (username, password_hash, full_name, role, is_active) 
+				 VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`,
+				"admin", hash, "Administrator", "ADMIN", true,
+			)
+			if err == nil {
+				log.Println("✅ Default admin user created (username: admin, password: admin123)")
+			}
+		}
+	} else {
+		log.Println("ℹ️  Admin user already exists, skipping user seed")
 	}
 
-	if count > 0 {
-		log.Println("ℹ️  Admin user already exists, skipping seed")
-		return nil
-	}
-
-	hash, err := utils.HashPassword("admin123")
-	if err != nil {
-		return err
-	}
-
-	_, err = pool.Exec(context.Background(),
-		`INSERT INTO users (username, password_hash, full_name, role, is_active) 
-		 VALUES ($1, $2, $3, $4, $5)`,
-		"admin", hash, "Administrator", "ADMIN", true,
-	)
-	if err != nil {
-		return err
-	}
-
-	log.Println("✅ Default admin user created (username: admin, password: admin123)")
-
-	// Seed default categories
+	// 2. Seed default categories
 	categories := []struct {
 		Name      string
 		Desc      string
@@ -50,19 +44,21 @@ func SeedDefaultAdmin(pool *pgxpool.Pool) error {
 		{"Lainnya", "Kategori lain-lain", "#607D8B"},
 	}
 
+	catCount := 0
 	for _, c := range categories {
-		_, err := pool.Exec(context.Background(),
-			`INSERT INTO categories (name, description, color_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+		_, err := pool.Exec(ctx,
+			`INSERT INTO categories (name, description, color_code) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING`,
 			c.Name, c.Desc, c.ColorCode,
 		)
-		if err != nil {
-			log.Printf("⚠️  Failed to seed category %s: %v", c.Name, err)
+		if err == nil {
+			catCount++
 		}
 	}
+	if catCount > 0 {
+		log.Printf("✅ %d categories seeded", catCount)
+	}
 
-	log.Println("✅ Default categories seeded")
-
-	// Seed default students
+	// 3. Seed default students
 	students := []struct {
 		NIS   string
 		Name  string
@@ -74,16 +70,19 @@ func SeedDefaultAdmin(pool *pgxpool.Pool) error {
 		{"12348", "Dewi Lestari", "10 TG 1"},
 	}
 
+	studCount := 0
 	for _, s := range students {
-		_, err := pool.Exec(context.Background(),
+		_, err := pool.Exec(ctx,
 			`INSERT INTO students (nis, full_name, class) VALUES ($1, $2, $3) ON CONFLICT (nis) DO NOTHING`,
 			s.NIS, s.Name, s.Class,
 		)
-		if err != nil {
-			log.Printf("⚠️  Failed to seed student %s: %v", s.Name, err)
+		if err == nil {
+			studCount++
 		}
 	}
-	log.Println("✅ Default students seeded")
+	if studCount > 0 {
+		log.Printf("✅ %d students seeded", studCount)
+	}
 
 	return nil
 }
