@@ -54,16 +54,16 @@
         <table class="w-full">
           <thead>
             <tr class="bg-gray-50/50">
-              <th v-for="h in ['Barang', 'Masalah', 'Vendor', 'Biaya', 'Status', 'Tanggal', '']" :key="h"
+              <th v-for="h in ['Barang', 'Masalah', 'Catatan', 'Vendor', 'Biaya', 'Status', 'Tanggal', '']" :key="h"
                   class="text-left py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{{ h }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50">
             <tr v-if="loading" class="animate-pulse">
-              <td colspan="7" class="px-8 py-12 text-center text-gray-400 font-bold uppercase tracking-widest text-xs italic">Menyelaraskan Data...</td>
+              <td colspan="8" class="px-8 py-12 text-center text-gray-400 font-bold uppercase tracking-widest text-xs italic">Menyelaraskan Data...</td>
             </tr>
             <tr v-else-if="logs.length === 0" class="text-center">
-              <td colspan="7" class="px-8 py-20">
+              <td colspan="8" class="px-8 py-20">
                 <div class="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
                   <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                 </div>
@@ -84,7 +84,10 @@
                 </div>
               </td>
               <td class="px-8 py-6">
-                <p class="text-xs text-gray-600 leading-relaxed font-medium max-w-[250px]">{{ log.issue_description }}</p>
+                <p class="text-xs text-gray-600 leading-relaxed font-medium max-w-[200px] truncate" :title="log.issue_description">{{ log.issue_description }}</p>
+              </td>
+              <td class="px-8 py-6">
+                <p class="text-xs text-gray-500 leading-relaxed italic max-w-[150px] truncate" :title="log.notes || '-'">{{ log.notes || '-' }}</p>
               </td>
               <td class="px-8 py-6 text-xs font-bold text-gray-700">{{ log.vendor || '---' }}</td>
               <td class="px-8 py-6">
