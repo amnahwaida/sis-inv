@@ -80,8 +80,37 @@ func SeedDefaultAdmin(pool *pgxpool.Pool) error {
 			studCount++
 		}
 	}
-	if studCount > 0 {
-		log.Printf("✅ %d students seeded", studCount)
+	// 4. Seed a few initial transactions for testing
+	var itemId string
+	var adminId string
+	_ = pool.QueryRow(ctx, "SELECT id FROM items LIMIT 1").Scan(&itemId)
+	_ = pool.QueryRow(ctx, "SELECT id FROM users WHERE username = 'admin'").Scan(&adminId)
+
+	if itemId != "" && adminId != "" {
+		trxCount := 0
+		// Transaction for Budi (12345)
+		_, err := pool.Exec(ctx, `
+			INSERT INTO transactions 
+			(item_id, borrower_type, student_nis, student_name, student_class, borrowed_by, borrowed_at, due_date, status, purpose)
+			VALUES ($1, 'STUDENT', '12345', 'Budi Santoso', '12 IPA 1', $2, NOW() - INTERVAL '1 day', NOW() + INTERVAL '5 hours', 'ACTIVE', 'Praktikum Fisika')
+			ON CONFLICT DO NOTHING`,
+			itemId, adminId,
+		)
+		if err == nil { trxCount++ }
+
+		// Past transaction for Siti (12346) - Returned
+		_, err = pool.Exec(ctx, `
+			INSERT INTO transactions 
+			(item_id, borrower_type, student_nis, student_name, student_class, borrowed_by, borrowed_at, due_date, returned_at, status, purpose)
+			VALUES ($1, 'STUDENT', '12346', 'Siti Aminah', '12 IPA 2', $2, NOW() - INTERVAL '3 days', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days' + INTERVAL '2 hours', 'RETURNED', 'Tugas Kelompok')
+			ON CONFLICT DO NOTHING`,
+			itemId, adminId,
+		)
+		if err == nil { trxCount++ }
+
+		if trxCount > 0 {
+			log.Printf("✅ %d initial transactions seeded", trxCount)
+		}
 	}
 
 	return nil
