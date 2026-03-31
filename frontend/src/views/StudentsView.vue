@@ -1,17 +1,34 @@
 <template>
   <div class="animate-fade-in space-y-6">
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
       <div>
         <h1 class="text-2xl font-black text-gray-900 tracking-tight">Kelola Siswa</h1>
         <p class="text-sm text-gray-500 mt-1">Daftar siswa yang terdaftar dalam sistem untuk peminjaman barang.</p>
       </div>
-      <button 
-        @click="openModal()" 
-        class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl shadow-lg shadow-primary-100 transition-all flex items-center gap-2"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-        Tambah Siswa
-      </button>
+      <div class="flex items-center gap-2">
+        <button 
+          @click="exportStudents" 
+          class="px-4 py-2 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center gap-2"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Export CSV
+        </button>
+        <button 
+          @click="triggerImport" 
+          class="px-4 py-2 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center gap-2"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          Import
+        </button>
+        <button 
+          @click="openModal()" 
+          class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl shadow-lg shadow-primary-100 transition-all flex items-center gap-2"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Tambah Siswa
+        </button>
+        <input type="file" ref="fileInput" class="hidden" accept=".csv" @change="handleImport">
+      </div>
     </div>
 
     <!-- Table -->
@@ -107,6 +124,8 @@ const loading = ref(false)
 const showModal = ref(false)
 const submitting = ref(false)
 const editingStudent = ref(null)
+const fileInput = ref(null)
+
 const form = ref({
   nis: '',
   full_name: '',
@@ -125,6 +144,47 @@ async function fetchStudents() {
     console.error(e)
   } finally {
     loading.value = false
+  }
+}
+
+async function exportStudents() {
+  try {
+    const response = await api.get('/students/export', { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'daftar_siswa.csv')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (e) {
+    alert('Gagal mendownload CSV')
+  }
+}
+
+function triggerImport() {
+  fileInput.value.click()
+}
+
+async function handleImport(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  submitting.value = true
+  try {
+    const { data } = await api.post('/students/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    alert(data.message + ` (${data.data.total} siswa terimpor)`)
+    await fetchStudents()
+  } catch (e) {
+    alert(e.response?.data?.error || 'Gagal mengimpor CSV')
+  } finally {
+    submitting.value = false
+    event.target.value = '' // Reset input
   }
 }
 

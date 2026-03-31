@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/csv"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -144,4 +145,90 @@ func (h *StudentHandler) Search(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(students, ""))
+}
+
+func (h *StudentHandler) ExportCSV(c *gin.Context) {
+	rows, err := h.db.Query(context.Background(), "SELECT nis, full_name, class FROM students ORDER BY nis ASC")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal mengekspor data"))
+		return
+	}
+	defer rows.Close()
+
+	c.Header("Content-Description", "File Transfer")
+	c.Header("Content-Disposition", "attachment; filename=daftar_siswa.csv")
+	c.Header("Content-Type", "text/csv")
+
+	w := csv.NewWriter(c.Writer)
+	_ = w.Write([]string{"NIS", "Nama Lengkap", "Kelas"})
+
+	for rows.Next() {
+		var nis, name, class string
+		if err := rows.Scan(&nis, &name, &class); err == nil {
+			_ = w.Write([]string{nis, name, class})
+		}
+	}
+	w.Flush()
+}
+
+func (h *StudentHandler) ImportCSV(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "File tidak ditemukan"))
+		return
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal membuka file"))
+		return
+	}
+	defer src.Close()
+
+	reader := csv.NewReader(src)
+	// Skip header
+	_, _ = reader.Read()
+
+	records, err := reader.ReadAll()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Format CSV tidak valid"))
+		return
+	}
+
+	ctx := context.Background()
+	tx, err := h.db.Begin(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal memulai transaksi"))
+		return
+	}
+	defer tx.Rollback(ctx)
+
+	imported := 0
+	for _, record := range records {
+		if len(record) < 3 { continue }
+		nis := record[0]
+		name := record[1]
+		class := record[2]
+
+		if nis == "" || name == "" { continue }
+
+		_, err = tx.Exec(ctx, `
+			INSERT INTO students (nis, full_name, class)
+			VALUES ($1, $2, $3)
+			ON CONFLICT (nis) DO UPDATE SET 
+				full_name = EXCLUDED.full_name,
+				class = EXCLUDED.class,
+				updated_at = NOW()
+		`, nis, name, class)
+		if err == nil {
+			imported++
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal menyimpan data ke database"))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{"total": imported}, "Berhasil mengimpor data siswa"))
 }

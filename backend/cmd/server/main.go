@@ -107,6 +107,8 @@ func main() {
 				adminStudents.POST("", studentHandler.Create)
 				adminStudents.PUT("/:id", studentHandler.Update)
 				adminStudents.DELETE("/:id", studentHandler.Delete)
+				adminStudents.GET("/export", studentHandler.ExportCSV)
+				adminStudents.POST("/import", studentHandler.ImportCSV)
 			}
 		}
 
