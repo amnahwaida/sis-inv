@@ -75,14 +75,14 @@ func (h *TransactionHandler) Borrow(c *gin.Context) {
 
 	// Determine expected return date (due_date)
 	var dueDate time.Time
-	if req.BorrowerType == "STUDENT" {
-		// Mandatory 6 hours for students as per PRD F04.4
-		dueDate = time.Now().Add(6 * time.Hour)
+	if req.ExpectedReturnDays > 0 {
+		hours := req.ExpectedReturnDays * 24
+		dueDate = time.Now().Add(time.Duration(hours) * time.Hour)
 	} else {
-		if req.ExpectedReturnDays > 0 {
-			dueDate = time.Now().AddDate(0, 0, req.ExpectedReturnDays)
+		if req.BorrowerType == "STUDENT" {
+			dueDate = time.Now().Add(12 * time.Hour) // Default 12 hours fallback
 		} else {
-			dueDate = time.Now().AddDate(0, 0, 7) // Default 7 days
+			dueDate = time.Now().Add(7 * 24 * time.Hour) // Default 7 days fallback
 		}
 	}
 

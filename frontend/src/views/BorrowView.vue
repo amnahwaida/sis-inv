@@ -47,7 +47,7 @@
             <div class="bg-gray-50 rounded-2xl p-1.5 flex gap-1.5 border border-gray-100">
               <button 
                 type="button"
-                @click="form.borrower_type = 'STAFF'"
+                @click="form.borrower_type = 'STAFF'; form.expected_return_days = 7"
                 class="flex-1 py-3 rounded-xl text-sm font-bold transition-all"
                 :class="form.borrower_type === 'STAFF' ? 'bg-white shadow-sm text-primary-600 ring-1 ring-gray-200' : 'text-gray-500 hover:text-gray-700'"
               >
@@ -55,7 +55,7 @@
               </button>
               <button 
                 type="button"
-                @click="form.borrower_type = 'STUDENT'"
+                @click="form.borrower_type = 'STUDENT'; form.expected_return_days = 0.5"
                 :disabled="itemDetail.borrower_type === 'STAFF_ONLY'"
                 class="flex-1 py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
                 :class="[
@@ -116,12 +116,12 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Estimasi Dikembalikan *</label>
-              <div v-if="form.borrower_type === 'STUDENT'" class="p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 text-sm font-bold flex items-center gap-2">
-                <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-                </svg>
-                Otomatis 6 Jam (Aturan Siswa)
-              </div>
+              <select v-if="form.borrower_type === 'STUDENT'" v-model="form.expected_return_days" class="input-field rounded-xl border-gray-200" required>
+                <option :value="0.5">12 Jam (Hari Ini)</option>
+                <option :value="1">1 Hari (Besok)</option>
+                <option :value="2">2 Hari</option>
+                <option :value="3">3 Hari</option>
+              </select>
               <select v-else v-model="form.expected_return_days" class="input-field rounded-xl border-gray-200" required>
                 <option :value="1">1 Hari (Besok)</option>
                 <option :value="3">3 Hari</option>
@@ -252,6 +252,7 @@ const resetScan = () => {
   form.value.student_nis = ''
   form.value.student_class = ''
   form.value.borrower_type = 'STAFF'
+  form.value.expected_return_days = 7
 }
 
 const submitBorrow = async () => {

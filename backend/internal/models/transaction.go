@@ -33,9 +33,9 @@ type BorrowRequest struct {
 	BorrowerType       string `json:"borrower_type" binding:"required,oneof=STAFF STUDENT"`
 	StudentNIS         string `json:"student_nis"`
 	StudentName        string `json:"student_name"`
-	StudentClass       string `json:"student_class"`
-	ExpectedReturnDays int    `json:"expected_return_days"`
-	Purpose            string `json:"purpose"`
+	StudentClass       string  `json:"student_class"`
+	ExpectedReturnDays float64 `json:"expected_return_days"`
+	Purpose            string  `json:"purpose"`
 }
 
 type ReturnRequest struct {
