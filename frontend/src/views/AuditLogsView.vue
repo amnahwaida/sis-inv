@@ -1,65 +1,80 @@
 <template>
-  <div class="animate-fade-in space-y-6 max-w-7xl mx-auto">
-    <!-- Header -->
-    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-black text-gray-900 tracking-tight">Log Audit Sistem</h1>
-        <p class="text-sm text-gray-500 mt-1">Rekam jejak aktivitas krusial dalam sistem (Terbatas untuk Admin).</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <button @click="exportExcel" class="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 hover:bg-green-600 hover:text-white rounded-xl font-bold text-sm transition-all shadow-sm">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          Export Excel
-        </button>
-        <button @click="fetchLogs" class="p-2 text-primary-600 hover:bg-primary-50 rounded-xl transition-all border border-gray-100 shadow-sm bg-white" title="Refresh">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-        </button>
+  <div class="animate-fade-in space-y-10 max-w-7xl mx-auto pb-20">
+    <!-- Header Section -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-gray-900 to-primary-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-primary-900/20 transition-all duration-500">
+      <div class="absolute top-0 right-0 -mt-12 -mr-12 w-64 h-64 bg-primary-500/20 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-0 left-0 -mb-12 -ml-12 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl"></div>
+      
+      <div class="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="space-y-1">
+          <h1 class="text-3xl font-black tracking-tight leading-none">Log Audit</h1>
+          <p class="text-primary-100/70 text-sm font-medium">Rekaman jejak aktivitas and keamanan sistem</p>
+        </div>
+        
+        <div class="flex items-center gap-3 backdrop-blur-md bg-white/10 p-2 rounded-2xl border border-white/10">
+          <button @click="exportExcel" 
+                  class="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 px-5 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2-2z" /></svg>
+            EXCEL
+          </button>
+          <button @click="fetchLogs" 
+                  class="bg-white/20 hover:bg-white/30 text-white px-5 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            REFRESH LOG
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Logs Table -->
-    <div class="card p-0 overflow-hidden border-gray-100 shadow-sm bg-white rounded-3xl">
-      <div class="overflow-x-auto">
+    <!-- Audit Logs Table Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden transition-all duration-300">
+      <div class="p-8 border-b border-gray-100 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-900/10 flex items-center justify-between">
+        <h2 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">Timeline Aktivitas</h2>
+        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Sinkronisasi Real-time</span>
+      </div>
+
+      <div class="overflow-x-auto relative">
+        <!-- Loading Overlay -->
+        <div v-if="loading" class="absolute inset-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm z-10 flex flex-col items-center justify-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+
         <table class="w-full">
-          <thead class="bg-gray-50/50 border-b border-gray-100">
-            <tr>
-              <th class="text-left text-[10px] font-black text-gray-400 uppercase tracking-widest px-6 py-4 w-12">No</th>
-              <th class="text-left text-[10px] font-black text-gray-400 uppercase tracking-widest px-6 py-4">Waktu</th>
-              <th class="text-left text-[10px] font-black text-gray-400 uppercase tracking-widest px-6 py-4">Pelaku</th>
-              <th class="text-left text-[10px] font-black text-gray-400 uppercase tracking-widest px-6 py-4">Aksi</th>
-              <th class="text-left text-[10px] font-black text-gray-400 uppercase tracking-widest px-6 py-4">Deskripsi</th>
-              <th class="text-left text-[10px] font-black text-gray-400 uppercase tracking-widest px-6 py-4">Alamat IP</th>
+          <thead>
+            <tr class="bg-gray-100/50 dark:bg-gray-700/30">
+              <th v-for="h in ['Waktu / Tanggal', 'Aktor (User)', 'Aksi / Tindakan', 'Detail Objek', 'IP Address']" :key="h"
+                  class="text-left py-5 px-8 text-[10px] font-black text-gray-400 dark:text-gray-300 uppercase tracking-[0.2em] whitespace-nowrap">{{ h }}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-50">
-            <tr v-if="loading" class="text-center">
-              <td colspan="6" class="px-6 py-12 text-gray-400 italic">Memuat data log...</td>
-            </tr>
-            <tr v-else-if="logs.length === 0" class="text-center">
-              <td colspan="6" class="px-6 py-12 text-gray-400">
-                <p class="font-bold text-gray-900 italic">Belum ada riwayat audit yang tertangkap.</p>
-              </td>
-            </tr>
-            <tr v-for="(log, idx) in logs" :key="log.id" class="hover:bg-gray-50/50 transition-colors text-xs">
-              <td class="px-6 py-4 font-mono text-gray-400">{{ idx + 1 }}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="font-bold text-gray-900">{{ formatDate(log.created_at) }}</div>
-                <div class="text-[10px] text-gray-400">{{ formatTime(log.created_at) }}</div>
-              </td>
-              <td class="px-6 py-4">
-                <div class="font-bold text-gray-800">{{ log.user_name || 'System' }}</div>
-              </td>
-              <td class="px-6 py-4">
-                <span class="px-2 py-0.5 rounded-md font-black uppercase text-[9px] tracking-widest border border-gray-100 shadow-sm" :class="getActionBadge(log.action)">
-                  {{ log.action }}
-                </span>
-              </td>
-              <td class="px-6 py-4 text-gray-600 font-medium max-w-xs truncate" :title="log.description">
-                {{ log.description }}
-              </td>
-              <td class="px-6 py-4 font-mono text-[10px] text-gray-500">
-                {{ log.ip_address || '127.0.0.1' }}
-              </td>
+          <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+            <template v-if="logs.length > 0">
+              <tr v-for="log in logs" :key="log.id" class="group hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-all duration-300">
+                <td class="px-8 py-6">
+                  <div class="text-xs font-black text-gray-900 dark:text-white leading-none mb-1">{{ formatFullDate(log.created_at) }}</div>
+                  <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ formatTime(log.created_at) }}</div>
+                </td>
+                <td class="px-8 py-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-[10px] font-black text-gray-500 uppercase">{{ log.user_name?.charAt(0) || 'S' }}</div>
+                    <span class="text-xs font-bold text-gray-700 dark:text-gray-300">{{ log.user_name || 'SYSTEM' }}</span>
+                  </div>
+                </td>
+                <td class="px-8 py-6">
+                  <span class="px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-sm"
+                        :class="getActionBadgeClass(log.action)">
+                    {{ log.action }}
+                  </span>
+                </td>
+                <td class="px-8 py-6">
+                  <p class="text-xs text-gray-500 dark:text-gray-400 font-medium max-w-sm truncate italic" :title="log.description">{{ log.description || '-' }}</p>
+                </td>
+                <td class="px-8 py-6">
+                  <span class="text-[10px] font-bold font-mono text-gray-400 bg-gray-50 dark:bg-gray-900 px-2 py-1 rounded-md">{{ log.ip_address || '---' }}</span>
+                </td>
+              </tr>
+            </template>
+            <tr v-else-if="!loading" class="text-center">
+              <td colspan="5" class="px-8 py-20 italic text-gray-400 font-bold uppercase tracking-widest text-xs">Belum ada rekaman aktivitas audit</td>
             </tr>
           </tbody>
         </table>
@@ -73,20 +88,15 @@ import { ref, onMounted } from 'vue'
 import api from '../utils/api'
 
 const logs = ref([])
-const loading = ref(false)
+const loading = ref(true)
 
 async function fetchLogs() {
   loading.value = true
   try {
     const { data } = await api.get('/reports/audit')
-    if (data.success) {
-      logs.value = data.data
-    }
-  } catch (e) {
-    console.error(e)
-  } finally {
-    loading.value = false
-  }
+    if (data.success) { logs.value = data.data || [] }
+  } catch (e) { console.error('Gagal fetch audit logs:', e) } 
+  finally { loading.value = false }
 }
 
 async function exportExcel() {
@@ -95,37 +105,23 @@ async function exportExcel() {
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
     link.href = url
-    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-    link.setAttribute('download', `SIS-INV_Log-Audit_${dateStr}.xlsx`)
+    link.setAttribute('download', `SIS-INV_Audit-Log_${new Date().toISOString().slice(0,10)}.xlsx`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-  } catch (e) {
-    console.error("Failed to export Excel", e)
-    alert("Gagal mengunduh file Excel")
-  }
+  } catch (e) { alert('Gagal mendownload audit log') }
 }
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return '-'
-  return new Intl.DateTimeFormat('id-ID', {
-    day: '2-digit', month: 'short', year: 'numeric'
-  }).format(new Date(dateStr))
+const getActionBadgeClass = (a) => {
+  if (a.includes('LOGIN')) return 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600'
+  if (a.includes('CREATE')) return 'bg-blue-50 dark:bg-blue-900/30 text-blue-600'
+  if (a.includes('UPDATE')) return 'bg-amber-50 dark:bg-amber-900/30 text-amber-600'
+  if (a.includes('DELETE')) return 'bg-rose-50 dark:bg-rose-900/30 text-rose-600'
+  return 'bg-gray-100 text-gray-600'
 }
 
-const formatTime = (dateStr) => {
-  if (!dateStr) return '-'
-  return new Intl.DateTimeFormat('id-ID', {
-    hour: '2-digit', minute: '2-digit', second: '2-digit'
-  }).format(new Date(dateStr))
-}
-
-const getActionBadge = (action) => {
-  if (action.includes('CREATE')) return 'bg-green-50 text-green-700 border-green-200'
-  if (action.includes('DELETE')) return 'bg-red-50 text-red-700 border-red-200'
-  if (action.includes('UPDATE')) return 'bg-blue-50 text-blue-700 border-blue-200'
-  return 'bg-gray-50 text-gray-700 border-gray-200'
-}
+const formatFullDate = (d) => d ? new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(d)) : '-'
+const formatTime = (d) => d ? new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(d)) : ''
 
 onMounted(fetchLogs)
 </script>

@@ -107,8 +107,8 @@ func main() {
 				adminStudents.POST("", studentHandler.Create)
 				adminStudents.PUT("/:id", studentHandler.Update)
 				adminStudents.DELETE("/:id", studentHandler.Delete)
-				adminStudents.GET("/export", studentHandler.ExportCSV)
-				adminStudents.POST("/import", studentHandler.ImportCSV)
+				adminStudents.GET("/export", studentHandler.ExportExcel)
+				adminStudents.POST("/import", studentHandler.ImportExcel)
 			}
 		}
 
@@ -131,6 +131,7 @@ func main() {
 				adminItems.PUT("/:id", itemHandler.Update)
 				adminItems.DELETE("/:id", itemHandler.Delete)
 				adminItems.POST("/:id/qr", itemHandler.GenerateQRCode)
+				adminItems.POST("/import", itemHandler.ImportExcel)
 			}
 		}
 
@@ -143,6 +144,7 @@ func main() {
 			transactions.POST("/borrow", trxHandler.Borrow)
 			transactions.POST("/return", trxHandler.Return)
 			transactions.GET("/my", trxHandler.MyBorrowings)
+			transactions.GET("/my/history", trxHandler.MyBorrowingsHistory)
 			transactions.GET("/student/:nis", trxHandler.GetStudentHistory)
 		}
 
@@ -184,8 +186,9 @@ func main() {
 				adminLocs.DELETE("/:id", locHandler.Delete)
 			}
 		}
-		// Reports
+		// Reports & Audit
 		reportHandler := handlers.NewReportHandler(db)
+		auditHandler := handlers.NewAuditHandler(db)
 		reports := v1.Group("/reports")
 		reports.Use(middleware.AuthMiddleware())
 		{
@@ -197,6 +200,17 @@ func main() {
 			reports.GET("/overdue", reportHandler.OverdueReport)
 			reports.GET("/history", reportHandler.TransactionHistory)
 			reports.GET("/audit", reportHandler.AuditLogs)
+
+			// Stock Opname / Audit Sessions
+			audit := reports.Group("/audit-sessions")
+			{
+				audit.GET("", auditHandler.ListSessions)
+				audit.POST("", auditHandler.StartSession)
+				audit.GET("/:id", auditHandler.GetSessionDetail)
+				audit.GET("/:id/export", reportHandler.ExportAuditSession)
+				audit.POST("/:id/scan", auditHandler.ScanItem)
+				audit.POST("/:id/close", auditHandler.CloseSession)
+			}
 		}
 
 		// Maintenance / Log Perbaikan

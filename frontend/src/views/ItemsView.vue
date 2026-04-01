@@ -1,167 +1,172 @@
 <template>
-  <div class="animate-fade-in space-y-6">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-900">Daftar Barang</h1>
-      <div class="flex gap-3">
-        <button 
-          v-if="authStore.isAdmin" 
-          @click="goToPrint" 
-          :disabled="selectedIds.length === 0"
-          class="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-          </svg>
-          Cetak Label ({{ selectedIds.length }})
-        </button>
-        <button v-if="authStore.isAdmin" @click="handleExportExcel" class="btn-secondary bg-green-50 text-green-700 border-green-200 hover:bg-green-100 flex items-center gap-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Export Excel
-        </button>
-        <button v-if="authStore.isAdmin" @click="openAddModal" class="btn-primary flex items-center gap-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Tambah Barang
-        </button>
+  <div class="animate-fade-in space-y-10 max-w-7xl mx-auto pb-20">
+    <!-- Header Section -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-gray-900 to-primary-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-primary-900/20 transition-all duration-500">
+      <div class="absolute top-0 right-0 -mt-12 -mr-12 w-64 h-64 bg-primary-500/20 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-0 left-0 -mb-12 -ml-12 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl"></div>
+      
+      <div class="relative flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div class="space-y-1">
+          <h1 class="text-3xl font-black tracking-tight leading-none">Daftar Barang</h1>
+          <p class="text-primary-100/70 text-sm font-medium">Manajemen seluruh aset dan inventaris sekolah</p>
+        </div>
+        
+        <div class="flex flex-wrap items-center gap-3 backdrop-blur-md bg-white/10 p-2 rounded-2xl border border-white/10">
+          <button v-if="authStore.isAdmin" @click="goToPrint" :disabled="selectedIds.length === 0"
+                  class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 px-4 py-3 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 active:scale-95 disabled:opacity-30">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+            CETAK ({{ selectedIds.length }})
+          </button>
+          <button v-if="authStore.isAdmin" @click="handleExportExcel" 
+                  class="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 px-4 py-3 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            EXCEL
+          </button>
+          <button v-if="authStore.isAdmin" @click="$refs.fileInput.click()" 
+                  class="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 px-4 py-3 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+            IMPORT
+            <input type="file" ref="fileInput" @change="handleImportExcel" class="hidden" accept=".xlsx, .xls" />
+          </button>
+          <button v-if="authStore.isAdmin" @click="openAddModal" 
+                  class="bg-white text-primary-900 hover:bg-primary-50 px-6 py-3 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 shadow-xl active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
+            TAMBAH BARANG
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Search & Filter -->
-    <div class="card">
-      <div class="flex flex-col md:flex-row gap-3">
-        <div class="flex-1">
-          <input type="text" class="input-field" placeholder="Cari nama / kode barang..." v-model="filters.search" @input="debouncedFetch" />
+    <!-- Search & Filters Container -->
+    <div class="bg-white dark:bg-gray-800 p-3 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div class="lg:col-span-1 relative">
+          <input type="text" class="input-field pl-10 h-12 rounded-2xl" placeholder="Cari nama / kode..." v-model="filters.search" @input="debouncedFetch" />
+          <svg class="w-5 h-5 absolute left-3 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         </div>
-        <select class="input-field md:w-36" v-model="filters.status" @change="fetchData">
+        <select class="input-field h-12 rounded-2xl" v-model="filters.status" @change="fetchData">
           <option value="">Semua Status</option>
           <option value="AVAILABLE">Tersedia</option>
           <option value="BORROWED">Dipinjam</option>
           <option value="MAINTENANCE">Perbaikan</option>
           <option value="LOST">Hilang</option>
         </select>
-        <select class="input-field md:w-36" v-model="filters.category_id" @change="fetchData">
+        <select class="input-field h-12 rounded-2xl" v-model="filters.category_id" @change="fetchData">
           <option value="">Semua Kategori</option>
-          <option v-for="cat in categoryStore.categories" :key="cat.id" :value="cat.id">
-            {{ cat.name }}
-          </option>
+          <option v-for="cat in categoryStore.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
         </select>
-        <select class="input-field md:w-36" v-model="filters.location_id" @change="fetchData">
+        <select class="input-field h-12 rounded-2xl" v-model="filters.location" @change="fetchData">
           <option value="">Semua Lokasi</option>
-          <option v-for="loc in locationStore.locations" :key="loc.id" :value="loc.id">
-            {{ loc.name }}
-          </option>
+          <option v-for="loc in locationStore.locations" :key="loc.id" :value="loc.name">{{ loc.name }}</option>
         </select>
-        <select class="input-field md:w-36" v-model="filters.condition" @change="fetchData">
+        <select class="input-field h-12 rounded-2xl" v-model="filters.condition" @change="fetchData">
           <option value="">Semua Kondisi</option>
           <option value="GOOD">Baik</option>
           <option value="DAMAGED">Rusak</option>
-          <option value="IN_REPAIR">Dalam Perbaikan</option>
+          <option value="IN_REPAIR">Diperbaiki</option>
         </select>
       </div>
     </div>
 
-    <!-- Items Table -->
-    <div class="card p-0 overflow-hidden relative min-h-[300px]">
-      <!-- Loading Overlay -->
-      <div v-if="itemStore.loading" class="absolute inset-0 bg-white/80 z-10 flex flex-col items-center justify-center">
-        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
-        <span class="mt-2 text-sm text-gray-600">Memuat data...</span>
-      </div>
+    <!-- Main Table Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden transition-all duration-300">
+      <div class="overflow-x-auto relative">
+        <!-- Loading Overlay -->
+        <div v-if="itemStore.loading" class="absolute inset-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm z-10 flex flex-col items-center justify-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <span class="mt-4 text-xs font-black text-primary-600 uppercase tracking-widest">Sinkronisasi Aset...</span>
+        </div>
 
-      <div class="overflow-x-auto">
         <table class="w-full">
-          <thead class="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th v-if="authStore.isAdmin" class="w-10 px-6 py-3">
-                <input type="checkbox" @change="toggleSelectAll" :checked="isAllSelected" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+          <thead>
+            <tr class="bg-gray-50/50 dark:bg-gray-700/30">
+              <th v-if="authStore.isAdmin" class="w-10 pl-8 py-5">
+                <input type="checkbox" @change="toggleSelectAll" :checked="isAllSelected" class="rounded-lg border-gray-300 text-primary-600 focus:ring-primary-500 w-5 h-5" />
               </th>
-              <th class="text-left text-xs font-semibold text-gray-600 uppercase px-6 py-3">Kode / Nama</th>
-              <th class="text-left text-xs font-semibold text-gray-600 uppercase px-6 py-3">Kategori & Lokasi</th>
-              <th class="text-left text-xs font-semibold text-gray-600 uppercase px-6 py-3">Status</th>
-              <th class="text-left text-xs font-semibold text-gray-600 uppercase px-6 py-3">Kondisi</th>
-              <th class="text-right text-xs font-semibold text-gray-600 uppercase px-6 py-3">Aksi</th>
+              <th v-for="h in ['Kode / Nama', 'Kategori & Lokasi', 'Status', 'Kondisi', '']" :key="h"
+                  class="text-left py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{{ h }}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-50 dark:divide-gray-700">
             <template v-if="itemStore.items.length > 0">
-              <tr v-for="item in itemStore.items" :key="item.id" class="hover:bg-gray-50 transition-colors" :class="{'bg-indigo-50/50': selectedIds.includes(item.id)}">
-                <td v-if="authStore.isAdmin" class="px-6 py-4">
-                  <input type="checkbox" v-model="selectedIds" :value="item.id" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+              <tr v-for="item in itemStore.items" :key="item.id" 
+                  class="group hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-all duration-300"
+                  :class="{'bg-primary-50/30 dark:bg-primary-900/5': selectedIds.includes(item.id)}">
+                <td v-if="authStore.isAdmin" class="pl-8 py-6">
+                  <input type="checkbox" v-model="selectedIds" :value="item.id" class="rounded-lg border-gray-300 text-primary-600 focus:ring-primary-500 w-5 h-5" />
                 </td>
-                <td class="px-6 py-4">
-                  <div class="font-medium text-gray-900">{{ item.name }}</div>
-                  <div class="text-sm text-gray-500 font-mono">{{ item.code }}</div>
+                <td class="px-8 py-6">
+                  <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center text-gray-400 dark:text-gray-500 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/50 group-hover:text-primary-600 transition-colors">
+                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    </div>
+                    <div>
+                      <div class="font-black text-gray-900 dark:text-white text-sm">{{ item.name }}</div>
+                      <div class="text-[10px] text-gray-400 font-bold font-mono tracking-tighter">{{ item.code }}</div>
+                    </div>
+                  </div>
                 </td>
-                <td class="px-6 py-4">
-                  <div class="text-sm text-gray-900">{{ item.category_name || '-' }}</div>
-                  <div class="text-sm text-gray-500">{{ item.location_name || item.location || '-' }}</div>
+                <td class="px-8 py-6">
+                  <div class="text-xs font-bold text-gray-700 dark:text-gray-300">{{ item.category_name || '-' }}</div>
+                  <div class="text-[10px] text-gray-400 mt-0.5">{{ item.location_name || item.location || '-' }}</div>
                 </td>
-                <td class="px-6 py-4">
-                  <span class="px-2.5 py-1 rounded-full text-xs font-medium" :class="{
-                    'bg-green-100 text-green-800': item.status === 'AVAILABLE',
-                    'bg-blue-100 text-blue-800': item.status === 'BORROWED',
-                    'bg-purple-100 text-purple-800': item.status === 'MAINTENANCE',
-                    'bg-red-100 text-red-800': item.status === 'LOST'
-                  }">
+                <td class="px-8 py-6">
+                  <span class="px-3 py-1 rounded-lg font-black uppercase text-[9px] tracking-widest shadow-sm inline-block" 
+                        :class="getStatusBadgeClass(item.status)">
                     {{ getStatusLabel(item.status) }}
                   </span>
                 </td>
-                <td class="px-6 py-4">
-                  <span class="px-2.5 py-1 rounded-full text-xs font-medium" :class="{
-                    'bg-gray-100 text-gray-800': item.condition === 'GOOD',
-                    'bg-orange-100 text-orange-800': item.condition === 'DAMAGED',
-                    'bg-yellow-100 text-yellow-800': item.condition === 'IN_REPAIR'
-                  }">
+                <td class="px-8 py-6">
+                  <span class="px-3 py-1 rounded-lg font-black uppercase text-[9px] tracking-widest shadow-sm inline-block"
+                        :class="getConditionBadgeClass(item.condition)">
                     {{ getConditionLabel(item.condition) }}
                   </span>
                 </td>
-                <td class="px-6 py-4 text-right border-l border-gray-50">
-                  <div class="flex items-center justify-end gap-3 flex-wrap">
-                    <!-- Standard Actions -->
-                    <button @click="openDetailModal(item)" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Detail</button>
-                    
-                    <!-- Admin Actions -->
+                <td class="px-8 py-6 text-right">
+                  <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button @click="openDetailModal(item)" class="p-2 text-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl hover:bg-indigo-500 hover:text-white transition-all transform hover:scale-110 active:scale-95" title="Detail">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </button>
                     <template v-if="authStore.isAdmin">
-                      <button @click="openQrModal(item)" class="text-emerald-600 hover:text-emerald-900 text-sm font-medium">QR Code</button>
-                      <button @click="openEditModal(item)" class="text-blue-600 hover:text-blue-900 text-sm font-medium">Edit</button>
-                      <button @click="deleteItem(item)" class="text-red-600 hover:text-red-900 text-sm font-medium">Hapus</button>
+                      <button @click="openQrModal(item)" class="p-2 text-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl hover:bg-emerald-500 hover:text-white transition-all transform hover:scale-110 active:scale-95" title="QR Code">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m0 11v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                      </button>
+                      <button @click="openEditModal(item)" class="p-2 text-blue-500 bg-blue-50 dark:bg-blue-900/30 rounded-xl hover:bg-blue-500 hover:text-white transition-all transform hover:scale-110 active:scale-95" title="Edit">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                      </button>
+                      <button @click="deleteItem(item)" class="p-2 text-red-500 bg-red-50 dark:bg-red-900/30 rounded-xl hover:bg-red-500 hover:text-white transition-all transform hover:scale-110 active:scale-95" title="Hapus">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      </button>
                     </template>
                   </div>
                 </td>
               </tr>
             </template>
             <tr v-else-if="!itemStore.loading" class="text-center">
-              <td colspan="5" class="px-6 py-12 text-gray-500">
-                <p class="text-3xl mb-2">📦</p>
-                <p class="text-base font-medium text-gray-900">Belum ada data barang</p>
-                <p class="text-sm text-gray-500 mt-1">Coba sesuaikan filter atau tambah barang baru.</p>
+              <td colspan="6" class="px-8 py-24">
+                <div class="bg-gray-50 dark:bg-gray-700/50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-300 dark:text-gray-600">
+                  <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                </div>
+                <p class="text-gray-900 dark:text-white font-black text-xl">Aset Tidak Ditemukan</p>
+                <p class="text-gray-400 text-sm mt-2 max-w-xs mx-auto">Coba sesuaikan kata kunci pencarian atau filter kategori Anda.</p>
               </td>
             </tr>
           </tbody>
         </table>
         
-        <!-- Pagination -->
-        <div v-if="itemStore.meta.total_pages > 1" class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-          <span class="text-sm text-gray-700">
-            Menampilkan <span class="font-medium">{{ (itemStore.meta.page - 1) * itemStore.meta.page_size + 1 }}</span> sampai <span class="font-medium">{{ Math.min(itemStore.meta.page * itemStore.meta.page_size, itemStore.meta.total) }}</span> dari <span class="font-medium">{{ itemStore.meta.total }}</span> hasil
+        <!-- Pagination Premium -->
+        <div v-if="itemStore.meta.total_pages > 1" class="px-8 py-6 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+            Menampilkan <span class="text-primary-600">{{ (itemStore.meta.page - 1) * itemStore.meta.page_size + 1 }}-{{ Math.min(itemStore.meta.page * itemStore.meta.page_size, itemStore.meta.total) }}</span> dari <span class="text-gray-900 dark:text-white">{{ itemStore.meta.total }}</span> aset
           </span>
           <div class="flex gap-2">
-            <button 
-              @click="changePage(itemStore.meta.page - 1)" 
-              :disabled="itemStore.meta.page === 1"
-              class="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              Sebelumnya
+            <button @click="changePage(itemStore.meta.page - 1)" :disabled="itemStore.meta.page === 1"
+                    class="px-5 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-30 hover:bg-primary-600 hover:text-white transition-all shadow-sm active:scale-95">
+              Kembali
             </button>
-            <button 
-              @click="changePage(itemStore.meta.page + 1)" 
-              :disabled="itemStore.meta.page === itemStore.meta.total_pages"
-              class="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              Selanjutnya
+            <button @click="changePage(itemStore.meta.page + 1)" :disabled="itemStore.meta.page === itemStore.meta.total_pages"
+                    class="px-5 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-30 hover:bg-primary-600 hover:text-white transition-all shadow-sm active:scale-95">
+              Lanjut
             </button>
           </div>
         </div>
@@ -207,21 +212,16 @@ const isAllSelected = computed(() => {
 const toggleSelectAll = (e) => {
   const currentPageIds = itemStore.items.map(i => i.id)
   if (e.target.checked) {
-    // Add only if not already there
     const uniqueBatch = currentPageIds.filter(id => !selectedIds.value.includes(id))
     selectedIds.value = [...selectedIds.value, ...uniqueBatch]
   } else {
-    // Remove only items from current page
     selectedIds.value = selectedIds.value.filter(id => !currentPageIds.includes(id))
   }
 }
 
 const goToPrint = () => {
   if (selectedIds.value.length === 0) return
-  router.push({
-    path: '/print-labels',
-    query: { ids: selectedIds.value.join(',') }
-  })
+  router.push({ path: '/print-labels', query: { ids: selectedIds.value.join(',') } })
 }
 
 const handleExportExcel = async () => {
@@ -234,102 +234,78 @@ const handleExportExcel = async () => {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-  } catch (err) {
-    alert('Gagal mendownload laporan Excel')
+  } catch (err) { alert('Gagal mendownload laporan Excel') }
+}
+
+const handleImportExcel = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+  
+  const formData = new FormData()
+  formData.append('file', file)
+  
+  itemStore.loading = true
+  try {
+    const { data } = await api.post('/items/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    if (data.success) {
+      alert(`Berhasil mengimpor ${data.data.total} barang`)
+      itemStore.fetchItems()
+    }
+  } catch (e) {
+    alert(e.response?.data?.error || 'Gagal mengimpor file excel. Pastikan format kolom sesuai: Kode, Nama, Kategori, Lokasi, Kondisi, Tipe Peminjam...')
+  } finally {
+    itemStore.loading = false
+    event.target.value = ''
   }
 }
 
-const filters = ref({
-  search: '',
-  status: '',
-  category_id: '',
-  location_id: '',
-  condition: '',
-  page: 1
-})
+const getStatusBadgeClass = (s) => {
+  const m = {
+    'AVAILABLE': 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
+    'BORROWED': 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
+    'MAINTENANCE': 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
+    'LOST': 'bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400'
+  }
+  return m[s] || 'bg-gray-50 text-gray-600'
+}
 
+const getConditionBadgeClass = (c) => {
+  const m = {
+    'GOOD': 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
+    'DAMAGED': 'bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400',
+    'IN_REPAIR': 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'
+  }
+  return m[c] || 'bg-gray-50 text-gray-600'
+}
+
+const filters = ref({ search: '', status: '', category_id: '', location: '', condition: '', page: 1 })
 let searchTimeout
 const debouncedFetch = () => {
   clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    filters.value.page = 1
-    fetchData()
-  }, 500)
+  searchTimeout = setTimeout(() => { filters.value.page = 1; fetchData() }, 500)
 }
+const fetchData = async () => { await itemStore.fetchItems(filters.value) }
+const changePage = (newPage) => { filters.value.page = newPage; fetchData() }
 
-const fetchData = async () => {
-  await itemStore.fetchItems(filters.value)
-}
-
-const changePage = (newPage) => {
-  filters.value.page = newPage
-  fetchData()
-}
-
-const openAddModal = () => {
-  selectedItem.value = null
-  isModalOpen.value = true
-}
-
-const openEditModal = (item) => {
-  selectedItem.value = { ...item }
-  isModalOpen.value = true
-}
-
-const openQrModal = (item) => {
-  selectedItem.value = { ...item }
-  isQrModalOpen.value = true
-}
-
-const openDetailModal = (item) => {
-  selectedItem.value = { ...item }
-  isDetailModalOpen.value = true
-}
-
-const closeModal = () => {
-  isModalOpen.value = false
-  selectedItem.value = null
-}
-
-const closeQrModal = () => {
-  isQrModalOpen.value = false
-  selectedItem.value = null
-}
-
-const closeDetailModal = () => {
-  isDetailModalOpen.value = false
-  selectedItem.value = null
-}
+const openAddModal = () => { selectedItem.value = null; isModalOpen.value = true }
+const openEditModal = (item) => { selectedItem.value = { ...item }; isModalOpen.value = true }
+const openQrModal = (item) => { selectedItem.value = { ...item }; isQrModalOpen.value = true }
+const openDetailModal = (item) => { selectedItem.value = { ...item }; isDetailModalOpen.value = true }
+const closeModal = () => { isModalOpen.value = false; selectedItem.value = null }
+const closeQrModal = () => { isQrModalOpen.value = false; selectedItem.value = null }
+const closeDetailModal = () => { isDetailModalOpen.value = false; selectedItem.value = null }
 
 const deleteItem = async (item) => {
-  if (confirm(`Apakah Anda yakin ingin menghapus barang ${item.name} (${item.code})?`)) {
-    try {
-      await itemStore.deleteItem(item.id)
-      fetchData() // Refresh list after delete
-    } catch (e) {
-      alert(itemStore.error || 'Gagal menghapus barang')
-    }
+  if (confirm(`Hapus ${item.name}?`)) {
+    try { await itemStore.deleteItem(item.id); fetchData() } 
+    catch (e) { alert(itemStore.error || 'Gagal menghapus barang') }
   }
 }
 
-const getStatusLabel = (status) => {
-  const map = {
-    'AVAILABLE': 'Tersedia',
-    'BORROWED': 'Dipinjam',
-    'MAINTENANCE': 'Perbaikan',
-    'LOST': 'Hilang'
-  }
-  return map[status] || status
-}
-
-const getConditionLabel = (condition) => {
-  const map = {
-    'GOOD': 'Baik',
-    'DAMAGED': 'Rusak',
-    'IN_REPAIR': 'Diperbaiki'
-  }
-  return map[condition] || condition
-}
+const getStatusLabel = (s) => ({ 'AVAILABLE': 'Tersedia', 'BORROWED': 'Dipinjam', 'MAINTENANCE': 'Perbaikan', 'LOST': 'Hilang' }[s] || s)
+const getConditionLabel = (c) => ({ 'GOOD': 'Baik', 'DAMAGED': 'Rusak', 'IN_REPAIR': 'Diperbaiki' }[c] || c)
 
 onMounted(() => {
   categoryStore.fetchCategories()

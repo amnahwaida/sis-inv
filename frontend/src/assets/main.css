@@ -6,6 +6,9 @@
   body {
     @apply text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-900 transition-colors duration-300;
   }
+  #app {
+    @apply min-h-screen;
+  }
 
   /* Global dark typography overrides */
   h1, h2, h3, h4, h5, h6 {
@@ -100,32 +103,26 @@
    GLOBAL DARK MODE OVERRIDES
    ======================================== */
 
-/* Text colors used across views */
 .dark .text-gray-900 { color: #f3f4f6 !important; }
 .dark .text-gray-800 { color: #e5e7eb !important; }
 .dark .text-gray-700 { color: #d1d5db !important; }
 .dark .text-gray-600 { color: #9ca3af !important; }
 .dark .text-gray-500 { color: #9ca3af !important; }
 
-/* Background overrides for common patterns */
 .dark .bg-white { background-color: #1f2937 !important; }
 .dark .bg-gray-50 { background-color: #111827 !important; }
 .dark .bg-gray-100 { background-color: #1f2937 !important; }
 
-/* Border overrides */
 .dark .border-gray-100 { border-color: #374151 !important; }
 .dark .border-gray-200 { border-color: #374151 !important; }
 .dark .border-gray-300 { border-color: #4b5563 !important; }
 .dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: #374151 !important; }
 
-/* Hover states */
 .dark .hover\:bg-gray-50:hover { background-color: #374151 !important; }
 .dark .hover\:bg-gray-100:hover { background-color: #374151 !important; }
 
-/* Card loading overlays */
 .dark .bg-white\/80 { background-color: rgba(31, 41, 55, 0.8) !important; }
 
-/* Special backgrounds (keep gradient cards intact) */
 .dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.15) !important; }
 .dark .bg-yellow-50 { background-color: rgba(234, 179, 8, 0.15) !important; }
 .dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.15) !important; }
@@ -136,22 +133,17 @@
 .dark .bg-purple-50 { background-color: rgba(168, 85, 247, 0.15) !important; }
 .dark .bg-gray-50\/50 { background-color: rgba(55, 65, 81, 0.5) !important; }
 
-/* Modal backdrop */
 .dark .bg-black\/60 { background-color: rgba(0, 0, 0, 0.75) !important; }
 
-/* Router-link and anchor text */
 .dark .text-indigo-600 { color: #818cf8 !important; }
 .dark .text-blue-600 { color: #60a5fa !important; }
 .dark .text-green-600 { color: #4ade80 !important; }
 .dark .text-emerald-600 { color: #34d399 !important; }
 .dark .text-red-600 { color: #f87171 !important; }
 
-/* Pagination buttons dark */
 .dark .border-gray-300 { border-color: #4b5563 !important; }
 
-/* ========================================
-   SCROLLBAR (Dark-aware)
-   ======================================== */
+/* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #f1f5f9; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -161,9 +153,7 @@
 .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
 .dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
 
-/* ========================================
-   ANIMATIONS
-   ======================================== */
+/* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }

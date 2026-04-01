@@ -1,112 +1,163 @@
 <template>
-  <div class="animate-fade-in space-y-6">
-    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-black text-gray-900 tracking-tight">Kelola Siswa</h1>
-        <p class="text-sm text-gray-500 mt-1">Daftar siswa yang terdaftar dalam sistem untuk peminjaman barang.</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <button 
-          @click="exportStudents" 
-          class="px-4 py-2 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center gap-2"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-          Export CSV
-        </button>
-        <button 
-          @click="triggerImport" 
-          class="px-4 py-2 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center gap-2"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-          Import
-        </button>
-        <button 
-          @click="openModal()" 
-          class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl shadow-lg shadow-primary-100 transition-all flex items-center gap-2"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          Tambah Siswa
-        </button>
-        <input type="file" ref="fileInput" class="hidden" accept=".csv" @change="handleImport">
+  <div class="animate-fade-in space-y-10 max-w-7xl mx-auto pb-20">
+    <!-- Header Section -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-gray-900 to-primary-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-primary-900/20 transition-all duration-500">
+      <div class="absolute top-0 right-0 -mt-12 -mr-12 w-64 h-64 bg-primary-500/20 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-0 left-0 -mb-12 -ml-12 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl"></div>
+      
+      <div class="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="space-y-1">
+          <h1 class="text-3xl font-black tracking-tight leading-none">Kelola Siswa</h1>
+          <p class="text-primary-100/70 text-sm font-medium">Manajemen database dan akses kartu siswa</p>
+        </div>
+        
+        <div class="flex flex-wrap items-center gap-3 backdrop-blur-md bg-white/10 p-2 rounded-2xl border border-white/10">
+          <button @click="exportExcel" 
+                  class="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 px-4 py-3 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2-2z" /></svg>
+            EKSPOR DATA
+          </button>
+          <button @click="$refs.fileInput.click()" 
+                  class="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 px-4 py-3 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+            IMPORT EXCEL
+            <input type="file" ref="fileInput" @change="handleImportExcel" class="hidden" accept=".xlsx, .xls" />
+          </button>
+          <button @click="openCreateModal" 
+                  class="bg-white text-primary-900 hover:bg-primary-50 px-6 py-3 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 shadow-xl active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
+            TAMBAH SISWA BARU
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Table -->
-    <div class="card p-0 overflow-hidden border-gray-100 shadow-sm bg-white rounded-3xl">
-      <div class="overflow-x-auto">
+    <!-- Stats Mini Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div class="bg-white dark:bg-gray-800 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm">
+        <p class="text-3xl font-black text-primary-600 leading-none">{{ students.length }}</p>
+        <p class="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-2">Total Terdaftar</p>
+      </div>
+    </div>
+
+    <!-- Search & Filter Area -->
+    <div class="bg-white dark:bg-gray-800 p-3 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col md:flex-row gap-3">
+      <div class="flex-1 relative">
+        <input type="text" v-model="filters.search" @input="debouncedFetch"
+               class="input-field pl-12 h-14 rounded-2xl" placeholder="Cari nama atau NIS siswa..." />
+        <svg class="w-6 h-6 absolute left-4 top-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
+      <select v-model="filters.class" @change="fetchStudents" class="input-field h-14 rounded-2xl md:w-64 font-bold">
+        <option value="">Semua Kelas</option>
+        <option v-for="cls in classes" :key="cls" :value="cls">{{ cls }}</option>
+      </select>
+    </div>
+
+    <!-- Table Container -->
+    <div class="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden transition-all duration-300">
+      <div class="overflow-x-auto relative">
+        <!-- Loading Overlay -->
+        <div v-if="loading" class="absolute inset-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm z-10 flex flex-col items-center justify-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <span class="mt-4 text-xs font-black text-primary-600 uppercase tracking-widest leading-none">Menyinkronkan Siswa...</span>
+        </div>
+
         <table class="w-full">
-          <thead class="bg-gray-50/50 border-b border-gray-100">
-            <tr>
-              <th class="text-left text-[10px] font-black text-gray-400 uppercase tracking-widest px-6 py-4">NIS</th>
-              <th class="text-left text-[10px] font-black text-gray-400 uppercase tracking-widest px-6 py-4">Nama Lengkap</th>
-              <th class="text-left text-[10px] font-black text-gray-400 uppercase tracking-widest px-6 py-4">Kelas</th>
-              <th class="text-left text-[10px] font-black text-gray-400 uppercase tracking-widest px-6 py-4">Status</th>
-              <th class="text-right text-[10px] font-black text-gray-400 uppercase tracking-widest px-6 py-4">Aksi</th>
+          <thead>
+            <tr class="bg-gray-50/50 dark:bg-gray-700/30">
+              <th v-for="h in ['Siswa', 'Data Identitas', 'Kelas', 'Tgl Terdaftar', '']" :key="h"
+                  class="text-left py-5 px-8 text-[10px] font-black text-gray-400 dark:text-gray-300 uppercase tracking-[0.2em]">{{ h }}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-50">
-            <tr v-if="loading && students.length === 0">
-              <td colspan="5" class="px-6 py-12 text-center text-gray-400">Memuat data...</td>
-            </tr>
-            <tr v-else-if="students.length === 0">
-              <td colspan="5" class="px-6 py-12 text-center text-gray-400">Belum ada data siswa</td>
-            </tr>
-            <tr v-for="s in students" :key="s.id" class="hover:bg-gray-50/50 transition-colors">
-              <td class="px-6 py-4 font-mono text-sm text-gray-600">{{ s.nis }}</td>
-              <td class="px-6 py-4 font-bold text-gray-900">{{ s.full_name }}</td>
-              <td class="px-6 py-4 text-sm text-gray-500">{{ s.class || '-' }}</td>
-              <td class="px-6 py-4">
-                <span :class="s.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'" class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider">
-                  {{ s.is_active ? 'Aktif' : 'Non-aktif' }}
-                </span>
-              </td>
-              <td class="px-6 py-4 text-right">
-                <div class="flex items-center justify-end gap-2">
-                  <button @click="openModal(s)" class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                  </button>
-                  <button @click="deleteStudent(s)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                  </button>
-                </div>
-              </td>
+          <tbody class="divide-y divide-gray-50 dark:divide-gray-700">
+            <template v-if="students.length > 0">
+              <tr v-for="s in students" :key="s.id" class="group hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-all duration-300">
+                <td class="px-8 py-6">
+                  <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-gray-700 text-gray-400 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/50 group-hover:text-primary-600 flex items-center justify-center text-sm font-black transition-all shadow-sm">
+                      {{ s.full_name?.charAt(0) }}
+                    </div>
+                    <div>
+                      <p class="text-sm font-black text-gray-900 dark:text-white leading-none uppercase tracking-tight">{{ s.full_name }}</p>
+                      <button @click="goToHistory(s.nisn)" class="text-[10px] text-primary-600 dark:text-primary-400 mt-1 font-bold tracking-widest flex items-center gap-1 hover:underline">
+                        LIHAT RIWAYAT <svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-8 py-6">
+                  <div class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase leading-none mb-1">NIS: {{ s.nisn }}</div>
+                  <div class="text-[10px] text-gray-400 font-mono tracking-tighter">{{ s.id }}</div>
+                </td>
+                <td class="px-8 py-6">
+                  <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg text-[10px] font-black uppercase tracking-widest">{{ s.class || '-' }}</span>
+                </td>
+                <td class="px-8 py-6 text-xs font-bold text-gray-400">{{ formatDate(s.created_at) }}</td>
+                <td class="px-8 py-6 text-right">
+                  <div class="flex items-center justify-end gap-2 transition-opacity">
+                    <button @click="openEditModal(s)" class="p-2 text-blue-500 bg-blue-50 dark:bg-blue-900/30 rounded-xl hover:bg-blue-500 hover:text-white transition-all transform hover:scale-110 active:scale-95" title="Edit">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                    </button>
+                    <button @click="deleteStudent(s)" class="p-2 text-red-500 bg-red-50 dark:bg-red-900/30 rounded-xl hover:bg-red-500 hover:text-white transition-all transform hover:scale-110 active:scale-95" title="Hapus">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </template>
+            <tr v-else-if="!loading" class="text-center">
+              <td colspan="5" class="px-8 py-20 italic text-gray-400 font-bold uppercase tracking-widest text-xs">Belum ada data siswa tersimpan</td>
             </tr>
           </tbody>
         </table>
+
+        <!-- Modern Pagination Bar -->
+        <div v-if="meta.total_pages > 1" class="px-8 py-6 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">HALAMAN <span class="text-primary-600">{{ meta.page }}</span> DARI <span class="text-gray-900 dark:text-white">{{ meta.total_pages }}</span></span>
+          <div class="flex gap-2">
+            <button @click="changePage(meta.page - 1)" :disabled="meta.page === 1"
+                    class="px-5 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-30 hover:bg-primary-600 hover:text-white transition-all shadow-sm">KEMBALI</button>
+            <button @click="changePage(meta.page + 1)" :disabled="meta.page === meta.total_pages"
+                    class="px-5 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-30 hover:bg-primary-600 hover:text-white transition-all shadow-sm">LANJUT</button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Modal -->
-    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-up">
-        <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-primary-50/50">
-          <h3 class="text-xl font-black text-gray-900 tracking-tight">{{ editingStudent ? 'Edit Siswa' : 'Tambah Siswa' }}</h3>
-          <button @click="closeModal()" class="text-gray-400 hover:text-gray-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+    <!-- Student Modal (Glassmorphic) -->
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-xl animate-fade-in" @click.self="closeModal">
+      <div class="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-3xl w-full max-w-md animate-scale-up overflow-hidden border border-white/20 dark:border-gray-700">
+        <div class="p-8 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+          <div>
+            <h3 class="text-2xl font-black text-gray-900 dark:text-white leading-none capitalize">{{ editingData ? 'Edit Data Siswa' : 'Siswa Baru' }}</h3>
+            <p class="text-[10px] font-black text-primary-500 uppercase tracking-widest mt-2">{{ editingData ? 'Perbarui Profil Siswa' : 'Registrasi Profil Baru' }}</p>
+          </div>
+          <button @click="closeModal" class="text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 p-3 rounded-2xl transition-all">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
         </div>
         
-        <form @submit.prevent="saveStudent" class="p-6 space-y-4">
-          <div>
-            <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">NIS *</label>
-            <input v-model="form.nis" required class="input-field rounded-xl" placeholder="Masukkan Nomor Induk Siswa">
+        <form @submit.prevent="saveStudent" class="p-8 space-y-6">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Nama Lengkap Siswa</label>
+            <input v-model="form.full_name" class="input-field rounded-2xl h-14" placeholder="Contoh: Ahmad Subardjo" required />
           </div>
-          <div>
-            <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Nama Lengkap *</label>
-            <input v-model="form.full_name" required class="input-field rounded-xl" placeholder="Nama lengkap siswa">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1">
+              <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">NIS (Sesuai Kartu)</label>
+              <input v-model="form.nisn" class="input-field rounded-2xl h-14" placeholder="Nomor Induk" required />
+            </div>
+            <div class="space-y-1">
+              <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Kelas / Angkatan</label>
+              <input v-model="form.class" class="input-field rounded-2xl h-14" placeholder="Contoh: XII-MIPA-1" required />
+            </div>
           </div>
-          <div>
-            <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Kelas</label>
-            <input v-model="form.class" class="input-field rounded-xl" placeholder="Contoh: 12 IPA 1">
-          </div>
-          <div v-if="editingStudent" class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-             <input type="checkbox" id="is_active" v-model="form.is_active" class="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-gray-300">
-             <label for="is_active" class="text-sm font-bold text-gray-700 select-none">Status Aktif</label>
-          </div>
-
-          <div class="flex gap-3 pt-4">
-            <button type="button" @click="closeModal()" class="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all">Batal</button>
-            <button type="submit" :disabled="submitting" class="flex-[2] px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl shadow-lg shadow-primary-100 transition-all flex items-center justify-center gap-2">
-              <svg v-if="submitting" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-              {{ submitting ? 'Menyimpan...' : 'Simpan Data' }}
+          
+          <div class="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-100 dark:border-gray-700">
+            <button type="button" @click="closeModal" class="btn-secondary flex-1 py-4 rounded-xl font-black text-[10px] tracking-widest">BATAL</button>
+            <button type="submit" :disabled="submitting" 
+                    class="bg-primary-600 text-white flex-[2] py-4 rounded-xl font-black text-[10px] tracking-[0.3em] shadow-xl shadow-primary-500/20 active:scale-95 disabled:opacity-30 transition-all uppercase">
+              {{ submitting ? 'MENYIMPAN...' : (editingData ? 'SIMPAN PERUBAHAN' : 'DAFTARKAN SISWA') }}
             </button>
           </div>
         </form>
@@ -117,125 +168,119 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '../utils/api'
 
+const router = useRouter()
 const students = ref([])
-const loading = ref(false)
+const classes = ref(['X-1', 'X-2', 'X-3', 'XI-1', 'XI-2', 'XI-3', 'XII-1', 'XII-2', 'XII-3']) // Default classes
+const loading = ref(true)
 const showModal = ref(false)
 const submitting = ref(false)
-const editingStudent = ref(null)
-const fileInput = ref(null)
+const editingData = ref(null)
+const meta = ref({ page: 1, total_pages: 1 })
 
-const form = ref({
-  nis: '',
-  full_name: '',
-  class: '',
-  is_active: true
-})
+const filters = ref({ search: '', class: '', page: 1, page_size: 15 })
+const form = ref({ full_name: '', nisn: '', class: '' })
 
-async function fetchStudents() {
+let searchTimeout
+const debouncedFetch = () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => { filters.value.page = 1; fetchStudents() }, 500)
+}
+
+const fetchStudents = async () => {
   loading.value = true
   try {
-    const { data } = await api.get('/students')
+    const { data } = await api.get('/students', { params: filters.value })
     if (data.success) {
-      students.value = data.data
+      // Backend returns array for student list directly in data
+      students.value = Array.isArray(data.data) ? data.data : (data.data.items || [])
+      meta.value = data.meta || { page: 1, total_pages: 1 }
     }
   } catch (e) {
-    console.error(e)
+    console.error('Gagal memuat siswa:', e)
+    students.value = []
   } finally {
     loading.value = false
   }
 }
 
-async function exportStudents() {
+const changePage = (p) => { filters.value.page = p; fetchStudents() }
+
+function openCreateModal() { editingData.value = null; form.value = { full_name: '', nisn: '', class: '' }; showModal.value = true }
+function openEditModal(student) { 
+  editingData.value = student; 
+  // Map back to form structure, backend returns both nis and nisn now
+  form.value = { 
+    full_name: student.full_name, 
+    nisn: student.nisn || student.nis, 
+    class: student.class 
+  }; 
+  showModal.value = true 
+}
+function closeModal() { showModal.value = false; editingData.value = null }
+function goToHistory(nisn) { router.push({ path: '/student-history', query: { nisn } }) }
+
+async function saveStudent() {
+  submitting.value = true
+  try {
+    if (editingData.value) { await api.put(`/students/${editingData.value.id}`, form.value) } 
+    else { await api.post('/students', form.value) }
+    closeModal(); fetchStudents()
+  } catch (e) { alert(e.response?.data?.error || 'Gagal menyimpan siswa') } 
+  finally { submitting.value = false }
+}
+
+async function exportExcel() {
   try {
     const response = await api.get('/students/export', { responseType: 'blob' })
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', 'daftar_siswa.csv')
+    link.setAttribute('download', `SIS-INV_Daftar_Siswa_${new Date().toISOString().slice(0,10)}.xlsx`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-  } catch (e) {
-    alert('Gagal mendownload CSV')
-  }
+  } catch (e) { alert('Gagal mendownload data siswa') }
 }
 
-function triggerImport() {
-  fileInput.value.click()
-}
-
-async function handleImport(event) {
+async function handleImportExcel(event) {
   const file = event.target.files[0]
   if (!file) return
-
+  
   const formData = new FormData()
   formData.append('file', file)
-
-  submitting.value = true
+  
+  loading.value = true
   try {
     const { data } = await api.post('/students/import', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
-    alert(data.message + ` (${data.data.total} siswa terimpor)`)
-    await fetchStudents()
-  } catch (e) {
-    alert(e.response?.data?.error || 'Gagal mengimpor CSV')
-  } finally {
-    submitting.value = false
-    event.target.value = '' // Reset input
-  }
-}
-
-function openModal(student = null) {
-  if (student) {
-    editingStudent.value = student
-    form.value = { 
-      nis: student.nis, 
-      full_name: student.full_name, 
-      class: student.class, 
-      is_active: student.is_active 
+    if (data.success) {
+      alert(`Berhasil mengimpor ${data.data.total} siswa`)
+      fetchStudents()
     }
-  } else {
-    editingStudent.value = null
-    form.value = { nis: '', full_name: '', class: '', is_active: true }
-  }
-  showModal.value = true
-}
-
-function closeModal() {
-  showModal.value = false
-  editingStudent.value = null
-}
-
-async function saveStudent() {
-  submitting.value = true
-  try {
-    if (editingStudent.value) {
-      await api.put(`/students/${editingStudent.value.id}`, form.value)
-    } else {
-      await api.post('/students', form.value)
-    }
-    closeModal()
-    await fetchStudents()
   } catch (e) {
-    alert(e.response?.data?.error || 'Gagal menyimpan data siswa')
+    alert(e.response?.data?.error || 'Gagal mengimpor file excel. Pastikan format kolom sesuai: NIS, Nama Lengkap, Kelas')
   } finally {
-    submitting.value = false
+    loading.value = false
+    event.target.value = '' // Clear input
   }
 }
 
 async function deleteStudent(student) {
-  if (confirm(`Hapus data siswa ${student.full_name}?`)) {
-    try {
+  if (confirm(`Apakah Anda yakin ingin menghapus siswa ${student.full_name}?`)) {
+    try { 
       await api.delete(`/students/${student.id}`)
-      await fetchStudents()
-    } catch (e) {
-      alert(e.response?.data?.error || 'Gagal menghapus siswa')
+      await fetchStudents() 
+    } catch (e) { 
+      alert(e.response?.data?.error || 'Gagal menghapus siswa') 
     }
   }
 }
+
+const formatDate = (d) => d ? new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short' }).format(new Date(d)) : '-'
 
 onMounted(fetchStudents)
 </script>

@@ -3,17 +3,24 @@
 # Based on PRD F06.3
 
 # Configuration
-PROJECT_ROOT="/home/vannyezha/project/sis_inv"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 BACKUP_DIR="$PROJECT_ROOT/backups"
 DATE=$(date +%Y%m%d_%H%M%S)
 RETENTION_DAYS=30
 
-# Database credentials (from .env)
-DB_USER="sekolah_admin"
-DB_NAME="inventaris_db"
-DB_PASS="sekolah_secret_2024"
-DB_HOST="localhost"
-DB_PORT="5432"
+# Load .env from project root if it exists
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    # Simple export for common .env formats
+    export $(grep -v '^#' "$PROJECT_ROOT/.env" | xargs)
+fi
+
+# Database credentials (use env vars, with defaults)
+DB_USER=${DB_USER:-"sekolah_admin"}
+DB_NAME=${DB_NAME:-"inventaris_db"}
+DB_PASS=${DB_PASSWORD:-"sekolah_secret_2024"}
+DB_HOST=${DB_HOST:-"localhost"}
+DB_PORT=${DB_PORT:-"5432"}
 
 # Create backup directory if not exists
 mkdir -p $BACKUP_DIR

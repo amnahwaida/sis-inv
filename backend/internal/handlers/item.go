@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/xuri/excelize/v2"
 	qrcode "github.com/skip2/go-qrcode"
 	"github.com/vannyezha/sis-inv/internal/models"
 	"github.com/vannyezha/sis-inv/internal/utils"
@@ -218,16 +219,20 @@ func (h *ItemHandler) GetByCode(c *gin.Context) {
 		`SELECT i.id, i.code, i.qr_code_data, i.name, i.category_id, c.name as category_name,
 		        i.location_id, l.name as location_name, i.location, i.condition, i.status, i.borrower_type, 
 		        i.purchase_date::text, i.purchase_price, i.warranty_end_date::text,
-		        i.notes, i.photo_url, i.created_at, i.updated_at
+		        i.notes, i.photo_url, i.created_at, i.updated_at,
+		        t.borrow_photo_url, COALESCE(u.full_name, t.student_name) as current_borrower
 		 FROM items i
 		 LEFT JOIN categories c ON i.category_id = c.id
 		 LEFT JOIN locations l ON i.location_id = l.id
+		 LEFT JOIN transactions t ON i.id = t.item_id AND t.status = 'ACTIVE'
+		 LEFT JOIN users u ON t.user_id = u.id
 		 WHERE i.code = $1`, code,
 	).Scan(
 		&i.ID, &i.Code, &i.QRCodeData, &i.Name, &i.CategoryID, &i.CategoryName,
 		&i.LocationID, &i.LocationName, &i.Location, &i.Condition, &i.Status, &i.BorrowerType,
 		&pDate, &i.PurchasePrice, &wDate,
 		&i.Notes, &i.PhotoURL, &i.CreatedAt, &i.UpdatedAt,
+		&i.LastBorrowPhotoURL, &i.CurrentBorrower,
 	)
 
 	if err != nil {
@@ -539,4 +544,129 @@ func (h *ItemHandler) GetHistory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(history, ""))
+}
+func (h *ItemHandler) ImportExcel(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "File tidak ditemukan"))
+		return
+	}
+
+	openedFile, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal membuka file"))
+		return
+	}
+	defer openedFile.Close()
+
+	f, err := excelize.OpenReader(openedFile)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Format file Excel tidak valid"))
+		return
+	}
+	defer f.Close()
+
+	rows, err := f.GetRows(f.GetSheetList()[0])
+	if err != nil || len(rows) < 2 {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Data Excel kosong atau tidak terbaca"))
+		return
+	}
+
+	ctx := context.Background()
+	tx, err := h.db.Begin(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal memulai transaksi"))
+		return
+	}
+	defer tx.Rollback(ctx)
+
+	imported := 0
+	for i, row := range rows {
+		if i == 0 { continue } // Skip header
+		if len(row) < 2 { continue }
+
+		code := strings.TrimSpace(row[0])
+		name := strings.TrimSpace(row[1])
+		if code == "" || name == "" { continue }
+
+		categoryName := ""
+		if len(row) >= 3 { categoryName = strings.TrimSpace(row[2]) }
+		
+		locationName := ""
+		if len(row) >= 4 { locationName = strings.TrimSpace(row[3]) }
+
+		condition := "GOOD"
+		if len(row) >= 5 {
+			cond := strings.ToUpper(strings.TrimSpace(row[4]))
+			if cond == "BAIK" || cond == "GOOD" {
+				condition = "GOOD"
+			} else if cond == "RUSAK" || cond == "DAMAGED" {
+				condition = "DAMAGED"
+			} else if cond == "HILANG" || cond == "LOST" {
+				condition = "LOST"
+			}
+		}
+
+		borrowerType := "STAFF_ONLY"
+		if len(row) >= 6 {
+			bt := strings.ToUpper(strings.TrimSpace(row[5]))
+			if strings.Contains(bt, "SISWA") || strings.Contains(bt, "STUDENT") || strings.Contains(bt, "ALLOWED") {
+				borrowerType = "STUDENT_ALLOWED"
+			}
+		}
+
+		notes := ""
+		if len(row) >= 9 { notes = strings.TrimSpace(row[8]) }
+
+		// Resolve Category ID
+		var categoryId *int
+		if categoryName != "" {
+			var id int
+			err := tx.QueryRow(ctx, "SELECT id FROM categories WHERE name ILIKE $1", categoryName).Scan(&id)
+			if err != nil {
+				// Create category if not exists
+				_ = tx.QueryRow(ctx, "INSERT INTO categories (name) VALUES ($1) RETURNING id", categoryName).Scan(&id)
+			}
+			categoryId = &id
+		}
+
+		// Resolve Location ID
+		var locationId *int
+		if locationName != "" {
+			var id int
+			err := tx.QueryRow(ctx, "SELECT id FROM locations WHERE name ILIKE $1", locationName).Scan(&id)
+			if err != nil {
+				// Create location if not exists
+				_ = tx.QueryRow(ctx, "INSERT INTO locations (name) VALUES ($1) RETURNING id", locationName).Scan(&id)
+			}
+			locationId = &id
+		}
+
+		_, err = tx.Exec(ctx, `
+			INSERT INTO items (code, name, category_id, location_id, condition, borrower_type, notes, status)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, 'AVAILABLE')
+			ON CONFLICT (code) DO UPDATE SET 
+				name = EXCLUDED.name,
+				category_id = EXCLUDED.category_id,
+				location_id = EXCLUDED.location_id,
+				condition = EXCLUDED.condition,
+				borrower_type = EXCLUDED.borrower_type,
+				notes = EXCLUDED.notes,
+				updated_at = NOW()
+		`, code, name, categoryId, locationId, condition, borrowerType, notes)
+		
+		if err == nil {
+			imported++
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal menyimpan data"))
+		return
+	}
+
+	actorId, _ := c.Get("userID")
+	utils.LogAudit(h.db, actorId.(string), "IMPORT_ITEMS", "ITEM", "00000000-0000-0000-0000-000000000000", fmt.Sprintf("Imported %d items via Excel", imported), c.ClientIP())
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{"total": imported}, "Berhasil mengimpor data barang"))
 }

@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -67,11 +68,15 @@ func (h *LocationHandler) Create(c *gin.Context) {
 }
 
 func (h *LocationHandler) Delete(c *gin.Context) {
-	id := c.Param("id")
+	idStr := c.Param("id")
+	id, _ := strconv.Atoi(idStr)
 
 	// Check if any items are using this location
+	// We check both location_id (foreign key) and location (string name backup)
 	var count int
-	err := h.db.QueryRow(context.Background(), "SELECT COUNT(*) FROM items WHERE location_id = $1", id).Scan(&count)
+	err := h.db.QueryRow(context.Background(), 
+		"SELECT COUNT(*) FROM items WHERE location_id = $1 OR location = (SELECT name FROM locations WHERE id = $1)", 
+		id).Scan(&count)
 	if err == nil && count > 0 {
 		c.JSON(http.StatusConflict, utils.ErrorResponse(http.StatusConflict, "Cannot delete location being used by items"))
 		return

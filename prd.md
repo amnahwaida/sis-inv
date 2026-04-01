@@ -139,7 +139,7 @@ SEHINGGA data aman jika server rusak
 | F05.4 | Export laporan ke Excel/PDF | P1 | | Admin |
 | **F06** | **Infrastruktur & Keamanan** | P0 | 4 hari | IT |
 | F06.1 | Docker Compose deployment | P0 | | IT |
-| F06.2 | Tailscale Zero Trust integration | P0 | | IT |
+| F06.2 | Cloudflare Zero Trust integration | P0 | | IT |
 | F06.3 | Automated backup script | P0 | | IT |
 | F06.4 | Firewall configuration | P0 | | IT |
 | F06.5 | HTTPS with self-signed cert | P0 | | IT |
@@ -189,7 +189,7 @@ SEHINGGA data aman jika server rusak
 │       │             │             │             │               │
 │       └─────────────┴──────┬──────┴─────────────┘               │
 │                            │                                    │
-│                    Tailscale Network                            │
+│                    Cloudflare Zero Trust                         │
 │                    (Encrypted Tunnel)                           │
 │                    HTTPS (Self-Signed)                          │
 └────────────────────────────┼────────────────────────────────────┘
@@ -201,7 +201,7 @@ SEHINGGA data aman jika server rusak
                     ┌────────▼────────┐
                     │   Host Server   │
                     │  (Mini PC/NUC)  │
-                    │  + Tailscale    │
+                    │  + Zero Trust   │
                     │  + UPS          │
                     └────────┬────────┘
                              │
@@ -246,7 +246,7 @@ SEHINGGA data aman jika server rusak
 | **Web Server** | Caddy | Latest | Auto HTTPS, simple config |
 | **Container** | Docker | Latest | Konsistensi environment |
 | **Orchestration** | Docker Compose | v3.8 | Multi-service management |
-| **Network** | Tailscale | Latest | Zero Trust, WireGuard based |
+| **Network** | Cloudflare Tunnel | Latest | Zero Trust, SSL, Domain |
 | **Auth** | JWT | - | Stateless authentication |
 | **PWA** | Service Worker | - | Offline caching, installable |
 | **QR Library** | html5-qrcode | Latest | Web-based QR scanning |
@@ -480,17 +480,17 @@ CREATE INDEX idx_audit_created ON audit_logs(created_at);
 
 | Requirement | Implementation | Priority |
 |-------------|----------------|----------|
-| **Network Security** | Tailscale Zero Trust, no port forwarding | P0 |
+| **Network Security** | Cloudflare Zero Trust, Tunnel, no port forwarding | P0 |
 | **HTTPS** | Self-signed certificate via Caddy | P0 |
 | **Authentication** | JWT with expiry (24 hours access, 7 days refresh) | P0 |
 | **Password** | Bcrypt hashing (cost 12) | P0 |
 | **Authorization** | Role-based access control (RBAC) | P0 |
-| **Data Encryption** | TLS untuk komunikasi, Tailscale encrypted tunnel | P0 |
-| **Firewall** | Only allow Tailscale interface on port 443 | P0 |
+| **Data Encryption** | TLS via Cloudflare Tunnel | P0 |
+| **Firewall** | Cloudflare Tunnel only, local loopback | P0 |
 | **Session** | Refresh token mechanism | P1 |
 | **Audit Log** | Log semua aktivitas penting + browser info | P1 |
 | **Rate Limiting** | Max 100 requests/minute per IP | P1 |
-| **CORS** | Restrict to school domain/Tailscale network | P1 |
+| **CORS** | Restrict to school domain | P1 |
 | **XSS Protection** | Content Security Policy headers | P1 |
 | **CSRF Protection** | CSRF tokens for state-changing operations | P1 |
 
@@ -580,7 +580,7 @@ crontab -e
 | Database corrupt | 2 jam | 24 jam | pg_restore dari file backup |
 | Data accidental delete | 1 jam | 24 jam | Restore specific table from backup |
 | Full system failure | 8 jam | 24 jam | Rebuild Docker + restore backup |
-| Tailscale config lost | 30 menit | 0 | Re-authenticate with same account |
+| Zero Trust tunnel lost | 30 menit | 0 | Check cloudflared service status |
 | SSL cert expired | 30 menit | 0 | Caddy auto-renews, manual override if needed |
 
 ---
@@ -664,7 +664,7 @@ Phase 1: Foundation (Week 1-2)
 ├── Backend API basic CRUD
 ├── Authentication system with RBAC
 ├── Web project setup (Vue/React)
-└── Tailscale integration test
+└── Cloudflare Tunnel integration test
 
 Phase 2: Core Features (Week 3-4)
 ├── Item management (Admin)
@@ -703,7 +703,7 @@ Phase 5: Pilot & Launch (Week 8-9)
 | M2 | Web App Alpha | Can login, scan, borrow/return (self) | 4 |
 | M3 | Student Borrow Flow | Teacher can borrow for student via NIS | 6 |
 | M4 | PWA Ready | Installable, offline cache working | 7 |
-| M5 | Server Deployed | Running on school server with Tailscale + HTTPS | 7 |
+| M5 | Server Deployed | Running on school server with Zero Trust + SSL Domain | 7 |
 | M6 | Backup Tested | Restore successful on test environment | 7 |
 | M7 | Security Audit Passed | No critical vulnerabilities | 8 |
 | M8 | Teacher Training | 90% pilot teachers can use independently | 8 |
@@ -726,7 +726,7 @@ Phase 5: Pilot & Launch (Week 8-9)
 | **Teacher forgets to return** | Medium | Medium | Overdue notifications + Dashboard alerts | System |
 | **Wrong student NIS input** | Low | Medium | Auto-suggest from student table + confirmation | Dev |
 | **Database corruption** | High | Low | Daily backup + Weekly restore test | IT |
-| **Tailscale service down** | Medium | Low | Local LAN fallback mode | Dev |
+| **Zero Trust tunnel down** | Medium | Low | Local domain fallback | Dev |
 | **Web camera permission denied** | Medium | Medium | Manual input fallback + Permission guide | Dev |
 
 ---
@@ -797,7 +797,7 @@ Phase 5: Pilot & Launch (Week 8-9)
 | QR Labels (100 pcs, aluminum) | 500.000 | One-time | For expensive items |
 | Network Cable & Accessories | 200.000 | One-time | For server connection |
 | Domain (optional) | 150.000 | Per year | For professional look |
-| Tailscale | 0 | Free | Free tier sufficient for MVP |
+| Cloudflare | 0 | Free | Free Zero Trust tier |
 | SSL Certificate | 0 | Free | Self-signed via Caddy |
 | Development Cost | - | - | Internal/Outsourced |
 | **Total Initial** | **~5.050.000** | | Excluding development |
@@ -866,7 +866,7 @@ Phase 5: Pilot & Launch (Week 8-9)
 | **NIS** | Nomor Induk Siswa - Student ID number |
 
 ### 15.2 References
-- [Tailscale Documentation](https://tailscale.com/kb/)
+- [Cloudflare Zero Trust Documentation](https://developers.cloudflare.com/cloudflare-one/)
 - [Vue.js Documentation](https://vuejs.org/)
 - [React Documentation](https://react.dev/)
 - [Go Gin Framework](https://gin-gonic.com/docs/)

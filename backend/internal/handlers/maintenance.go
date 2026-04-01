@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -144,7 +145,8 @@ func (h *MaintenanceHandler) Create(c *gin.Context) {
 
 // UpdateStatus updates the status of a maintenance log (e.g., IN_PROGRESS, DONE, CANCELLED)
 func (h *MaintenanceHandler) UpdateStatus(c *gin.Context) {
-	id := c.Param("id")
+	idStr := c.Param("id")
+	id, _ := strconv.Atoi(idStr)
 
 	var req struct {
 		Status string  `json:"status" binding:"required"`
@@ -220,7 +222,8 @@ func (h *MaintenanceHandler) UpdateStatus(c *gin.Context) {
 
 // Delete removes a maintenance log
 func (h *MaintenanceHandler) Delete(c *gin.Context) {
-	id := c.Param("id")
+	idStr := c.Param("id")
+	id, _ := strconv.Atoi(idStr)
 	ctx := context.Background()
 
 	// Get item_id first
@@ -244,7 +247,7 @@ func (h *MaintenanceHandler) Delete(c *gin.Context) {
 	}
 
 	userId, _ := c.Get("userID")
-	utils.LogAudit(h.db, userId.(string), "DELETE_MAINTENANCE", "MAINTENANCE", itemId, "Deleted maintenance log #"+id, c.ClientIP())
+	utils.LogAudit(h.db, userId.(string), "DELETE_MAINTENANCE", "MAINTENANCE", itemId, fmt.Sprintf("Deleted maintenance log #%d", id), c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Log perbaikan berhasil dihapus"))
 }

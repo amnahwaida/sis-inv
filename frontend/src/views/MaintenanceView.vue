@@ -104,14 +104,14 @@
               <td class="px-8 py-6 text-right">
                 <div class="flex items-center justify-end gap-2 transition-all duration-300">
                   <button v-if="log.status === 'PENDING'" @click="updateLog(log, 'IN_PROGRESS')"
-                    class="p-2 text-blue-600 bg-blue-50 rounded-xl hover:bg-blue-600 hover:text-white transition-all transform hover:scale-110" title="Kerjakan">
+                    class="p-2 text-blue-600 bg-blue-50 rounded-xl hover:bg-blue-600 hover:text-white transition-all transform hover:scale-110 active:scale-95 relative z-10" title="Kerjakan">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
                   </button>
                   <button v-if="log.status === 'IN_PROGRESS'" @click="openFinishModal(log)"
-                    class="p-2 text-green-600 bg-green-50 rounded-xl hover:bg-green-600 hover:text-white transition-all transform hover:scale-110" title="Selesaikan">
+                    class="p-2 text-green-600 bg-green-50 rounded-xl hover:bg-green-600 hover:text-white transition-all transform hover:scale-110 active:scale-95 relative z-10" title="Selesaikan">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                   </button>
-                  <button @click="deleteLog(log)" class="p-2 text-red-500 bg-red-50 rounded-xl hover:bg-red-600 hover:text-white transition-all transform hover:scale-110" title="Hapus">
+                  <button @click="deleteLog(log)" class="p-2 text-red-500 bg-red-50 rounded-xl hover:bg-red-600 hover:text-white transition-all transform hover:scale-110 active:scale-95 relative z-10" title="Hapus">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                   </button>
                 </div>
@@ -377,10 +377,13 @@ const debounceItemSearch = () => {
     try {
       const { data } = await api.get(`/items?search=${form.value.search_query}&page_size=10`)
       if (data.success) {
-        // Only show items that are NOT currently in maintenance or borrowed (optional, but safer)
-        suggestedItems.value = data.data.items
+        // Fix: API returns { data: { items: [], meta: {} } }
+        suggestedItems.value = data.data.items || []
       }
-    } catch (e) { console.error(e) }
+    } catch (e) { 
+      console.error(e)
+      suggestedItems.value = []
+    }
   }, 300)
 }
 
@@ -443,8 +446,10 @@ async function deleteLog(log) {
   if (!confirm(`Hapus log perbaikan untuk "${log.item_name}"?`)) return
   try {
     await api.delete(`/maintenance/${log.id}`)
-    fetchLogs()
-  } catch (e) { alert('Gagal menghapus') }
+    await fetchLogs()
+  } catch (e) { 
+    alert(e.response?.data?.error || 'Gagal menghapus') 
+  }
 }
 
 const formatDate = (d) => d ? new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(d)) : '-'

@@ -2,15 +2,15 @@ package handlers
 
 import (
 	"context"
-	"encoding/csv"
 	"fmt"
 	"net/http"
-
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vannyezha/sis-inv/internal/utils"
+	"github.com/xuri/excelize/v2"
 )
 
 type StudentHandler struct {
@@ -40,6 +40,7 @@ func (h *StudentHandler) List(c *gin.Context) {
 			students = append(students, map[string]interface{}{
 				"id":         id,
 				"nis":        nis,
+				"nisn":       nis, // Alias for compatibility
 				"full_name":  name,
 				"class":      class,
 				"is_active":  isActive,
@@ -54,7 +55,8 @@ func (h *StudentHandler) List(c *gin.Context) {
 
 func (h *StudentHandler) Create(c *gin.Context) {
 	var req struct {
-		NIS      string `json:"nis" binding:"required"`
+		NIS      string `json:"nis"`
+		NISN     string `json:"nisn"`
 		FullName string `json:"full_name" binding:"required"`
 		Class    string `json:"class"`
 	}
@@ -63,16 +65,23 @@ func (h *StudentHandler) Create(c *gin.Context) {
 		return
 	}
 
+	nis := req.NIS
+	if nis == "" { nis = req.NISN }
+	if nis == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "NIS atau NISN wajib diisi"))
+		return
+	}
+
 	_, err := h.db.Exec(context.Background(), 
 		`INSERT INTO students (nis, full_name, class) VALUES ($1, $2, $3)`,
-		req.NIS, req.FullName, req.Class)
+		nis, req.FullName, req.Class)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal menyimpan data: NIS mungkin sudah terpakai"))
 		return
 	}
 
 	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "CREATE_STUDENT", "STUDENT", "00000000-0000-0000-0000-000000000000", "Added student NIS: "+req.NIS, c.ClientIP())
+	utils.LogAudit(h.db, actorId.(string), "CREATE_STUDENT", "STUDENT", "00000000-0000-0000-0000-000000000000", "Added student NIS: "+nis, c.ClientIP())
 
 	c.JSON(http.StatusCreated, utils.SuccessResponse(nil, "Siswa berhasil ditambahkan"))
 }
@@ -80,13 +89,21 @@ func (h *StudentHandler) Create(c *gin.Context) {
 func (h *StudentHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 	var req struct {
-		NIS      string `json:"nis" binding:"required"`
+		NIS      string `json:"nis"`
+		NISN     string `json:"nisn"`
 		FullName string `json:"full_name" binding:"required"`
 		Class    string `json:"class"`
 		IsActive bool   `json:"is_active"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Data tidak valid"))
+		return
+	}
+
+	nis := req.NIS
+	if nis == "" { nis = req.NISN }
+	if nis == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "NIS atau NISN wajib diisi"))
 		return
 	}
 
@@ -104,14 +121,14 @@ func (h *StudentHandler) Update(c *gin.Context) {
 	}
 
 	changes := []string{}
-	if req.NIS != oldNis { changes = append(changes, fmt.Sprintf("NIS: %s -> %s", oldNis, req.NIS)) }
+	if nis != oldNis { changes = append(changes, fmt.Sprintf("NIS: %s -> %s", oldNis, nis)) }
 	if req.FullName != oldName { changes = append(changes, fmt.Sprintf("Nama: %s -> %s", oldName, req.FullName)) }
 	if req.Class != oldClass { changes = append(changes, fmt.Sprintf("Kelas: %s -> %s", oldClass, req.Class)) }
 	if req.IsActive != oldActive { changes = append(changes, fmt.Sprintf("Aktif: %v -> %v", oldActive, req.IsActive)) }
 
 	_, err = h.db.Exec(ctx,
 		`UPDATE students SET nis = $1, full_name = $2, class = $3, is_active = $4, updated_at = NOW() WHERE id = $5`,
-		req.NIS, req.FullName, req.Class, req.IsActive, id)
+		nis, req.FullName, req.Class, req.IsActive, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal memperbarui data"))
 		return
@@ -128,7 +145,10 @@ func (h *StudentHandler) Update(c *gin.Context) {
 }
 
 func (h *StudentHandler) Delete(c *gin.Context) {
-	id := c.Param("id")
+	idStr := c.Param("id")
+	// Convert ID string to int since students.id is SERIAL
+	id, _ := strconv.Atoi(idStr)
+
 	// Get student info for audit
 	var stName, stNis string
 	_ = h.db.QueryRow(context.Background(), "SELECT full_name, nis FROM students WHERE id = $1", id).Scan(&stName, &stNis)
@@ -178,6 +198,7 @@ func (h *StudentHandler) Search(c *gin.Context) {
 		if err := rows.Scan(&nis, &name, &class); err == nil {
 			students = append(students, map[string]string{
 				"nis":       nis,
+				"nisn":      nis, // Alias for compatibility
 				"full_name": name,
 				"class":     class,
 			})
@@ -191,7 +212,7 @@ func (h *StudentHandler) Search(c *gin.Context) {
 	c.JSON(http.StatusOK, utils.SuccessResponse(students, ""))
 }
 
-func (h *StudentHandler) ExportCSV(c *gin.Context) {
+func (h *StudentHandler) ExportExcel(c *gin.Context) {
 	rows, err := h.db.Query(context.Background(), "SELECT nis, full_name, class FROM students ORDER BY nis ASC")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal mengekspor data"))
@@ -199,43 +220,71 @@ func (h *StudentHandler) ExportCSV(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	c.Header("Content-Description", "File Transfer")
-	c.Header("Content-Disposition", "attachment; filename=daftar_siswa.csv")
-	c.Header("Content-Type", "text/csv")
+	f := excelize.NewFile()
+	defer f.Close()
 
-	w := csv.NewWriter(c.Writer)
-	_ = w.Write([]string{"NIS", "Nama Lengkap", "Kelas"})
+	sheet := "Data Siswa"
+	f.NewSheet(sheet)
+	f.DeleteSheet("Sheet1")
 
+	// Headers
+	hdrs := []string{"NIS", "Nama Lengkap", "Kelas"}
+	for i, hd := range hdrs {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheet, cell, hd)
+	}
+
+	// Header Style
+	style, _ := f.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Bold: true, Color: "FFFFFF"},
+		Fill:      excelize.Fill{Type: "pattern", Color: []string{"4F46E5"}, Pattern: 1},
+		Alignment: &excelize.Alignment{Horizontal: "center"},
+	})
+	f.SetRowStyle(sheet, 1, 1, style)
+
+	row := 2
 	for rows.Next() {
 		var nis, name, class string
 		if err := rows.Scan(&nis, &name, &class); err == nil {
-			_ = w.Write([]string{nis, name, class})
+			f.SetCellValue(sheet, fmt.Sprintf("A%d", row), nis)
+			f.SetCellValue(sheet, fmt.Sprintf("B%d", row), name)
+			f.SetCellValue(sheet, fmt.Sprintf("C%d", row), class)
+			row++
 		}
 	}
-	w.Flush()
+
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", "attachment; filename=SIS-INV_Daftar_Siswa.xlsx")
+	if err := f.Write(c.Writer); err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal menulis file excel"))
+	}
 }
 
-func (h *StudentHandler) ImportCSV(c *gin.Context) {
+func (h *StudentHandler) ImportExcel(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "File tidak ditemukan"))
 		return
 	}
 
-	src, err := file.Open()
+	openedFile, err := file.Open()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal membuka file"))
 		return
 	}
-	defer src.Close()
+	defer openedFile.Close()
 
-	reader := csv.NewReader(src)
-	// Skip header
-	_, _ = reader.Read()
-
-	records, err := reader.ReadAll()
+	f, err := excelize.OpenReader(openedFile)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Format CSV tidak valid"))
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Format file Excel tidak valid"))
+		return
+	}
+	defer f.Close()
+
+	// Get all rows from the first sheet
+	rows, err := f.GetRows(f.GetSheetList()[0])
+	if err != nil || len(rows) < 2 {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Data Excel kosong atau tidak terbaca"))
 		return
 	}
 
@@ -248,34 +297,42 @@ func (h *StudentHandler) ImportCSV(c *gin.Context) {
 	defer tx.Rollback(ctx)
 
 	imported := 0
-	for _, record := range records {
-		if len(record) < 3 { continue }
-		nis := record[0]
-		name := record[1]
-		class := record[2]
+	for i, row := range rows {
+		// Minimum validation: Row must have at least 2 columns (NIS, FullName)
+		if i == 0 || len(row) < 2 { continue } 
 
-		if nis == "" || name == "" { continue }
+		nis := strings.TrimSpace(row[0])
+		name := strings.TrimSpace(row[1])
+		class := ""
+		if len(row) >= 3 { class = strings.TrimSpace(row[2]) }
+
+		// Basic data validation
+		if nis == "" || name == "" || strings.EqualFold(nis, "NIS") { 
+			continue 
+		}
 
 		_, err = tx.Exec(ctx, `
-			INSERT INTO students (nis, full_name, class)
-			VALUES ($1, $2, $3)
+			INSERT INTO students (nis, full_name, class, is_active)
+			VALUES ($1, $2, $3, true)
 			ON CONFLICT (nis) DO UPDATE SET 
 				full_name = EXCLUDED.full_name,
 				class = EXCLUDED.class,
+				is_active = true,
 				updated_at = NOW()
 		`, nis, name, class)
+		
 		if err == nil {
 			imported++
 		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal menyimpan data ke database"))
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal menyimpan data"))
 		return
 	}
 
 	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "IMPORT_STUDENTS", "STUDENT", "00000000-0000-0000-0000-000000000000", fmt.Sprintf("Imported %d students via CSV", imported), c.ClientIP())
+	utils.LogAudit(h.db, actorId.(string), "IMPORT_STUDENTS", "STUDENT", "00000000-0000-0000-0000-000000000000", fmt.Sprintf("Imported %d students via Excel", imported), c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{"total": imported}, "Berhasil mengimpor data siswa"))
 }

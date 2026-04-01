@@ -32,6 +32,10 @@ type Item struct {
 	PhotoURL        *string    `json:"photo_url,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
+
+	// Active Transaction (Joined)
+	LastBorrowPhotoURL *string `json:"last_borrow_photo_url,omitempty"`
+	CurrentBorrower    *string `json:"current_borrower,omitempty"`
 }
 
 type Location struct {

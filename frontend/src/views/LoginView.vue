@@ -1,116 +1,84 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 flex items-center justify-center p-4">
-    <!-- Decorative shapes -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full blur-3xl"></div>
-      <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-primary-400/10 rounded-full blur-3xl"></div>
-    </div>
+  <div class="min-h-screen relative flex items-center justify-center p-6 bg-slate-50 dark:bg-gray-950 overflow-hidden transition-colors duration-700">
+    <!-- Animated background decorators -->
+    <div class="absolute top-0 right-0 -mt-24 -mr-24 w-[40rem] h-[40rem] bg-primary-500/10 dark:bg-primary-900/10 rounded-full blur-[120px] animate-pulse"></div>
+    <div class="absolute bottom-0 left-0 -mb-24 -ml-24 w-[30rem] h-[30rem] bg-indigo-500/10 dark:bg-indigo-900/10 rounded-full blur-[100px] animate-pulse transition-all duration-1000"></div>
 
-    <div class="w-full max-w-md relative animate-fade-in">
-      <!-- Logo & Title -->
-      <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl mb-4 border border-white/20">
-          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
+    <!-- Theme Toggle (Floating Top Right) -->
+    <button @click="toggleDarkMode" 
+          class="fixed top-8 right-8 z-50 p-4 rounded-[1.5rem] bg-white/20 dark:bg-gray-800/40 backdrop-blur-2xl border border-white/30 dark:border-gray-700/50 shadow-2xl hover:scale-110 active:scale-95 transition-all duration-500 group">
+      <span v-if="isDark" class="text-xl">🌙</span>
+      <span v-else class="text-xl">☀️</span>
+      <div class="absolute inset-0 rounded-[1.5rem] bg-primary-500/10 scale-0 group-hover:scale-100 transition-transform duration-500"></div>
+    </button>
+
+    <!-- Main Login Card -->
+    <div class="relative z-10 w-full max-w-lg lg:max-w-xl animate-fade-in">
+      <div class="bg-white/70 dark:bg-gray-900/70 backdrop-blur-[40px] rounded-[3rem] p-10 lg:p-14 shadow-[0_32px_120px_-20px_rgba(0,0,0,0.15)] border border-white/40 dark:border-gray-800/50 overflow-hidden group">
+        <!-- Floating Aura on hover -->
+        <div class="absolute -top-24 -right-24 w-48 h-48 bg-primary-500/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+        
+        <!-- App Identity -->
+        <div class="text-center space-y-4 mb-12">
+          <div class="w-20 h-20 bg-gradient-to-br from-primary-600 to-indigo-700 rounded-[2rem] mx-auto flex items-center justify-center shadow-2xl shadow-primary-500/30 rotate-3 transition-transform duration-700 hover:rotate-0">
+            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+          </div>
+          <div class="space-y-1">
+            <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tighter uppercase leading-none">SIS-INV</h1>
+            <p class="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-[0.4em]">School Inventory System</p>
+          </div>
         </div>
-        <h1 class="text-3xl font-bold text-white tracking-tight">SIS-INV</h1>
-        <p class="text-primary-200 text-sm mt-1">Sistem Inventaris Sekolah</p>
-      </div>
 
-      <!-- Login Card -->
-      <div class="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-white/50">
-        <h2 class="text-xl font-semibold text-gray-800 mb-6">Masuk ke Akun</h2>
-
-        <!-- Error Alert -->
-        <div v-if="error" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-          <svg class="w-5 h-5 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-          </svg>
-          <span class="text-sm text-red-700">{{ error }}</span>
-        </div>
-
-        <form @submit.prevent="handleLogin" class="space-y-5">
-          <!-- Username -->
-          <div>
-            <label for="username" class="block text-sm font-medium text-gray-700 mb-1.5">Username</label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+        <!-- Login Form -->
+        <form @submit.prevent="handleLogin" class="space-y-8">
+          <div class="space-y-6">
+            <div class="relative group">
+              <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 pl-4">Username</label>
+              <div class="relative">
+                <input v-model="username" 
+                     class="w-full pl-12 pr-6 h-16 bg-white dark:bg-gray-800/50 rounded-2xl border-none ring-1 ring-gray-100 dark:ring-gray-700 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900/30 transition-all font-bold text-sm" 
+                     placeholder="Nama pengguna Anda" required />
+                <svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-primary-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
               </div>
-              <input 
-                v-model="username"
-                id="username"
-                type="text"
-                class="input-field pl-10"
-                placeholder="Masukkan username"
-                required
-                autocomplete="username"
-              />
+            </div>
+
+            <div class="relative group">
+              <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 pl-4">Keamanan (Password)</label>
+              <div class="relative">
+                <input v-model="password" type="password"
+                     class="w-full pl-12 pr-6 h-16 bg-white dark:bg-gray-800/50 rounded-2xl border-none ring-1 ring-gray-100 dark:ring-gray-700 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900/30 transition-all font-bold text-sm" 
+                     placeholder="Ketik password ketat" required />
+                <svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-primary-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+              </div>
             </div>
           </div>
 
-          <!-- Password -->
-          <div>
-            <label for="password" class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-              <input 
-                v-model="password"
-                id="password"
-                :type="showPassword ? 'text' : 'password'"
-                class="input-field pl-10 pr-10"
-                placeholder="Masukkan password"
-                required
-                autocomplete="current-password"
-              />
-              <button 
-                type="button"
-                @click="showPassword = !showPassword"
-                class="absolute inset-y-0 right-0 pr-3 flex items-center"
-              >
-                <svg v-if="!showPassword" class="w-5 h-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                <svg v-else class="w-5 h-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                </svg>
-              </button>
-            </div>
+          <div v-if="error" class="p-5 bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-900/30 text-rose-600 dark:text-rose-400 text-xs font-black rounded-2xl flex items-center gap-3 animate-shake uppercase tracking-widest">
+            <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+            {{ error }}
           </div>
 
-          <!-- Submit -->
-          <button 
-            type="submit"
-            :disabled="loading"
-            class="btn-primary w-full flex items-center justify-center gap-2"
-          >
-            <svg v-if="loading" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>{{ loading ? 'Memproses...' : 'Masuk' }}</span>
+          <button :disabled="loading" 
+                  class="w-full h-16 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-2xl shadow-primary-500/40 active:scale-95 disabled:opacity-30 transition-all mt-4 relative overflow-hidden group/btn">
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
+            {{ loading ? 'SINKRONISASI...' : 'AUTENTIKASI MASUK' }}
           </button>
         </form>
-      </div>
 
-      <!-- Footer -->
-      <p class="text-center text-primary-300 text-xs mt-6">
-        © 2024 SIS-INV • Sistem Inventaris Sekolah
-      </p>
+        <p class="text-center text-[10px] text-gray-400 font-bold uppercase tracking-[0.3em] mt-12 pb-2 border-b border-gray-100 dark:border-gray-800">SIS-INV • AMANAH & TERTIB</p>
+      </div>
+      
+      <!-- Footer Info -->
+      <footer class="mt-8 text-center flex flex-col items-center gap-2">
+        <p class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Terlindungi oleh Enkripsi End-to-End</p>
+        <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-lg shadow-emerald-500/50 animate-pulse"></div>
+      </footer>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
@@ -119,20 +87,47 @@ const authStore = useAuthStore()
 
 const username = ref('')
 const password = ref('')
-const showPassword = ref(false)
 const loading = ref(false)
 const error = ref('')
+const isDark = ref(false)
 
-async function handleLogin() {
-  error.value = ''
+const handleLogin = async () => {
   loading.value = true
+  error.value = ''
   try {
-    await authStore.login(username.value, password.value)
-    router.push('/')
-  } catch (e) {
-    error.value = e.response?.data?.error || e.message || 'Login gagal'
+    const success = await authStore.login(username.value, password.value)
+    if (success) { router.push('/') } 
+    else { error.value = 'HAK AKSES DITOLAK' }
+  } catch (err) {
+    error.value = err.response?.data?.error || 'GAGAL TERHUBUNG KE SERVER'
   } finally {
     loading.value = false
   }
 }
+
+const toggleDarkMode = () => {
+  isDark.value = !isDark.value
+  document.documentElement.classList.toggle('dark')
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+}
+
+onMounted(() => {
+  const savedTheme = localStorage.getItem('theme')
+  isDark.value = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  if (isDark.value) document.documentElement.classList.add('dark')
+  else document.documentElement.classList.remove('dark')
+})
 </script>
+
+<style scoped>
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+</style>

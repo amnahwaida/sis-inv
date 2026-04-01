@@ -28,9 +28,7 @@
         </div>
         
         <div class="qr-placeholder mb-3 flex items-center justify-center bg-white p-1">
-           <img :src="`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${item.code}`" 
-                class="w-32 h-32 object-contain" 
-                :alt="item.code" />
+           <qrcode-vue :value="item.code" :size="120" level="H" :render-as="'svg'" />
         </div>
 
         <div class="space-y-0.5">
@@ -53,6 +51,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useItemStore } from '../stores/item'
+import QrcodeVue from 'qrcode.vue'
 
 const route = useRoute()
 const itemStore = useItemStore()

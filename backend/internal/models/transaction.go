@@ -20,6 +20,7 @@ type Transaction struct {
 	ReturnCondition *string    `json:"return_condition,omitempty" db:"return_condition"`
 	ReturnNotes     *string    `json:"return_notes,omitempty" db:"return_notes"`
 	ReturnPhotoURL  *string    `json:"return_photo_url,omitempty" db:"return_photo_url"`
+	BorrowPhotoURL  *string    `json:"borrow_photo_url,omitempty" db:"borrow_photo_url"`
 	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
 
@@ -36,6 +37,7 @@ type BorrowRequest struct {
 	StudentClass       string  `json:"student_class"`
 	ExpectedReturnDays float64 `json:"expected_return_days"`
 	Purpose            string  `json:"purpose"`
+	PhotoURL           string  `json:"photo_url"`
 }
 
 type ReturnRequest struct {

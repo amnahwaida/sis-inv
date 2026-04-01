@@ -91,8 +91,8 @@ func (h *TransactionHandler) Borrow(c *gin.Context) {
 	var trxId string
 	query := `
 		INSERT INTO transactions 
-		(item_id, borrower_type, user_id, student_nis, student_name, student_class, borrowed_by, status, due_date, purpose)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, 'ACTIVE', $8, $9)
+		(item_id, borrower_type, user_id, student_nis, student_name, student_class, borrowed_by, status, due_date, purpose, borrow_photo_url)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, 'ACTIVE', $8, $9, $10)
 		RETURNING id
 	`
 	
@@ -105,7 +105,7 @@ func (h *TransactionHandler) Borrow(c *gin.Context) {
 	err = tx.QueryRow(ctx, query, 
 		itemId, req.BorrowerType, borrowerUserId, 
 		utils.NullString(req.StudentNIS), utils.NullString(req.StudentName), utils.NullString(req.StudentClass),
-		userId, dueDate, req.Purpose,
+		userId, dueDate, req.Purpose, utils.NullString(req.PhotoURL),
 	).Scan(&trxId)
 	
 	if err != nil {
@@ -280,19 +280,79 @@ func (h *TransactionHandler) MyBorrowings(c *gin.Context) {
 			}
 
 			borrowings = append(borrowings, map[string]interface{}{
-				"id":                   id,
-				"item_code":            code,
-				"item_name":            itemName,
-				"borrower_type":        borrowerType,
-				"borrower_display":     displayName,
-				"borrow_date":          borrowDate,
-				"due_date":             dueDate,
-				"status":               status,
+				"id":               id,
+				"item_code":        code,
+				"item_name":        itemName,
+				"borrower_type":    borrowerType,
+				"borrower_display": displayName,
+				"student_name":     studentName,
+				"student_class":    studentClass,
+				"borrow_date":      borrowDate,
+				"due_date":         dueDate,
+				"status":           status,
+				"is_overdue":       time.Now().After(dueDate),
 			})
 		}
 	}
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(borrowings, "Fetched active borrowings successfully"))
+}
+
+// MyBorrowingsHistory returns historical (RETURNED) transactions managed by this user
+func (h *TransactionHandler) MyBorrowingsHistory(c *gin.Context) {
+	userId, _ := c.Get("userID")
+
+	query := `
+		SELECT 
+			t.id, t.status, t.borrowed_at, t.returned_at, t.due_date,
+			t.borrower_type, t.student_name, t.student_class,
+			t.return_condition, t.return_notes,
+			i.code, i.name
+		FROM transactions t
+		JOIN items i ON t.item_id = i.id
+		WHERE t.borrowed_by = $1 AND t.status = 'RETURNED'
+		ORDER BY t.returned_at DESC
+		LIMIT 50
+	`
+
+	rows, err := h.db.Query(context.Background(), query, userId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to fetch history"))
+		return
+	}
+	defer rows.Close()
+
+	var history []map[string]interface{}
+	for rows.Next() {
+		var id, status, code, itemName, borrowerType string
+		var borrowDate, returnedAt, dueDate time.Time
+		var studentName, studentClass, returnCondition, returnNotes *string
+
+		err := rows.Scan(&id, &status, &borrowDate, &returnedAt, &dueDate, &borrowerType, &studentName, &studentClass, &returnCondition, &returnNotes, &code, &itemName)
+		if err == nil {
+			displayName := "Diri Sendiri"
+			if borrowerType == "STUDENT" && studentName != nil {
+				displayName = *studentName
+			}
+
+			history = append(history, map[string]interface{}{
+				"id":               id,
+				"item_code":        code,
+				"item_name":        itemName,
+				"borrower_display": displayName,
+				"student_name":     studentName,
+				"student_class":    studentClass,
+				"borrowed_at":      borrowDate,
+				"returned_at":      returnedAt,
+				"due_date":         dueDate,
+				"return_condition": returnCondition,
+				"return_notes":     returnNotes,
+				"status":           status,
+			})
+		}
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(history, "Fetched history successfully"))
 }
 
 // GetStudentHistory returns all transactions for a specific student (F04.6)
@@ -307,6 +367,7 @@ func (h *TransactionHandler) GetStudentHistory(c *gin.Context) {
 		SELECT 
 			t.id, t.status, t.borrowed_at, t.returned_at, t.due_date,
 			t.student_name, t.student_class, t.purpose,
+			t.borrow_photo_url, t.return_photo_url, t.return_condition,
 			i.code as item_code, i.name as item_name,
 			u.full_name as teacher_name
 		FROM transactions t
@@ -326,13 +387,14 @@ func (h *TransactionHandler) GetStudentHistory(c *gin.Context) {
 	var history []map[string]interface{}
 	for rows.Next() {
 		var id, status, itemCode, itemName, teacherName string
-		var studentName, studentClass, purpose *string
+		var studentName, studentClass, purpose, borrowPhoto, returnPhoto, returnCondition *string
 		var borrowedAt time.Time
 		var returnedAt, dueDate *time.Time
 
 		err := rows.Scan(
 			&id, &status, &borrowedAt, &returnedAt, &dueDate,
 			&studentName, &studentClass, &purpose,
+			&borrowPhoto, &returnPhoto, &returnCondition,
 			&itemCode, &itemName, &teacherName,
 		)
 		if err == nil {
@@ -345,9 +407,12 @@ func (h *TransactionHandler) GetStudentHistory(c *gin.Context) {
 				"student_name":  studentName,
 				"student_class": studentClass,
 				"purpose":       purpose,
-				"item_code":     itemCode,
-				"item_name":     itemName,
-				"teacher_name":  teacherName,
+				"item_code":        itemCode,
+				"item_name":        itemName,
+				"teacher_name":     teacherName,
+				"borrow_photo_url": borrowPhoto,
+				"return_photo_url": returnPhoto,
+				"return_condition": returnCondition,
 			})
 		}
 	}

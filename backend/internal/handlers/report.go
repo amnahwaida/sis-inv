@@ -618,3 +618,139 @@ func (h *ReportHandler) ExportMaintenanceLogs(c *gin.Context) {
 	c.Header("Content-Disposition", "attachment; filename="+fileName)
 	f.Write(c.Writer)
 }
+func (h *ReportHandler) ExportAuditSession(c *gin.Context) {
+	sessionId := c.Param("id")
+	ctx := context.Background()
+
+	// 1. Get Session Info
+	var s struct {
+		ID           string
+		LocationName string
+		UserName     string
+		Status       string
+		StartedAt    time.Time
+		FinishedAt   *time.Time
+		Notes        *string
+	}
+	err := h.db.QueryRow(ctx,
+		`SELECT s.id, l.name as location_name, u.full_name as user_name,
+		        s.status, s.started_at, s.finished_at, s.notes
+		 FROM audit_sessions s
+		 JOIN locations l ON s.location_id = l.id
+		 JOIN users u ON s.user_id = u.id
+		 WHERE s.id = $1`, sessionId).Scan(
+		&s.ID, &s.LocationName, &s.UserName, &s.Status, &s.StartedAt, &s.FinishedAt, &s.Notes,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Audit session not found"))
+		return
+	}
+
+	f := excelize.NewFile()
+	defer f.Close()
+
+	sheet := "Hasil Audit"
+	idx, _ := f.NewSheet(sheet)
+	f.DeleteSheet("Sheet1")
+
+	// Header Info
+	f.SetCellValue(sheet, "A1", "LAPORAN HASIL STOCK OPNAME")
+	f.SetCellValue(sheet, "A2", "Lokasi:")
+	f.SetCellValue(sheet, "B2", s.LocationName)
+	f.SetCellValue(sheet, "A3", "Petugas:")
+	f.SetCellValue(sheet, "B3", s.UserName)
+	f.SetCellValue(sheet, "A4", "Waktu Mulai:")
+	f.SetCellValue(sheet, "B4", s.StartedAt.Format("2006-01-02 15:04"))
+	f.SetCellValue(sheet, "A5", "Status:")
+	f.SetCellValue(sheet, "B5", s.Status)
+
+	headerStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true, Size: 14},
+	})
+	f.SetCellStyle(sheet, "A1", "A1", headerStyle)
+
+	// Items Table Header
+	f.SetCellValue(sheet, "A7", "LIST BARANG DITEMUKAN")
+	tableHeaderStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true, Color: "FFFFFF"},
+		Fill: excelize.Fill{Type: "pattern", Color: []string{"4F46E5"}, Pattern: 1},
+	})
+	
+	cols := []string{"No", "Kode Barang", "Nama Barang", "Kondisi Saat Scan", "Waktu Scan", "Catatan"}
+	for i, col := range cols {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 8)
+		f.SetCellValue(sheet, cell, col)
+	}
+	f.SetRowStyle(sheet, 8, 8, tableHeaderStyle)
+
+	// Fetch Found Items
+	rows, _ := h.db.Query(ctx, 
+		`SELECT i.code, i.name, ai.found_condition, ai.scanned_at, COALESCE(ai.notes, '-')
+		 FROM audit_items ai
+		 JOIN items i ON ai.item_id = i.id
+		 WHERE ai.session_id = $1 ORDER BY ai.scanned_at ASC`, sessionId)
+	
+	rowIdx := 9
+	for rows.Next() {
+		var code, name, cond, notes string
+		var scannedAt time.Time
+		rows.Scan(&code, &name, &cond, &scannedAt, &notes)
+		
+		f.SetCellValue(sheet, fmt.Sprintf("A%d", rowIdx), rowIdx-8)
+		f.SetCellValue(sheet, fmt.Sprintf("B%d", rowIdx), code)
+		f.SetCellValue(sheet, fmt.Sprintf("C%d", rowIdx), name)
+		f.SetCellValue(sheet, fmt.Sprintf("D%d", rowIdx), cond)
+		f.SetCellValue(sheet, fmt.Sprintf("E%d", rowIdx), scannedAt.Format("15:04:05"))
+		f.SetCellValue(sheet, fmt.Sprintf("F%d", rowIdx), notes)
+		rowIdx++
+	}
+	rows.Close()
+
+	// Missing Items Section
+	rowIdx += 2
+	f.SetCellValue(sheet, fmt.Sprintf("A%d", rowIdx), "LIST BARANG TIDAK DITEMUKAN (MISSING)")
+	rowIdx++
+	
+	missingCols := []string{"No", "Kode Barang", "Nama Barang", "Status Sistem", "Kondisi Terakhir"}
+	for i, col := range missingCols {
+		cell, _ := excelize.CoordinatesToCellName(i+1, rowIdx)
+		f.SetCellValue(sheet, cell, col)
+	}
+	f.SetRowStyle(sheet, rowIdx, rowIdx, tableHeaderStyle)
+	
+	startRow := rowIdx + 1
+	rows, _ = h.db.Query(ctx,
+		`SELECT i.code, i.name, i.status, i.condition
+		 FROM items i
+		 WHERE i.location = $1
+		 AND i.id NOT IN (SELECT item_id FROM audit_items WHERE session_id = $2)`,
+		s.LocationName, sessionId)
+	
+	rowIdx++
+	missingCount := 0
+	for rows.Next() {
+		var code, name, status, cond string
+		rows.Scan(&code, &name, &status, &cond)
+		
+		f.SetCellValue(sheet, fmt.Sprintf("A%d", rowIdx), rowIdx-startRow+1)
+		f.SetCellValue(sheet, fmt.Sprintf("B%d", rowIdx), code)
+		f.SetCellValue(sheet, fmt.Sprintf("C%d", rowIdx), name)
+		f.SetCellValue(sheet, fmt.Sprintf("D%d", rowIdx), status)
+		f.SetCellValue(sheet, fmt.Sprintf("E%d", rowIdx), cond)
+		rowIdx++
+		missingCount++
+	}
+	rows.Close()
+
+	if missingCount == 0 {
+		f.SetCellValue(sheet, fmt.Sprintf("A%d", startRow), "Semua Barang Ditemukan")
+	}
+
+	f.SetActiveSheet(idx)
+	fileName := fmt.Sprintf("Audit_%s_%s.xlsx", s.LocationName, time.Now().Format("20060102"))
+	
+	c.Header("Content-Type", "application/octet-stream")
+	c.Header("Content-Disposition", "attachment; filename="+fileName)
+	f.Write(c.Writer)
+}

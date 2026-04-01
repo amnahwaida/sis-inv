@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -68,7 +69,8 @@ func (h *CategoryHandler) Create(c *gin.Context) {
 }
 
 func (h *CategoryHandler) Delete(c *gin.Context) {
-	id := c.Param("id")
+	idStr := c.Param("id")
+	id, _ := strconv.Atoi(idStr)
 
 	// Check if any items are using this category
 	var count int

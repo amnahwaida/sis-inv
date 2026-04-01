@@ -92,6 +92,18 @@ const routes = [
         meta: { roles: ['ADMIN'] },
       },
       {
+        path: 'stock-opname',
+        name: 'Stock Opname',
+        component: () => import('../views/StockOpnameView.vue'),
+        meta: { roles: ['ADMIN'] },
+      },
+      {
+        path: 'stock-opname/:id',
+        name: 'Audit Detail',
+        component: () => import('../views/AuditDetailView.vue'),
+        meta: { roles: ['ADMIN'] },
+      },
+      {
         path: 'settings',
         name: 'Pengaturan',
         component: () => import('../views/SettingsView.vue'),

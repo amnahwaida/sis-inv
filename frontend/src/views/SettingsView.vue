@@ -1,153 +1,168 @@
 <template>
-  <div class="max-w-4xl mx-auto space-y-6">
-    <!-- Profile Card -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      <div class="p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6 bg-gradient-to-br from-primary-600 to-indigo-700 text-white">
-        <div class="w-24 h-24 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-3xl font-bold border border-white/30 shadow-xl">
-          {{ userInitials }}
-        </div>
-        <div class="text-center sm:text-left">
-          <h2 class="text-2xl font-black tracking-tight">{{ authStore.user?.full_name }}</h2>
-          <p class="text-primary-100 font-medium opacity-90">{{ roleLabel }}</p>
-          <div class="mt-3 flex flex-wrap justify-center sm:justify-start gap-2">
-            <span class="px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-wider border border-white/20">
-              User ID: {{ authStore.user?.username }}
-            </span>
-            <span v-if="authStore.user?.nip" class="px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-wider border border-white/20">
-              NIP: {{ authStore.user?.nip }}
-            </span>
-          </div>
-        </div>
-      </div>
+  <div class="animate-fade-in space-y-10 max-w-7xl mx-auto pb-20">
+    <!-- Header Section -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-gray-900 to-primary-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-primary-900/20 transition-all duration-500">
+      <div class="absolute top-0 right-0 -mt-12 -mr-12 w-64 h-64 bg-primary-500/20 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-0 left-0 -mb-12 -ml-12 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl"></div>
       
-      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+      <div class="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div class="space-y-1">
-          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Email Terdaftar</p>
-          <p class="text-gray-900 font-medium">{{ authStore.user?.email || '-' }}</p>
-        </div>
-        <div class="space-y-1">
-          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Nomor Telepon</p>
-          <p class="text-gray-900 font-medium">{{ authStore.user?.phone || '-' }}</p>
+          <h1 class="text-3xl font-black tracking-tight leading-none">Pengaturan Sistem</h1>
+          <p class="text-primary-100/70 text-sm font-medium">Atur profil, preferensi, and keamanan akun Anda</p>
         </div>
       </div>
     </div>
 
-    <!-- Security Card -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/30">
-        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-          <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
-          Keamanan Akun
-        </h3>
+    <!-- Main Content Area -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- Left Column: Navigation Tabs -->
+      <div class="lg:col-span-4 space-y-4">
+        <div class="bg-white dark:bg-gray-800 rounded-[2.5rem] p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
+          <div class="flex flex-col gap-2">
+            <button v-for="tab in [{id:'profile', label:'Profil Pengguna', icon:'👤'}, {id:'security', label:'Keamanan & Password', icon:'🛡️'}, {id:'app', label:'Preferensi Aplikasi', icon:'📱'}]" 
+                    :key="tab.id"
+                    @click="activeTab = tab.id"
+                    :class="activeTab === tab.id ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-400'"
+                    class="px-6 py-4 rounded-2xl text-xs font-black transition-all flex items-center justify-between group active:scale-95">
+              <span class="flex items-center gap-3">
+                <span class="text-lg">{{ tab.icon }}</span>
+                <span class="uppercase tracking-widest">{{ tab.label }}</span>
+              </span>
+              <svg class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Help Info -->
+        <div class="p-8 bg-indigo-50 dark:bg-indigo-900/20 rounded-[2.5rem] border border-indigo-100 dark:border-indigo-800 space-y-4">
+          <div class="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black">?</div>
+          <h4 class="text-xs font-black text-indigo-900 dark:text-indigo-100 uppercase tracking-widest">Bantuan & Dukungan</h4>
+          <p class="text-[10px] font-bold text-indigo-400 leading-relaxed uppercase tracking-tight">Hubungi Administrator jika Anda mengalami kesulitan dalam pengaturan akun atau memiliki pertanyaan teknis sistem.</p>
+        </div>
       </div>
 
-      <div class="p-6 sm:p-8">
-        <form @submit.prevent="handleChangePassword" class="max-w-md space-y-6">
-          <div class="space-y-4">
-            <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Password Saat Ini</label>
-              <input 
-                v-model="passwordForm.old" 
-                type="password" 
-                required
-                class="input-field rounded-xl border-gray-200 focus:ring-primary-500"
-                placeholder="••••••••"
-              >
+      <!-- Right Column: Form Area -->
+      <div class="lg:col-span-8">
+        <div class="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden animate-scale-up">
+          
+          <!-- Profile Form -->
+          <div v-if="activeTab === 'profile'" class="p-10 space-y-8 animate-fade-in">
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 bg-primary-50 dark:bg-primary-900/30 text-primary-600 rounded-3xl flex items-center justify-center text-xl font-black shadow-inner">
+                {{ authStore.user?.full_name?.charAt(0) }}
+              </div>
+              <div>
+                <h3 class="text-xl font-black text-gray-900 dark:text-white leading-none capitalize">Informasi Akun</h3>
+                <p class="text-[10px] font-black text-primary-500 uppercase tracking-widest mt-2">Data profil personal Anda</p>
+              </div>
             </div>
             
-            <div class="grid grid-cols-1 gap-4">
-              <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Password Baru</label>
-                <input 
-                  v-model="passwordForm.new" 
-                  type="password" 
-                  required
-                  minlength="6"
-                  class="input-field rounded-xl border-gray-200 focus:ring-primary-500"
-                  placeholder="Min. 6 karakter"
-                >
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-50 dark:border-gray-700">
+              <div class="space-y-1">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Nama Lengkap</label>
+                <input :value="authStore.user?.full_name" class="input-field rounded-2xl h-14 opacity-60" disabled />
               </div>
-              <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Konfirmasi Password Baru</label>
-                <input 
-                  v-model="passwordForm.confirm" 
-                  type="password" 
-                  required
-                  minlength="6"
-                  class="input-field rounded-xl border-gray-200 focus:ring-primary-500"
-                  placeholder="Ulangi password baru"
-                >
+              <div class="space-y-1">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Username (Login)</label>
+                <input :value="authStore.user?.username" class="input-field rounded-2xl h-14 opacity-60" disabled />
+              </div>
+              <div class="space-y-1">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Hak Akses (Role)</label>
+                <span class="inline-block px-4 py-3 bg-gray-50 dark:bg-gray-900/40 rounded-2xl text-[10px] font-black text-primary-600 uppercase tracking-widest">{{ authStore.user?.role }}</span>
+              </div>
+            </div>
+            
+            <p class="text-[10px] text-gray-400 italic bg-gray-50 dark:bg-gray-900/30 p-4 rounded-xl">Nama and username dikunci oleh Sistem. Hubungi admin untuk perubahan biodata.</p>
+          </div>
+
+          <!-- Password / Security Form -->
+          <div v-if="activeTab === 'security'" class="p-10 space-y-10 animate-fade-in">
+            <h3 class="text-xl font-black text-gray-900 dark:text-white capitalize">Keamanan & Password</h3>
+            
+            <form @submit.prevent="handleChangePassword" class="space-y-6">
+              <div class="space-y-1">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Password Lama</label>
+                <input type="password" v-model="passForm.old_password" class="input-field rounded-2xl h-14" required />
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Password Baru</label>
+                  <input type="password" v-model="passForm.new_password" class="input-field rounded-2xl h-14" required minlength="6" />
+                </div>
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Konfirmasi Password Baru</label>
+                  <input type="password" v-model="passForm.confirm_password" class="input-field rounded-2xl h-14" required minlength="6" />
+                </div>
+              </div>
+
+              <div class="flex justify-end pt-6">
+                <button type="submit" :disabled="submitting"
+                        class="bg-primary-600 text-white px-10 py-5 rounded-2xl font-black text-xs tracking-[0.3em] shadow-xl shadow-primary-500/20 active:scale-95 disabled:opacity-30 transition-all uppercase">
+                  {{ submitting ? 'MEMPROSES...' : 'GANTI PASSWORD' }}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- App Settings Form -->
+          <div v-if="activeTab === 'app'" class="p-10 space-y-10 animate-fade-in">
+            <h3 class="text-xl font-black text-gray-900 dark:text-white capitalize">Preferensi Aplikasi</h3>
+            
+            <div class="space-y-6">
+              <div class="flex items-center justify-between p-6 bg-gray-50 dark:bg-gray-900/30 rounded-[2rem] border border-gray-100 dark:border-gray-700">
+                <div class="space-y-1">
+                  <p class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">Mode Gelap (Dark Mode)</p>
+                  <p class="text-xs text-gray-400 font-bold uppercase tracking-widest">Atur kenyamanan mata Anda</p>
+                </div>
+                <button @click="toggleMode" 
+                        class="w-14 h-8 bg-gray-200 dark:bg-primary-600 rounded-full relative transition-colors duration-500 shadow-inner">
+                  <div class="absolute top-1 left-1 dark:left-7 w-6 h-6 bg-white rounded-full shadow-lg transition-all duration-300 flex items-center justify-center">
+                    <span class="text-[10px]">{{ isDark ? '🌙' : '☀️' }}</span>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
 
-          <div v-if="status.msg" :class="[status.type === 'success' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100']" class="p-4 rounded-xl border text-xs font-bold flex items-center gap-3">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path v-if="status.type === 'success'" fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-              <path v-else fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-            </svg>
-            {{ status.msg }}
-          </div>
-
-          <button 
-            type="submit" 
-            :disabled="loading"
-            class="w-full sm:w-auto px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white text-sm font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary-100 active:scale-95 transition-all disabled:opacity-50"
-          >
-            {{ loading ? 'Memproses...' : 'Perbarui Password' }}
-          </button>
-        </form>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import api from '../utils/api'
 
 const authStore = useAuthStore()
-const loading = ref(false)
-const status = ref({ type: '', msg: '' })
+const activeTab = ref('profile')
+const submitting = ref(false)
+const isDark = ref(document.documentElement.classList.contains('dark'))
 
-const passwordForm = ref({
-  old: '',
-  new: '',
-  confirm: ''
-})
+const passForm = ref({ old_password: '', new_password: '', confirm_password: '' })
 
-const userInitials = computed(() => {
-  const name = authStore.user?.full_name || ''
-  return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-})
-
-const roleLabels = { ADMIN: 'Administrator', TEACHER: 'Guru/Staff', HEAD: 'Kepala Sekolah' }
-const roleLabel = computed(() => roleLabels[authStore.userRole] || authStore.userRole)
-
-const handleChangePassword = async () => {
-  if (passwordForm.value.new !== passwordForm.value.confirm) {
-    status.value = { type: 'error', msg: 'Konfirmasi password baru tidak cocok' }
+async function handleChangePassword() {
+  if (passForm.value.new_password !== passForm.value.confirm_password) {
+    alert('Konfirmasi password tidak cocok!')
     return
   }
-
-  if (passwordForm.value.old === passwordForm.value.new) {
-    status.value = { type: 'error', msg: 'Password baru tidak boleh sama dengan password lama' }
-    return
-  }
-
-  loading.value = true
-  status.value = { type: '', msg: '' }
-
+  submitting.value = true
   try {
-    await authStore.changePassword(passwordForm.value.old, passwordForm.value.new)
-    status.value = { type: 'success', msg: 'Password berhasil diubah secara aman.' }
-    passwordForm.value = { old: '', new: '', confirm: '' }
-  } catch (err) {
-    status.value = { type: 'error', msg: err.message }
+    await api.put('/users/me/password', passForm.value)
+    alert('Password berhasil diganti!')
+    passForm.value = { old_password: '', new_password: '', confirm_password: '' }
+  } catch (e) {
+    alert(e.response?.data?.error || 'Gagal mengganti password')
   } finally {
-    loading.value = false
+    submitting.value = false
   }
+}
+
+const toggleMode = () => {
+  isDark.value = !isDark.value
+  document.documentElement.classList.toggle('dark')
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
 }
 </script>
