@@ -62,7 +62,7 @@ services:
     restart: unless-stopped
     command: tunnel --no-autoupdate run
     environment:
-      - TUNNEL_TOKEN=eyJhIjoiYzVhMDA5ODM4Y2MyYmZjMWJlYzFhZTE5YzE3ZjI4ZmYiLCJ0IjoiM2Y1NmYwNDUtZWNjYy00ZGIzLTgyZmYtNGQyODgzZTNhZjgxIiwicyI6Ik1HUXdZVGcxTURBdE5EaGhNUzAwTW1VM0xXSmpZbVl0Tm1JMVpUZ3pOemN6TVdJeiJ9
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN:-}
     depends_on:
       - frontend
     networks:
