@@ -676,9 +676,7 @@ func (h *ItemHandler) ImportExcel(c *gin.Context) {
 		
 		if err == nil {
 			imported++
-			if len(importedNames) < 3 {
-				importedNames = append(importedNames, name)
-			}
+			importedNames = append(importedNames, name)
 		}
 	}
 
@@ -691,11 +689,8 @@ func (h *ItemHandler) ImportExcel(c *gin.Context) {
 
 	desc := "Gagal mengimpor barang atau tidak ada data yang valid"
 	if imported > 0 {
-		exampleNames := strings.Join(importedNames, ", ")
-		if imported > 3 {
-			exampleNames += ", dll"
-		}
-		desc = fmt.Sprintf("Mengimpor %d barang melalui Excel (Contoh: %s)", imported, exampleNames)
+		allNames := strings.Join(importedNames, ", ")
+		desc = fmt.Sprintf("Mengimpor %d barang melalui Excel: %s", imported, allNames)
 	}
 
 	utils.LogAudit(h.db, actorId.(string), "IMPORT_ITEMS", "ITEM", "00000000-0000-0000-0000-000000000000", desc, c.ClientIP())
