@@ -55,23 +55,35 @@ Ensure you have the following installed:
 - [Go 1.22+](https://go.dev/dl/)
 - [Node.js 22.12+](https://nodejs.org/)
 
-### 2. Infrastructure Setup
-Spin up the PostgreSQL database container:
+### 2. Environment Configuration
+Copy the example environment file and update the variables:
+```bash
+cp .env.example .env
+```
+
+**Key variables to update in `.env`:**
+- `JWT_SECRET`: Change this to a random long string for security.
+- `TUNNEL_TOKEN`: Your Cloudflare Tunnel token (required for `docker-compose` tunnel service).
+- `DB_PASSWORD`: Set a strong password for your PostgreSQL database.
+- `ADMIN_DEFAULT_PASSWORD`: Set the default password used for administrative resets.
+
+### 3. Infrastructure Setup
+Spin up the PostgreSQL database and Cloudflare Tunnel:
 ```bash
 # From the project root
 docker compose up -d
 ```
-*The database runs on port `5432` with the name `inventaris_db`.*
+*The database runs on port `5432` by default. If the `TUNNEL_TOKEN` is provided, the tunnel will start automatically.*
 
-### 3. Backend (API) Setup
+### 4. Backend (API) Setup
 ```bash
 cd backend
 go mod tidy
 go run cmd/server/main.go
 ```
-*API serves at `http://localhost:8080`. Seeding (default admin) happens automatically on first run.*
+*API serves at `http://localhost:8080`.*
 
-### 4. Frontend Setup
+### 5. Frontend Setup
 ```bash
 cd frontend
 npm install
