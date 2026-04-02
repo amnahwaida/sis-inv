@@ -119,8 +119,8 @@ func (h *UserHandler) Create(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	auditDesc := fmt.Sprintf("Menambahkan pengguna baru: %s (Username: %s, Role: %s, NIP: %s). Melalui panel administrasi.", 
-		req.FullName, req.Username, req.Role, req.NIP)
+	auditDesc := fmt.Sprintf("Menambahkan pengguna baru: %s (Username: %s, Role: %s). Melalui panel administrasi.", 
+		req.FullName, req.Username, req.Role)
 	utils.LogAudit(h.db, actorId.(string), "CREATE_USER", "USER", userID, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{"id": userID}, "User berhasil dibuat"))
