@@ -599,7 +599,7 @@ func (h *ItemHandler) ImportExcel(c *gin.Context) {
 	defer tx.Rollback(ctx)
 
 	imported := 0
-	var importedNames []string
+	var importedCodes []string
 	for i, row := range rows {
 		if i == 0 { continue } // Skip header
 		if len(row) < 2 { continue }
@@ -676,7 +676,7 @@ func (h *ItemHandler) ImportExcel(c *gin.Context) {
 		
 		if err == nil {
 			imported++
-			importedNames = append(importedNames, name)
+			importedCodes = append(importedCodes, code)
 		}
 	}
 
@@ -689,8 +689,8 @@ func (h *ItemHandler) ImportExcel(c *gin.Context) {
 
 	desc := "Gagal mengimpor barang atau tidak ada data yang valid"
 	if imported > 0 {
-		allNames := strings.Join(importedNames, ", ")
-		desc = fmt.Sprintf("Mengimpor %d barang melalui Excel: %s", imported, allNames)
+		allCodes := strings.Join(importedCodes, ", ")
+		desc = fmt.Sprintf("Mengimpor %d barang melalui Excel: %s", imported, allCodes)
 	}
 
 	utils.LogAudit(h.db, actorId.(string), "IMPORT_ITEMS", "ITEM", "00000000-0000-0000-0000-000000000000", desc, c.ClientIP())
