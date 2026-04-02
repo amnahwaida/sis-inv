@@ -43,7 +43,10 @@ func main() {
 
 	// Seed default data
 	if err := database.SeedDefaultAdmin(db); err != nil {
-		log.Fatalf("❌ Failed to seed data: %v", err)
+		log.Fatalf("❌ Failed to seed admin: %v", err)
+	}
+	if err := database.SeedDefaultSettings(db); err != nil {
+		log.Printf("⚠️  Failed to seed settings: %v", err)
 	}
 
 	// Initialize handlers
@@ -69,6 +72,10 @@ func main() {
 	{
 		// System (public)
 		v1.GET("/system/health", systemHandler.HealthCheck)
+
+		// PWA Manifest (Dynamic)
+		pwaHandler := handlers.NewPWAHandler(db)
+		r.GET("/manifest.webmanifest", pwaHandler.GetManifest)
 
 		// Upload (Auth only)
 		uploadHandler := handlers.NewUploadHandler()

@@ -23,35 +23,37 @@
     <!-- Tabs & Filter Section -->
     <div class="flex flex-col md:flex-row items-center justify-between gap-6">
       <div class="flex flex-wrap items-center justify-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm w-full md:w-fit group">
-        <button v-for="tab in [{id:'active', label:'Peminjaman Aktif', icon:'⚡'}, {id:'overdue', label:'Terlambat', icon:'⚠️'}, {id:'history', label:'Riwayat Lengkap', icon:'📜'}]" 
-                :key="tab.id"
-                @click="activeTab = tab.id" 
-                :class="activeTab === tab.id ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'" 
-                class="px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95">
-          <span>{{ tab.icon }}</span>
-          <span>{{ tab.label }}</span>
-          <span v-if="tab.id === 'active' && activeBorrowings.length" class="ml-1 px-2 py-0.5 bg-white/20 rounded-full text-[10px]">{{ activeBorrowings.length }}</span>
-          <span v-if="tab.id === 'overdue' && overdueItems.length" class="ml-1 px-2 py-0.5 bg-white/20 rounded-full text-[10px]">{{ overdueItems.length }}</span>
-        </button>
+         <button v-for="tab in [
+                   {id:'active', label:'Peminjaman Aktif', icon:'M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z'}, 
+                   {id:'overdue', label:'Terlambat', icon:'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z'}, 
+                   {id:'history', label:'Riwayat Lengkap', icon:'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z'}
+                 ]" 
+                 :key="tab.id"
+                 @click="activeTab = tab.id" 
+                 :class="activeTab === tab.id ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'" 
+                 class="px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95">
+           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+             <path stroke-linecap="round" stroke-linejoin="round" :d="tab.icon" />
+           </svg>
+           <span>{{ tab.label }}</span>
+         </button>
       </div>
 
       <!-- Filters Row -->
-      <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+      <div class="bg-white dark:bg-gray-800 p-3 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
         <!-- Search Input -->
         <div class="relative w-full sm:w-64">
-          <input type="text" v-model="searchQuery" placeholder="Cari nama / kode..." 
-                 class="input-field pl-10 h-11 rounded-2xl text-sm w-full" />
-          <svg class="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" v-model="filters.search" @input="debouncedFetch" placeholder="Cari nama / kode..." 
+                 class="input-field pl-10 h-12 rounded-2xl text-sm w-full" />
+          <svg class="w-5 h-5 absolute left-3 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         </div>
 
         <!-- Class Filter -->
-        <div class="flex items-center gap-2 bg-white dark:bg-gray-800 p-2 px-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm w-full sm:w-auto">
-          <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Kelas:</label>
-          <select v-model="classFilter" @change="handleFilterChange" class="bg-transparent border-none focus:ring-0 text-sm font-black text-gray-900 dark:text-white py-0 w-full sm:w-auto">
-            <option value="">Semua</option>
-            <option v-for="cls in uniqueClasses" :key="cls" :value="cls">{{ cls }}</option>
-          </select>
-        </div>
+        <select v-model="filters.class" @change="handleFilterChange" 
+                class="input-field h-12 rounded-2xl text-sm w-full sm:w-auto appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10">
+          <option value="">Semua Kelas</option>
+          <option v-for="cls in uniqueClasses" :key="cls" :value="cls">{{ cls }}</option>
+        </select>
       </div>
     </div>
 
@@ -73,16 +75,16 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50 dark:divide-gray-700">
-            <tr v-if="paginatedData.length === 0" class="text-center">
+            <tr v-if="currentItems.length === 0" class="text-center">
               <td colspan="6" class="px-8 py-24">
                 <div class="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-500">
                   <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 </div>
-                <p class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">{{ searchQuery ? 'Tidak Ditemukan' : 'Semua Aset Tersedia' }}</p>
-                <p class="text-xs text-gray-400 font-medium mt-1">{{ searchQuery ? 'Coba kata kunci lain.' : 'Tidak ada peminjaman aktif saat ini.' }}</p>
+                <p class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">{{ filters.search ? 'Tidak Ditemukan' : 'Semua Aset Tersedia' }}</p>
+                <p class="text-xs text-gray-400 font-medium mt-1">{{ filters.search ? 'Coba kata kunci lain.' : 'Tidak ada peminjaman aktif saat ini.' }}</p>
               </td>
             </tr>
-            <tr v-for="trx in paginatedData" :key="trx.id" class="hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-all duration-300">
+            <tr v-for="trx in currentItems" :key="trx.id" class="hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-all duration-300">
               <td class="px-8 py-6">
                 <div class="font-black text-gray-900 dark:text-white text-sm leading-none">{{ trx.item_name }}</div>
                 <div class="text-[10px] text-gray-400 font-bold font-mono mt-1 tracking-tighter">{{ trx.item_code }}</div>
@@ -127,8 +129,8 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50 dark:divide-gray-700">
-            <template v-if="paginatedData.length > 0">
-              <tr v-for="trx in paginatedData" :key="trx.id" class="hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-all duration-300">
+            <template v-if="currentItems.length > 0">
+              <tr v-for="trx in currentItems" :key="trx.id" class="hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-all duration-300">
                 <td class="px-8 py-6">
                   <div class="font-black text-gray-900 dark:text-white text-sm tracking-tight">{{ trx.item_name }}</div>
                   <div class="text-[10px] text-gray-400 font-mono tracking-tighter">{{ trx.item_code }}</div>
@@ -155,7 +157,7 @@
               </tr>
             </template>
             <tr v-else class="text-center">
-              <td colspan="5" class="px-8 py-24 italic text-gray-400 font-bold tracking-[0.2em] text-[10px] uppercase">{{ searchQuery ? 'Tidak Ditemukan' : 'Tidak Ada Data Ditemukan' }}</td>
+              <td colspan="5" class="px-8 py-24 italic text-gray-400 font-bold tracking-[0.2em] text-[10px] uppercase">{{ filters.search ? 'Tidak Ditemukan' : 'Tidak Ada Data Ditemukan' }}</td>
             </tr>
           </tbody>
         </table>
@@ -163,20 +165,22 @@
       </div>
 
       <!-- Pagination Bar -->
-      <div v-if="totalPages > 1" class="px-8 py-5 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="px-8 py-5 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/10">
         <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-          Menampilkan <span class="text-primary-600">{{ startRow }}-{{ endRow }}</span> dari <span class="text-gray-900 dark:text-white">{{ filteredData.length }}</span> data
+          Menampilkan <span class="text-primary-600">{{ currentItems.length ? (meta.page - 1) * meta.page_size + 1 : 0 }}-{{ Math.min(meta.page * meta.page_size, meta.total) }}</span> dari <span class="text-gray-900 dark:text-gray-300">{{ meta.total }}</span> laporan
         </span>
         <div class="flex gap-2">
-          <button @click="currentPage--" :disabled="currentPage === 1" class="pagination-btn-standard">
+          <button @click="changePage(meta.page - 1)" :disabled="meta.page === 1" class="pagination-btn-standard">
             Kembali
           </button>
-          <button v-for="p in visiblePages" :key="p" @click="currentPage = p"
-                  class="w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm active:scale-95 border"
-                  :class="p === currentPage ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700'">
-            {{ p }}
-          </button>
-          <button @click="currentPage++" :disabled="currentPage === totalPages" class="pagination-btn-standard">
+          <div class="flex gap-1">
+            <button v-for="p in visiblePages" :key="p" @click="changePage(p)"
+                    class="w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm active:scale-95 border"
+                    :class="p === meta.page ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700'">
+              {{ p }}
+            </button>
+          </div>
+          <button @click="changePage(meta.page + 1)" :disabled="meta.page === meta.total_pages" class="pagination-btn-standard">
             Lanjut
           </button>
         </div>
@@ -190,87 +194,77 @@ import { ref, computed, onMounted, watch } from 'vue'
 import api from '../utils/api'
 
 const activeTab = ref('active')
-const activeBorrowings = ref([])
-const overdueItems = ref([])
-const histories = ref([])
+const currentItems = ref([])
+const meta = ref({ page: 1, page_size: 15, total: 0, total_pages: 1 })
 const uniqueClasses = ref([])
-const classFilter = ref('')
-const searchQuery = ref('')
+const filters = ref({ search: '', class: '', page: 1, page_size: 15 })
 const loading = ref(false)
-const currentPage = ref(1)
-const perPage = 15
 
-// Current tab's raw data
-const currentRawData = computed(() => {
-  if (activeTab.value === 'active') return activeBorrowings.value
-  if (activeTab.value === 'overdue') return overdueItems.value
-  return histories.value
-})
+let searchTimeout
+const debouncedFetch = () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    filters.value.page = 1
+    fetchData()
+  }, 400)
+}
 
-// Filtered data (search applied)
-const filteredData = computed(() => {
-  const q = searchQuery.value.toLowerCase().trim()
-  if (!q) return currentRawData.value
-  return currentRawData.value.filter(trx => {
-    const fields = [
-      trx.item_name, trx.item_code, trx.student_name, 
-      trx.teacher_name, trx.student_class
-    ].filter(Boolean).join(' ').toLowerCase()
-    return fields.includes(q)
-  })
-})
-
-// Pagination
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredData.value.length / perPage)))
-const startRow = computed(() => (currentPage.value - 1) * perPage + 1)
-const endRow = computed(() => Math.min(currentPage.value * perPage, filteredData.value.length))
-const paginatedData = computed(() => filteredData.value.slice((currentPage.value - 1) * perPage, currentPage.value * perPage))
+const changePage = (p) => {
+  if (p < 1 || p > meta.value.total_pages) return
+  filters.value.page = p
+  fetchData()
+}
 
 const visiblePages = computed(() => {
   const pages = []
-  const start = Math.max(1, currentPage.value - 2)
-  const end = Math.min(totalPages.value, currentPage.value + 2)
+  const current = meta.value.page
+  const total = meta.value.total_pages
+  const start = Math.max(1, current - 2)
+  const end = Math.min(total, current + 2)
   for (let i = start; i <= end; i++) pages.push(i)
   return pages
 })
 
-// Reset page on search or tab change
-watch([searchQuery, activeTab], () => { currentPage.value = 1 })
-
-async function fetchActive() {
-  loading.value = true
-  try {
-    const params = classFilter.value ? `?class=${encodeURIComponent(classFilter.value)}` : ''
-    const { data } = await api.get(`/reports/active-borrowings${params}`)
-    if (data.success) { activeBorrowings.value = data.data }
-  } catch (e) { console.error(e) } 
-  finally { loading.value = false }
+const buildParams = () => {
+  const p = new URLSearchParams()
+  p.append('page', filters.value.page)
+  p.append('page_size', filters.value.page_size)
+  if (filters.value.search) p.append('search', filters.value.search)
+  if (filters.value.class) p.append('class', filters.value.class)
+  return p.toString()
 }
 
-async function fetchOverdue() {
-  try {
-    const params = classFilter.value ? `?class=${encodeURIComponent(classFilter.value)}` : ''
-    const { data } = await api.get(`/reports/overdue${params}`)
-    if (data.success) { overdueItems.value = data.data }
-  } catch (e) { console.error(e) }
-}
-
-async function fetchHistory() {
+async function fetchData() {
   loading.value = true
   try {
-    const params = classFilter.value ? `?class=${encodeURIComponent(classFilter.value)}` : ''
-    const { data } = await api.get(`/reports/history${params}`)
-    if (data.success) { histories.value = data.data || [] }
-  } catch (e) { console.error(e) } 
-  finally { loading.value = false }
+    let endpoint = ''
+    if (activeTab.value === 'active') endpoint = '/reports/active-borrowings'
+    else if (activeTab.value === 'overdue') endpoint = '/reports/overdue'
+    else if (activeTab.value === 'history') endpoint = '/reports/history'
+    
+    const { data } = await api.get(`${endpoint}?${buildParams()}`)
+    if (data.success) {
+      currentItems.value = data.data.items || []
+      meta.value = data.data.meta || { page: 1, page_size: 15, total: 0, total_pages: 1 }
+    }
+  } catch (e) {
+    console.error(e)
+    currentItems.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 function handleFilterChange() {
-  currentPage.value = 1
-  if (activeTab.value === 'active') fetchActive()
-  else if (activeTab.value === 'overdue') fetchOverdue()
-  else if (activeTab.value === 'history') fetchHistory()
+  filters.value.page = 1
+  fetchData()
 }
+
+watch(activeTab, () => {
+  filters.value.page = 1
+  filters.value.search = ''
+  fetchData()
+})
 
 async function fetchClasses() {
   try {
@@ -282,7 +276,7 @@ async function fetchClasses() {
 async function exportTransactions() {
   try {
     const params = new URLSearchParams()
-    if (classFilter.value) params.append('class', classFilter.value)
+    if (filters.value.class) params.append('class', filters.value.class)
     params.append('type', activeTab.value)
     
     const response = await api.get(`/reports/export/transactions?${params.toString()}`, { responseType: 'blob' })
@@ -295,16 +289,11 @@ async function exportTransactions() {
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
-  return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(dateStr))
+  return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(dateStr))
 }
 
-watch(activeTab, (newTab) => {
-  if (newTab === 'active') fetchActive()
-  else if (newTab === 'overdue') fetchOverdue()
-  else if (newTab === 'history') fetchHistory()
-})
-
 onMounted(() => {
-  fetchActive(); fetchOverdue(); fetchHistory(); fetchClasses()
+  fetchData()
+  fetchClasses()
 })
 </script>

@@ -16,7 +16,9 @@
             <input type="text" v-model="nisnSearch" @input="debouncedStudentSearch" @keydown.enter="handleSearch"
                    class="bg-white/10 border-none text-white placeholder-white/40 text-xs font-bold rounded-xl h-12 pl-12 pr-4 w-full focus:bg-white/20 focus:ring-0 transition-all" 
                    placeholder="Ketik NIS atau Nama Siswa..." />
-            <svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/40" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
             
             <!-- Auto-suggestion Dropdown -->
             <div v-if="suggestions.length > 0" class="absolute z-50 left-0 right-0 top-full mt-2 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl overflow-hidden animate-scale-up">
@@ -53,14 +55,22 @@
             <span class="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-xl w-fit mx-auto md:mx-0">Aktif</span>
           </div>
           <div class="flex items-center justify-center md:justify-start gap-x-6 gap-y-2 text-gray-400 font-bold text-xs uppercase tracking-widest flex-wrap">
-            <span class="flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-5m-4 0V5a2 2 0 012-2h2a2 2 0 012 2v1m-4 0h4"/></svg> NIS: {{ studentInfo.nis }}</span>
-            <span class="flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5"/></svg> KELAS: {{ studentInfo.class }}</span>
+            <span class="flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z" />
+              </svg> NIS: {{ studentInfo.nis }}
+            </span>
+            <span class="flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
+              </svg> KELAS: {{ studentInfo.class }}
+            </span>
           </div>
         </div>
         <div class="flex flex-col items-center gap-4 w-full md:w-auto">
           <div class="grid grid-cols-2 gap-4 w-full">
             <div class="p-4 bg-gray-50 dark:bg-gray-900/40 rounded-3xl text-center">
-              <div class="text-2xl font-black text-primary-600">{{ histories.length }}</div>
+              <div class="text-2xl font-black text-primary-600">{{ meta.total }}</div>
               <div class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total Pinjam</div>
             </div>
             <div class="p-4 bg-gray-50 dark:bg-gray-900/40 rounded-3xl text-center">
@@ -70,72 +80,118 @@
           </div>
           <!-- EXPORT BUTTON -->
           <button @click="exportToExcel" class="btn-premium-action w-full bg-emerald-500 shadow-emerald-500/20">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2-2z" /></svg>
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
             EKSPOR KE EXCEL
           </button>
         </div>
       </div>
 
-      <!-- History Table -->
-      <div class="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden transition-all duration-300">
-        <div class="p-8 border-b border-gray-100 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-900/10 flex items-center justify-between">
+      <!-- History Timeline Area -->
+      <div class="space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">Timeline Transaksi</h3>
-          <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Sinkronisasi Real-time</span>
+          
+          <!-- Inner Search -->
+          <div class="relative w-full md:w-72 group">
+            <input type="text" v-model="innerSearch" @input="debouncedInnerSearch"
+                   class="input-field pl-10 h-11 rounded-2xl text-xs bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 shadow-sm" 
+                   placeholder="Cari aset dalam riwayat..." />
+            <svg class="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400 group-focus-within:text-primary-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+          </div>
         </div>
-        <div class="overflow-x-auto relative">
-          <table class="w-full">
-            <thead>
-              <tr class="bg-gray-50/50 dark:bg-gray-700/30">
-                <th v-for="h in ['Aset', 'Guru Piket', 'Tgl Pinjam', 'Tgl Kembali', 'Status']" :key="h"
-                    class="text-left py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] whitespace-nowrap">{{ h }}</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50 dark:divide-gray-700">
-              <template v-if="paginatedData.length > 0">
-                <tr v-for="trx in paginatedData" :key="trx.id" class="group hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-all duration-300">
-                  <td class="px-8 py-6">
-                    <div class="font-black text-gray-900 dark:text-white text-sm tracking-tight leading-none mb-1">{{ trx.item_name }}</div>
-                    <div class="text-[10px] text-gray-400 font-mono font-bold tracking-tighter">{{ trx.item_code }}</div>
-                  </td>
-                  <td class="px-8 py-6 text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-widest">
-                    {{ trx.teacher_name }}
-                    <div v-if="trx.borrow_photo_url" class="mt-2">
-                       <a :href="trx.borrow_photo_url" target="_blank" class="inline-flex items-center gap-1 text-[9px] bg-primary-50 dark:bg-primary-900/30 text-primary-600 px-2 py-1 rounded-md hover:bg-primary-100 transition-colors">
-                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> Lihat Foto
-                       </a>
+
+        <div class="relative">
+          <!-- Loading Overlay -->
+          <div v-if="loadingHistory" class="absolute inset-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-3xl">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+          </div>
+
+          <!-- Vertical Timeline Layout -->
+          <div v-if="histories.length > 0" class="relative pl-8 space-y-8 before:absolute before:inset-0 before:left-[11px] before:w-0.5 before:bg-gray-100 dark:before:bg-gray-700">
+            <div v-for="trx in histories" :key="trx.id" class="relative group animate-fade-in">
+              <!-- Timeline Dot -->
+              <div class="absolute -left-[31px] top-6 w-4 h-4 rounded-full border-4 border-white dark:border-gray-900 shadow-sm z-10 transition-transform group-hover:scale-125"
+                   :class="trx.status === 'RETURNED' ? 'bg-emerald-500' : 'bg-primary-500 animate-pulse'"></div>
+              
+              <!-- Timeline Card -->
+              <div class="card-premium !p-6 !rounded-[2rem] hover:ring-2 hover:ring-primary-500/20 transition-all">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                  <div class="flex items-center gap-5">
+                    <div class="w-12 h-12 bg-gray-50 dark:bg-gray-900 rounded-2xl flex items-center justify-center text-gray-400 group-hover:text-primary-500 transition-colors">
+                      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-10.5v10.5" />
+                      </svg>
                     </div>
-                  </td>
-                  <td class="px-8 py-6 text-xs font-medium text-gray-500">{{ formatDate(trx.borrowed_at) }}</td>
-                  <td class="px-8 py-6 text-xs font-medium text-gray-500">{{ formatDate(trx.returned_at) }}</td>
-                  <td class="px-8 py-6">
-                    <span v-if="trx.status === 'RETURNED'" class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm inline-block bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600">
-                      Dikembalikan
-                    </span>
-                    <span v-else class="text-[9px] font-black text-primary-600 animate-pulse uppercase tracking-[0.2em]">Masih Dipinjam</span>
-                  </td>
-                </tr>
-              </template>
-              <tr v-else class="text-center">
-                <td colspan="5" class="px-8 py-16 text-gray-400 italic text-sm">Belum ada riwayat peminjaman tercatat.</td>
-              </tr>
-            </tbody>
-          </table>
+                    <div>
+                      <div class="text-[10px] font-black text-primary-500 uppercase tracking-widest mb-1">{{ formatDateOnly(trx.borrowed_at) }}</div>
+                      <h4 class="text-base font-black text-gray-900 dark:text-white uppercase tracking-tight">{{ trx.item_name }}</h4>
+                      <p class="text-[10px] font-mono font-bold text-gray-400 tracking-tighter">{{ trx.item_code }} • PETUGAS: {{ trx.teacher_name }}</p>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-wrap items-center gap-4 border-t lg:border-t-0 pt-4 lg:pt-0 border-gray-50 dark:border-gray-700">
+                    <div class="space-y-1">
+                      <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Peminjaman</p>
+                      <p class="text-xs font-bold text-gray-700 dark:text-gray-300">{{ formatTimeOnly(trx.borrowed_at) }}</p>
+                    </div>
+                    <div class="w-px h-8 bg-gray-100 dark:bg-gray-700 hidden sm:block"></div>
+                    <div class="space-y-1">
+                      <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pengembalian</p>
+                      <p class="text-xs font-bold" :class="trx.returned_at ? 'text-gray-700 dark:text-gray-300' : 'text-primary-500 italic'">
+                        {{ trx.returned_at ? formatTimeOnly(trx.returned_at) : 'Siswa meminjam aset' }}
+                      </p>
+                    </div>
+                    <div class="lg:ml-4">
+                      <span v-if="trx.status === 'RETURNED'" class="px-4 py-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 rounded-xl text-[9px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-800">Dikembalikan</span>
+                      <span v-else class="px-4 py-1.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 rounded-xl text-[9px] font-black uppercase tracking-widest border border-primary-100 dark:border-primary-800 animate-pulse">Dipinjam</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div v-if="trx.borrow_photo_url" class="mt-4 pt-4 border-t border-gray-50 dark:border-gray-700">
+                   <a :href="trx.borrow_photo_url" target="_blank" class="inline-flex items-center gap-2 text-[10px] font-black text-primary-600 hover:underline">
+                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                       <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                       <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                     </svg>
+                     LIHAT BUKTI FOTO PINJAMAN
+                   </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty History -->
+          <div v-else class="py-20 bg-gray-50/50 dark:bg-gray-800/30 rounded-[3rem] border border-dashed border-gray-200 dark:border-gray-700 text-center space-y-4">
+            <div class="w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl shadow-sm mx-auto flex items-center justify-center text-gray-300">
+              <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p class="text-xs font-black text-gray-400 uppercase tracking-widest">{{ innerSearch ? 'Pencarian tidak ditemukan' : 'Belum ada riwayat tercatat' }}</p>
+          </div>
         </div>
 
         <!-- Pagination Bar -->
-        <div v-if="totalPages > 1" class="px-8 py-5 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="px-8 py-6 bg-white dark:bg-gray-800 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
           <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-            Menampilkan <span class="text-primary-600">{{ startRow }}-{{ endRow }}</span> dari <span class="text-gray-900 dark:text-white">{{ histories.length }}</span> data
+            Menampilkan <span class="text-primary-600">{{ histories.length ? (meta.page - 1) * meta.page_size + 1 : 0 }}-{{ Math.min(meta.page * meta.page_size, meta.total) }}</span> dari <span class="text-gray-900 dark:text-white">{{ meta.total }}</span> data
           </span>
           <div class="flex gap-2">
             <button @click="currentPage--" :disabled="currentPage === 1" class="pagination-btn-standard">
               Kembali
             </button>
-            <button v-for="p in visiblePages" :key="p" @click="currentPage = p"
-                    class="w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm active:scale-95 border"
-                    :class="p === currentPage ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700'">
-              {{ p }}
-            </button>
+            <div class="flex gap-1">
+              <button v-for="p in visiblePages" :key="p" @click="currentPage = p"
+                      class="w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm active:scale-95 border"
+                      :class="p === currentPage ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700'">
+                {{ p }}
+              </button>
+            </div>
             <button @click="currentPage++" :disabled="currentPage === totalPages" class="pagination-btn-standard">
               Lanjut
             </button>
@@ -147,7 +203,9 @@
     <!-- Empty State / Search Prompt -->
     <div v-else class="py-24 text-center space-y-6">
       <div class="w-32 h-32 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto text-gray-300 transition-all group-hover:scale-110 shadow-inner">
-        <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <svg class="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
       </div>
       <div class="space-y-2">
         <h2 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Cek Riwayat Aset Siswa</h2>
@@ -165,18 +223,25 @@ import api from '../utils/api'
 const route = useRoute()
 const nisnSearch = ref('')
 const loading = ref(false)
+const loadingHistory = ref(false)
+const innerSearch = ref('')
 const studentInfo = ref(null)
 const histories = ref([])
 const suggestions = ref([])
+const meta = ref({
+  total: 0,
+  total_pages: 1,
+  page: 1,
+  page_size: 10
+})
 
 // Pagination
 const currentPage = ref(1)
 const perPage = 10
 
-const totalPages = computed(() => Math.max(1, Math.ceil(histories.value.length / perPage)))
+const totalPages = computed(() => meta.value.total_pages)
 const startRow = computed(() => (currentPage.value - 1) * perPage + 1)
-const endRow = computed(() => Math.min(currentPage.value * perPage, histories.value.length))
-const paginatedData = computed(() => histories.value.slice((currentPage.value - 1) * perPage, currentPage.value * perPage))
+const endRow = computed(() => Math.min(currentPage.value * perPage, meta.value.total))
 
 const visiblePages = computed(() => {
   const pages = []
@@ -193,7 +258,7 @@ onMounted(() => {
   }
 })
 
-// Auto-suggestion
+// Auto-suggestion for student search
 let searchTimeout
 const debouncedStudentSearch = () => {
   clearTimeout(searchTimeout)
@@ -202,9 +267,19 @@ const debouncedStudentSearch = () => {
   searchTimeout = setTimeout(fetchSuggestions, 400)
 }
 
+// Inner search for transactions in timeline
+let innerSearchTimeout
+const debouncedInnerSearch = () => {
+  clearTimeout(innerSearchTimeout)
+  innerSearchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    if (studentInfo.value) fetchHistory(studentInfo.value.nis)
+  }, 400)
+}
+
 const fetchSuggestions = async () => {
   try {
-    const { data } = await api.get('/students/search', { params: { q: nisnSearch.value.trim() } })
+    const { data } = await api.get('/students/search', { params: { q: nisnSearch.value.trim(), include_inactive: 'true' } })
     if (data.success) { suggestions.value = data.data || [] }
   } catch (err) { suggestions.value = [] }
 }
@@ -227,25 +302,36 @@ const handleSearch = async () => {
 
   const searchTerm = nisnSearch.value.trim()
 
-  if (!studentInfo.value) {
-    try {
-      const { data } = await api.get('/students/search', { params: { q: searchTerm } })
-      if (data.success && data.data && data.data.length > 0) {
-        const exactMatch = data.data.find(s => s.nis === searchTerm)
-        studentInfo.value = exactMatch || data.data[0]
-      }
-    } catch (err) { }
-  }
+  // Always try to resolve the student first via search API
+  try {
+    const { data } = await api.get('/students/search', { params: { q: searchTerm, include_inactive: 'true' } })
+    if (data.success && data.data && data.data.length > 0) {
+      // Prefer exact NIS match, then fallback to first result
+      const exactMatch = data.data.find(s => s.nis === searchTerm)
+      studentInfo.value = exactMatch || data.data[0]
+    }
+  } catch (err) { }
 
-  await fetchHistory(searchTerm)
+  // Use resolved NIS if we found a student, otherwise try the raw search term as NIS
+  const resolvedNis = studentInfo.value ? studentInfo.value.nis : searchTerm
+  await fetchHistory(resolvedNis)
 }
 
 const fetchHistory = async (nis) => {
-  loading.value = true
+  loadingHistory.value = true
   try {
-    const { data } = await api.get(`/transactions/student/${nis}`)
+    const { data } = await api.get(`/transactions/student/${nis}`, {
+      params: {
+        page: currentPage.value,
+        page_size: perPage,
+        search: innerSearch.value
+      }
+    })
     if (data.success) {
-      histories.value = data.data || []
+      histories.value = data.data.items || []
+      meta.value = data.data.meta || { total: 0, total_pages: 1, page: 1, page_size: 10 }
+      
+      // Only populate studentInfo from history if we haven't found them via search
       if (!studentInfo.value && histories.value.length > 0) {
         const first = histories.value[0]
         studentInfo.value = {
@@ -254,17 +340,25 @@ const fetchHistory = async (nis) => {
           class: first.student_class || '-'
         }
       }
-      if (!studentInfo.value) {
-        studentInfo.value = { full_name: nis, nis: nis, class: '-' }
-      }
+      // Do NOT create dummy studentInfo — if student not found, leave null
     }
   } catch (err) {
-    alert(err.response?.data?.error || 'Siswa tidak ditemukan atau belum memiliki riwayat')
-    studentInfo.value = null
+    if (!innerSearch.value) {
+      alert(err.response?.data?.error || 'Siswa tidak ditemukan atau belum memiliki riwayat')
+      studentInfo.value = null
+    }
+    histories.value = []
   } finally {
     loading.value = false
+    loadingHistory.value = false
   }
 }
+
+watch(currentPage, () => {
+  if (studentInfo.value) {
+    fetchHistory(studentInfo.value.nis)
+  }
+})
 
 const exportToExcel = async () => {
   if (!studentInfo.value) return
@@ -316,5 +410,15 @@ const exportToExcel = async () => {
 const formatDate = (d) => {
   if (!d) return '-'
   return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(d))
+}
+
+const formatDateOnly = (d) => {
+  if (!d) return '-'
+  return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(d))
+}
+
+const formatTimeOnly = (d) => {
+  if (!d) return '-'
+  return new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit' }).format(new Date(d)) + ' WIB'
 }
 </script>

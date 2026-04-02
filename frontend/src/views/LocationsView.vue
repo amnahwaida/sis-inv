@@ -11,19 +11,25 @@
           <p class="text-primary-100/70 text-sm font-medium">Manajemen tata letak penempatan aset sekolah</p>
         </div>
         
-        <div class="flex flex-col sm:flex-row items-center gap-3 backdrop-blur-md bg-white/10 p-2 rounded-2xl border border-white/10 w-full md:w-auto">
-          <!-- Search Input -->
-          <div class="relative w-full sm:w-64">
-            <input type="text" v-model="searchQuery" placeholder="Cari lokasi..." 
-                   class="w-full bg-white/10 text-white placeholder-white/50 border-none rounded-xl h-10 pl-10 focus:ring-2 focus:ring-white/50 text-xs font-medium" />
-            <svg class="w-4 h-4 absolute left-3.5 top-3 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-          </div>
-
+        <div class="flex items-center gap-3 backdrop-blur-md bg-white/10 p-2 rounded-2xl border border-white/10">
           <button @click="showModal = true" class="btn-premium-primary">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
             TAMBAH LOKASI
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Search & Filters Container -->
+    <div class="bg-white dark:bg-gray-800 p-3 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row items-center gap-3 w-full">
+      <div class="relative w-full sm:w-80">
+        <input type="text" v-model="searchQuery" placeholder="Cari nama lokasi..." 
+               class="input-field pl-10 h-12 rounded-2xl text-sm w-full" />
+        <svg class="w-5 h-5 absolute left-3 top-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
       </div>
     </div>
 
@@ -33,9 +39,12 @@
     </div>
     
     <!-- Empty State (No Search Results) -->
-    <div v-else-if="paginatedData.length === 0" class="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm">
+    <div v-else-if="locations.length === 0" class="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm">
       <div class="w-20 h-20 bg-gray-50 dark:bg-gray-900 rounded-full flex items-center justify-center text-gray-300 mb-4">
-        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+        <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+        </svg>
       </div>
       <p class="text-lg font-black text-gray-400 capitalize">{{ searchQuery ? `Lokasi '${searchQuery}' Tidak Ditemukan` : 'Belum Ada Lokasi' }}</p>
     </div>
@@ -43,12 +52,15 @@
     <!-- Locations Grid -->
     <div v-else class="space-y-8">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <div v-for="loc in paginatedData" :key="loc.id" class="card-premium group">
+        <div v-for="loc in locations" :key="loc.id" class="card-premium group">
           <div class="card-decoration"></div>
           
           <div class="relative z-10 flex flex-col h-full">
             <div class="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500 translate-y-0 group-hover:-translate-y-2">
-              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+              </svg>
             </div>
             
             <div class="flex-1 space-y-2">
@@ -59,8 +71,16 @@
             <div class="mt-8 pt-6 border-t border-gray-50 dark:border-gray-700 flex items-center justify-between">
               <span class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{{ loc.item_count || 0 }} ASET TERSIMPAN</span>
               <div class="flex gap-2">
-                <button @click="openEditModal(loc)" class="btn-action-edit"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
-                <button @click="deleteLocation(loc)" class="btn-action-delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                <button @click="openEditModal(loc)" class="btn-action-edit">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                  </svg>
+                </button>
+                <button @click="deleteLocation(loc)" class="btn-action-delete">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
@@ -70,26 +90,30 @@
         <button v-if="!searchQuery && currentPage === totalPages" @click="showModal = true" 
                 class="border-4 border-dashed border-gray-100 dark:border-gray-700 rounded-[2.5rem] p-8 flex flex-col items-center justify-center group hover:border-indigo-200 dark:hover:border-indigo-900 transition-all cursor-pointer min-h-[250px]">
           <div class="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-300 group-hover:scale-110 group-hover:bg-indigo-50 group-hover:text-indigo-500 transition-all duration-500">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
           </div>
           <p class="mt-4 text-[10px] font-black text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 uppercase tracking-widest">Tambah Ruangan Baru</p>
         </button>
       </div>
 
       <!-- Pagination Bar -->
-      <div v-if="totalPages > 1" class="px-8 py-5 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+      <div class="px-8 py-5 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
         <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-          Menampilkan <span class="text-primary-600">{{ startRow }}-{{ endRow }}</span> dari <span class="text-gray-900 dark:text-white">{{ filteredData.length }}</span> ruangan
+          Menampilkan <span class="text-primary-600">{{ locations.length ? (meta.page - 1) * meta.page_size + 1 : 0 }}-{{ Math.min(meta.page * meta.page_size, meta.total) }}</span> dari <span class="text-gray-900 dark:text-white">{{ meta.total }}</span> ruangan
         </span>
         <div class="flex gap-2">
           <button @click="currentPage--" :disabled="currentPage === 1" class="pagination-btn-standard">
             Kembali
           </button>
-          <button v-for="p in visiblePages" :key="p" @click="currentPage = p"
-                  class="w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm active:scale-95 border"
-                  :class="p === currentPage ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700'">
-            {{ p }}
-          </button>
+          <div class="flex gap-1">
+            <button v-for="p in visiblePages" :key="p" @click="currentPage = p"
+                    class="w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm active:scale-95 border"
+                    :class="p === currentPage ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700'">
+              {{ p }}
+            </button>
+          </div>
           <button @click="currentPage++" :disabled="currentPage === totalPages" class="pagination-btn-standard">
             Lanjut
           </button>
@@ -106,7 +130,9 @@
             <p class="text-[10px] font-black text-primary-500 uppercase tracking-widest mt-2">{{ editingData ? 'Perbarui Atribut Ruangan' : 'Tambah Area Penyimpanan' }}</p>
           </div>
           <button @click="closeModal" class="text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 p-3 rounded-2xl transition-all">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
         
@@ -144,25 +170,53 @@ const editingData = ref(null)
 
 const searchQuery = ref('')
 const currentPage = ref(1)
-const perPage = 11 // 11 items per page so the 'Tambah' card makes it an even 12 grid items on the last page.
+const perPage = 11 
+const meta = ref({
+  total: 0,
+  total_pages: 1,
+  page: 1,
+  page_size: 11
+})
 
 const form = ref({ name: '', description: '' })
 
-// Search logic
-const filteredData = computed(() => {
-  const q = searchQuery.value.toLowerCase().trim()
-  if (!q) return locations.value
-  return locations.value.filter(loc => 
-    loc.name?.toLowerCase().includes(q) || 
-    loc.description?.toLowerCase().includes(q)
-  )
+async function fetchLocations() {
+  loading.value = true
+  try {
+    const { data } = await api.get('/locations', {
+      params: {
+        page: currentPage.value,
+        page_size: perPage,
+        search: searchQuery.value
+      }
+    })
+    if (data.success) { 
+      locations.value = data.data.items || []
+      meta.value = data.data.meta || { total: 0, total_pages: 1, page: 1, page_size: 11 }
+    }
+  } catch (e) { 
+    console.error(e) 
+    locations.value = []
+  } finally { 
+    loading.value = false 
+  }
+}
+
+// Debounced search
+let searchTimeout
+watch(searchQuery, () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    fetchLocations()
+  }, 400)
 })
 
-// Pagination logic
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredData.value.length / perPage)))
+watch(currentPage, fetchLocations)
+
+const totalPages = computed(() => meta.value.total_pages)
 const startRow = computed(() => (currentPage.value - 1) * perPage + 1)
-const endRow = computed(() => Math.min(currentPage.value * perPage, filteredData.value.length))
-const paginatedData = computed(() => filteredData.value.slice((currentPage.value - 1) * perPage, currentPage.value * perPage))
+const endRow = computed(() => Math.min(currentPage.value * perPage, meta.value.total))
 
 const visiblePages = computed(() => {
   const pages = []
@@ -171,19 +225,6 @@ const visiblePages = computed(() => {
   for (let i = start; i <= end; i++) pages.push(i)
   return pages
 })
-
-watch(searchQuery, () => {
-  currentPage.value = 1
-})
-
-async function fetchLocations() {
-  loading.value = true
-  try {
-    const { data } = await api.get('/locations')
-    if (data.success) { locations.value = data.data }
-  } catch (e) { console.error(e) } 
-  finally { loading.value = false }
-}
 
 function openEditModal(loc) {
   editingData.value = loc

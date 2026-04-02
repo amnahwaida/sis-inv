@@ -61,7 +61,7 @@ func (h *ItemHandler) List(c *gin.Context) {
 		argIdx++
 	}
 	if filter.Location != "" {
-		query += fmt.Sprintf(" AND i.location = $%d", argIdx)
+		query += fmt.Sprintf(" AND (i.location = $%d OR l.name = $%d)", argIdx, argIdx)
 		args = append(args, filter.Location)
 		argIdx++
 	}
@@ -124,7 +124,12 @@ func (h *ItemHandler) List(c *gin.Context) {
 	}
 
 	// Also get total count
-	countQuery := "SELECT COUNT(*) FROM items i WHERE 1=1" 
+	countQuery := `
+		SELECT COUNT(*) 
+		FROM items i 
+		LEFT JOIN locations l ON i.location_id = l.id 
+		WHERE 1=1
+	`
 	countArgs := []interface{}{}
 	countArgIdx := 1
 	
@@ -144,7 +149,7 @@ func (h *ItemHandler) List(c *gin.Context) {
 		countArgIdx++
 	}
 	if filter.Location != "" {
-		countQuery += fmt.Sprintf(" AND i.location = $%d", countArgIdx)
+		countQuery += fmt.Sprintf(" AND (i.location = $%d OR l.name = $%d)", countArgIdx, countArgIdx)
 		countArgs = append(countArgs, filter.Location)
 		countArgIdx++
 	}
@@ -276,7 +281,10 @@ func (h *ItemHandler) Create(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "CREATE_ITEM", "ITEM", itemID, "Created item: "+req.Code, c.ClientIP())
+	// 5W1H: Who (actorId), What (Created item + details), When (automatic), Where (internal/handlers/item.go), Why (user action), How (via UI)
+	auditDesc := fmt.Sprintf("Menambahkan barang baru [%s] '%s' ke lokasi %s. Kondisi: %s, Tipe Peminjam: %s. Melalui form input.", 
+		req.Code, req.Name, req.Location, req.Condition, req.BorrowerType)
+	utils.LogAudit(h.db, actorId.(string), "CREATE_ITEM", "ITEM", itemID, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{"id": itemID}, "Item successfully created"))
 }
@@ -404,9 +412,9 @@ func (h *ItemHandler) Update(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	auditDesc := "Updated item."
+	auditDesc := fmt.Sprintf("Memperbarui data barang [%s] '%s'.", oldCode, oldName)
 	if len(changes) > 0 {
-		auditDesc = "Updated item. Changes: " + strings.Join(changes, " | ")
+		auditDesc += " Perubahan: " + strings.Join(changes, " | ")
 	}
 	utils.LogAudit(h.db, actorId.(string), "UPDATE_ITEM", "ITEM", id, auditDesc, c.ClientIP())
 
@@ -449,7 +457,12 @@ func (h *ItemHandler) Delete(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "DELETE_ITEM", "ITEM", id, "Archived/Deleted item", c.ClientIP())
+	// Fetch item details for more descriptive audit log
+	var delCode, delName string
+	h.db.QueryRow(context.Background(), "SELECT code, name FROM items WHERE id = $1", id).Scan(&delCode, &delName)
+	
+	auditDesc := fmt.Sprintf("Menghapus/Arsip barang [%s] '%s' dari sistem.", delCode, delName)
+	utils.LogAudit(h.db, actorId.(string), "DELETE_ITEM", "ITEM", id, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Item successfully deleted"))
 }

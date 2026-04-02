@@ -7,14 +7,24 @@ import { registerSW } from 'virtual:pwa-register'
 
 registerSW({ immediate: true })
 
-import { useSettingsStore } from './stores/settings'
-
 const app = createApp(App)
-app.use(createPinia())
+const pinia = createPinia()
+app.use(pinia)
 app.use(router)
+
+// Import stores AFTER pinia is installed
+import { useSettingsStore } from './stores/settings'
+import { usePwaStore } from './stores/pwa'
 
 // Fetch branding settings globally
 const settingsStore = useSettingsStore()
 settingsStore.fetchSettings()
+
+// Capture beforeinstallprompt globally so it's never lost
+const pwaStore = usePwaStore()
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault()
+  pwaStore.setInstallPrompt(e)
+})
 
 app.mount('#app')

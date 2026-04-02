@@ -147,7 +147,9 @@ func (h *StudentHandler) Create(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "CREATE_STUDENT", "STUDENT", "00000000-0000-0000-0000-000000000000", "Added student NIS: "+nis, c.ClientIP())
+	auditDesc := fmt.Sprintf("Mendaftarkan siswa baru: %s (NIS: %s, Kelas: %s). Data siswa kini tersedia untuk transaksi peminjaman.", 
+		req.FullName, nis, req.Class)
+	utils.LogAudit(h.db, actorId.(string), "CREATE_STUDENT", "STUDENT", "00000000-0000-0000-0000-000000000000", auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusCreated, utils.SuccessResponse(nil, "Siswa berhasil ditambahkan"))
 }
@@ -230,11 +232,13 @@ func (h *StudentHandler) Delete(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	// Since students.id is SERIAL (int) and audit_logs.entity_id is UUID,
-	// we use a NULL or a fixed UUID for student entity_id in audit log to prevent cast errors,
-	// or we pass the string ID only if our LogAudit handles non-UUID strings (currently it doesn't).
-	// For now, we'll use a placeholder UUID: '00000000-0000-0000-0000-000000000000'
-	utils.LogAudit(h.db, actorId.(string), "DELETE_STUDENT", "STUDENT", "00000000-0000-0000-0000-000000000000", fmt.Sprintf("Deleted student: %s (NIS: %s)", stName, stNis), c.ClientIP())
+	
+	// Fetch student class for audit
+	var stClass string
+	h.db.QueryRow(context.Background(), "SELECT class FROM students WHERE id = $1", id).Scan(&stClass)
+
+	auditDesc := fmt.Sprintf("Menghapus data siswa: %s (NIS: %s, Kelas: %s) dari sistem.", stName, stNis, stClass)
+	utils.LogAudit(h.db, actorId.(string), "DELETE_STUDENT", "STUDENT", "00000000-0000-0000-0000-000000000000", auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Siswa berhasil dihapus"))
 }
@@ -247,13 +251,17 @@ func (h *StudentHandler) Search(c *gin.Context) {
 	}
 
 	searchTerm := "%" + queryParam + "%"
+	includeInactive := c.Query("include_inactive") == "true"
 	
 	query := `
 		SELECT nis, full_name, class 
 		FROM students 
-		WHERE (nis ILIKE $1 OR full_name ILIKE $1) AND is_active = true
-		LIMIT 10
-	`
+		WHERE (nis ILIKE $1 OR full_name ILIKE $1)`
+	
+	if !includeInactive {
+		query += ` AND is_active = true`
+	}
+	query += ` ORDER BY full_name ASC LIMIT 10`
 
 	rows, err := h.db.Query(context.Background(), query, searchTerm)
 	if err != nil {

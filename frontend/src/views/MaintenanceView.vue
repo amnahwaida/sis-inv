@@ -17,7 +17,9 @@
             EXCEL
           </button>
           <button @click="showCreateModal = true" class="btn-premium-primary">
-            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
             LAPOR KERUSAKAN
           </button>
         </div>
@@ -41,26 +43,26 @@
       </div>
     </div>
 
-    <!-- Filters Row -->
-    <div class="flex flex-col sm:flex-row items-center gap-3 w-full">
+    <!-- Search & Filters Container -->
+    <div class="bg-white dark:bg-gray-800 p-3 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row items-center gap-3 w-full">
       <!-- Search Input -->
       <div class="relative w-full sm:w-80">
         <input type="text" v-model="searchQuery" placeholder="Cari barang, vendor, keluhan..." 
-               class="input-field pl-10 h-11 rounded-2xl text-sm w-full" />
-        <svg class="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+               class="input-field pl-10 h-12 rounded-2xl text-sm w-full" />
+        <svg class="w-5 h-5 absolute left-3 top-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
       </div>
 
       <!-- Status Filter -->
-      <div class="flex items-center gap-2 bg-white dark:bg-gray-800 p-2 px-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm w-full sm:w-auto">
-        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Status:</label>
-        <select v-model="filterStatus" class="bg-transparent border-none focus:ring-0 text-sm font-black text-gray-900 dark:text-white py-0 w-full sm:w-auto">
-          <option value="">Semua Status</option>
-          <option value="PENDING">Menunggu</option>
-          <option value="IN_PROGRESS">Dikerjakan</option>
-          <option value="DONE">Selesai</option>
-          <option value="CANCELLED">Dibatalkan</option>
-        </select>
-      </div>
+      <select v-model="filterStatus" 
+              class="input-field h-12 rounded-2xl text-sm w-full sm:w-auto appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10">
+        <option value="">Semua Status</option>
+        <option value="PENDING">Menunggu</option>
+        <option value="IN_PROGRESS">Dikerjakan</option>
+        <option value="DONE">Selesai</option>
+        <option value="CANCELLED">Dibatalkan</option>
+      </select>
     </div>
 
     <!-- Main Content Card -->
@@ -80,12 +82,14 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50 dark:divide-gray-700">
-            <template v-if="paginatedData.length > 0">
-              <tr v-for="log in paginatedData" :key="log.id" class="group hover:bg-gray-50/80 dark:hover:bg-gray-700/50 transition-all duration-300">
+            <template v-if="logs.length > 0">
+              <tr v-for="log in logs" :key="log.id" class="group hover:bg-gray-50/80 dark:hover:bg-gray-700/50 transition-all duration-300">
                 <td class="px-8 py-6">
                   <div class="flex items-center gap-4">
                     <div class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center text-gray-400 dark:text-gray-500 group-hover:bg-primary-100 group-hover:text-primary-600 transition-colors">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-5.25v9" />
+                      </svg>
                     </div>
                     <div>
                       <div class="font-black text-gray-900 dark:text-gray-100 text-sm">{{ log.item_name }}</div>
@@ -113,14 +117,20 @@
                   <div class="flex items-center justify-end gap-2 transition-all duration-300">
                     <button v-if="log.status === 'PENDING'" @click="updateLog(log, 'IN_PROGRESS')"
                       class="btn-action-view !text-blue-600 !bg-blue-50 hover:!bg-blue-600 hover:!text-white" title="Kerjakan">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                      </svg>
                     </button>
                     <button v-if="log.status === 'IN_PROGRESS'" @click="openFinishModal(log)"
                       class="btn-action-view !text-green-600 !bg-green-50 hover:!bg-green-600 hover:!text-white" title="Selesaikan">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
                     </button>
                     <button @click="deleteLog(log)" class="btn-action-delete" title="Hapus">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                      </svg>
                     </button>
                   </div>
                 </td>
@@ -134,19 +144,21 @@
       </div>
 
       <!-- Pagination Bar -->
-      <div v-if="totalPages > 1" class="px-8 py-5 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="px-8 py-5 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
         <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-          Menampilkan <span class="text-primary-600">{{ startRow }}-{{ endRow }}</span> dari <span class="text-gray-900 dark:text-white">{{ filteredData.length }}</span> data
+          Menampilkan <span class="text-primary-600">{{ logs.length ? (meta.page - 1) * meta.page_size + 1 : 0 }}-{{ Math.min(meta.page * meta.page_size, meta.total) }}</span> dari <span class="text-gray-900 dark:text-white">{{ meta.total }}</span> data
         </span>
         <div class="flex gap-2">
           <button @click="currentPage--" :disabled="currentPage === 1" class="pagination-btn-standard">
             Kembali
           </button>
-          <button v-for="p in visiblePages" :key="p" @click="currentPage = p"
-                  class="w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm active:scale-95 border"
-                  :class="p === currentPage ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700'">
-            {{ p }}
-          </button>
+          <div class="flex gap-1">
+            <button v-for="p in visiblePages" :key="p" @click="currentPage = p"
+                    class="w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm active:scale-95 border"
+                    :class="p === currentPage ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700'">
+              {{ p }}
+            </button>
+          </div>
           <button @click="currentPage++" :disabled="currentPage === totalPages" class="pagination-btn-standard">
             Lanjut
           </button>
@@ -165,7 +177,9 @@
               <h2 class="text-2xl font-black tracking-tight leading-none">Lapor Kerusakan</h2>
               <p class="text-primary-100/60 text-xs font-bold mt-2 tracking-widest uppercase italic">Laporan Pemeliharaan Aset</p>
               <button @click="showCreateModal = false" class="absolute top-8 right-8 text-white/50 hover:text-white transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
@@ -179,7 +193,9 @@
                 
                 <div class="relative group">
                   <div class="absolute inset-y-0 left-4 flex items-center text-gray-400 group-focus-within:text-primary-600 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                    </svg>
                   </div>
                   <input 
                     v-model="form.search_query" 
@@ -197,7 +213,9 @@
                     >
                       <div class="flex items-center gap-4">
                         <div class="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 group-hover/item:bg-white transition-colors">
-                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-5.25v9" />
+                          </svg>
                         </div>
                         <div>
                           <div class="text-sm font-black text-gray-900">{{ item.name }}</div>
@@ -213,7 +231,9 @@
                 <div v-if="form.item_code" class="bg-primary-50 rounded-2xl p-4 flex items-center justify-between border border-primary-200 animate-scale-up">
                   <div class="flex items-center gap-4">
                     <div class="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary-200">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
                     </div>
                     <div>
                       <p class="text-[10px] font-black text-primary-400 uppercase tracking-widest leading-none mb-1">Barang Terpilih</p>
@@ -221,7 +241,9 @@
                     </div>
                   </div>
                   <button @click="form.item_code = ''; form.search_query = ''" class="p-2 text-primary-400 hover:text-primary-800 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -281,7 +303,9 @@
               <h2 class="text-2xl font-black tracking-tight leading-none">Selesaikan Perbaikan</h2>
               <div class="bg-white/20 backdrop-blur-sm rounded-2xl p-4 mt-6 flex items-center gap-4">
                 <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-green-700 shadow-lg">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
                 </div>
                 <div>
                   <div class="text-xs font-black text-white uppercase tracking-widest opacity-60">Barang</div>
@@ -332,10 +356,10 @@ import { ref, computed, onMounted, watch, h } from 'vue'
 import api from '../utils/api'
 
 // Icons for stats cards
-const IconPending = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-6 h-6' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' })]) }
-const IconProgress = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-6 h-6' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z' })]) }
-const IconDone = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-6 h-6' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M5 13l4 4L19 7' })]) }
-const IconCancel = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-6 h-6' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M6 18L18 6M6 6l12 12' })]) }
+const IconPending = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-6 h-6', 'stroke-width': '2' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z' })]) }
+const IconProgress = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-6 h-6', 'stroke-width': '2' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z' })]) }
+const IconDone = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-6 h-6', 'stroke-width': '2' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z' })]) }
+const IconCancel = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-6 h-6', 'stroke-width': '2' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z' })]) }
 
 const logs = ref([])
 const loading = ref(false)
@@ -343,6 +367,18 @@ const filterStatus = ref('')
 const searchQuery = ref('')
 const currentPage = ref(1)
 const perPage = 10
+const meta = ref({
+  total: 0,
+  total_pages: 1,
+  page: 1,
+  page_size: 10
+})
+const serverSummary = ref({
+  pending: 0,
+  in_progress: 0,
+  done: 0,
+  cancelled: 0
+})
 
 const showCreateModal = ref(false)
 const showFinishModal = ref(false)
@@ -358,48 +394,54 @@ let searchTimeout = null
 
 const statusLabels = { PENDING: 'Menunggu', IN_PROGRESS: 'Dikerjakan', DONE: 'Selesai', CANCELLED: 'Dibatalkan' }
 
-const stats = computed(() => {
-  const all = logs.value
-  return {
-    pending: all.filter(l => l.status === 'PENDING').length,
-    inProgress: all.filter(l => l.status === 'IN_PROGRESS').length,
-    done: all.filter(l => l.status === 'DONE').length,
-    cancelled: all.filter(l => l.status === 'CANCELLED').length,
-  }
-})
-
 const statsMap = computed(() => ({
-  pending: { label: 'Menunggu', value: stats.value.pending, color: 'bg-yellow-500', gradient: 'bg-gradient-to-br from-yellow-400 to-orange-500', icon: IconPending },
-  progress: { label: 'Dikerjakan', value: stats.value.inProgress, color: 'bg-blue-500', gradient: 'bg-gradient-to-br from-blue-400 to-indigo-600', icon: IconProgress },
-  done: { label: 'Selesai', value: stats.value.done, color: 'bg-green-500', gradient: 'bg-gradient-to-br from-green-400 to-emerald-600', icon: IconDone },
-  cancelled: { label: 'Batal', value: stats.value.cancelled, color: 'bg-gray-500', gradient: 'bg-gradient-to-br from-gray-400 to-slate-600', icon: IconCancel },
+  pending: { label: 'Menunggu', value: serverSummary.value.pending, color: 'bg-yellow-500', gradient: 'bg-gradient-to-br from-yellow-400 to-orange-500', icon: IconPending },
+  progress: { label: 'Dikerjakan', value: serverSummary.value.in_progress, color: 'bg-blue-500', gradient: 'bg-gradient-to-br from-blue-400 to-indigo-600', icon: IconProgress },
+  done: { label: 'Selesai', value: serverSummary.value.done, color: 'bg-green-500', gradient: 'bg-gradient-to-br from-green-400 to-emerald-600', icon: IconDone },
+  cancelled: { label: 'Batal', value: serverSummary.value.cancelled, color: 'bg-gray-500', gradient: 'bg-gradient-to-br from-gray-400 to-slate-600', icon: IconCancel },
 }))
 
-// Client-side Search and Pagination
-const filteredData = computed(() => {
-  let result = logs.value
-  
-  if (filterStatus.value) {
-    result = result.filter(l => l.status === filterStatus.value)
+async function fetchLogs() {
+  loading.value = true
+  try {
+    const { data } = await api.get('/maintenance', {
+      params: {
+        page: currentPage.value,
+        page_size: perPage,
+        search: searchQuery.value,
+        status: filterStatus.value
+      }
+    })
+    if (data.success) {
+      logs.value = data.data.items || []
+      meta.value = data.data.meta || { total: 0, total_pages: 1, page: 1, page_size: 10 }
+      if (data.data.summary) {
+        serverSummary.value = data.data.summary
+      }
+    }
+  } catch (e) { 
+    console.error(e) 
+    logs.value = []
+  } finally { 
+    loading.value = false 
   }
-  
-  const q = searchQuery.value.toLowerCase().trim()
-  if (q) {
-    result = result.filter(l => 
-      l.item_name?.toLowerCase().includes(q) || 
-      l.item_code?.toLowerCase().includes(q) ||
-      l.issue_description?.toLowerCase().includes(q) ||
-      l.vendor?.toLowerCase().includes(q)
-    )
-  }
-  
-  return result
+}
+
+// Debounced search
+let searchWatchTimeout
+watch([searchQuery, filterStatus], () => {
+  clearTimeout(searchWatchTimeout)
+  searchWatchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    fetchLogs()
+  }, 400)
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredData.value.length / perPage)))
+watch(currentPage, fetchLogs)
+
+const totalPages = computed(() => meta.value.total_pages)
 const startRow = computed(() => (currentPage.value - 1) * perPage + 1)
-const endRow = computed(() => Math.min(currentPage.value * perPage, filteredData.value.length))
-const paginatedData = computed(() => filteredData.value.slice((currentPage.value - 1) * perPage, currentPage.value * perPage))
+const endRow = computed(() => Math.min(currentPage.value * perPage, meta.value.total))
 
 const visiblePages = computed(() => {
   const pages = []
@@ -408,20 +450,6 @@ const visiblePages = computed(() => {
   for (let i = start; i <= end; i++) pages.push(i)
   return pages
 })
-
-watch([searchQuery, filterStatus], () => {
-  currentPage.value = 1
-})
-
-async function fetchLogs() {
-  loading.value = true
-  try {
-    // We fetch all records locally to allow smooth client-side filtering and stats calculation
-    const { data } = await api.get('/maintenance')
-    if (data.success) logs.value = data.data
-  } catch (e) { console.error(e) }
-  finally { loading.value = false }
-}
 
 async function exportExcel() {
   try {
@@ -435,6 +463,7 @@ async function exportExcel() {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
   } catch (e) {
     console.error("Failed to export Excel", e)
     alert("Gagal mengunduh file Excel")

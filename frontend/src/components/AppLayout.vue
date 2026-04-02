@@ -6,26 +6,42 @@
       class="fixed inset-y-0 left-0 z-30 w-64 bg-gray-900 transition-transform duration-300 ease-in-out lg:static lg:inset-0"
     >
       <!-- Logo -->
-      <div class="flex items-center gap-3 px-6 py-5 border-b border-gray-800">
-        <div class="w-9 h-9 bg-primary-500 rounded-lg flex items-center justify-center">
-          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+      <div class="p-6 flex items-center gap-4">
+        <div class="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary-900/20 overflow-hidden">
+          <img v-if="settingsStore.settings.app_logo_url" :src="settingsStore.settings.app_logo_url" class="w-full h-full object-cover" />
+          <svg v-else class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-5.25v9" />
           </svg>
         </div>
-        <div>
-          <h1 class="text-white font-bold text-lg leading-tight">{{ settingsStore.settings.app_name }}</h1>
-          <p class="text-gray-500 text-xs">{{ settingsStore.settings.app_subtitle }}</p>
+        <div class="flex-1 min-w-0">
+          <h2 class="text-lg font-black text-white tracking-tighter uppercase truncate leading-none mb-1">{{ settingsStore.settings.app_name }}</h2>
+          <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate">{{ settingsStore.settings.app_subtitle }}</p>
         </div>
       </div>
 
-      <!-- Install Button Section -->
-      <div v-if="installPrompt" class="px-4 py-3 border-b border-gray-800 animate-pulse">
+      <!-- Install Button Section (Android/Chrome) -->
+      <div v-if="pwaStore.canInstall" class="px-4 py-3 border-b border-gray-800">
         <button 
-          @click="handleInstall"
+          @click="pwaStore.triggerInstall()"
           class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-xs font-black transition-all shadow-lg shadow-primary-600/20"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M15.536 8.464a5 5 0 00-7.072 0M12 14v-2" /></svg>
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
           INSTAL APLIKASI
+        </button>
+      </div>
+
+      <!-- iOS Install Instruction -->
+      <div v-if="pwaStore.isIOS && !pwaStore.isStandalone" class="px-4 py-3 border-b border-gray-800">
+        <button 
+          @click="pwaStore.showIOSGuide = true"
+          class="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-primary-500/30 text-primary-400 hover:text-primary-300 rounded-xl text-[10px] font-black transition-all"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+          </svg>
+          CARA INSTAL (iOS)
         </button>
       </div>
 
@@ -39,8 +55,18 @@
           :class="$route.path === item.to ? 'bg-primary-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'"
           @click="sidebarOpen = false"
         >
-          <component :is="item.icon" class="w-5 h-5" />
-          <span>{{ item.label }}</span>
+          <template v-if="settingsStore.settings[item.iconKey]">
+            <div 
+              v-if="settingsStore.settings[item.iconKey].trim().startsWith('<svg')" 
+              v-html="settingsStore.settings[item.iconKey]" 
+              class="w-5 h-5 flex items-center justify-center flex-shrink-0 [&>svg]:w-full [&>svg]:h-full"
+            />
+            <span v-else class="w-5 h-5 flex items-center justify-center text-lg leading-none flex-shrink-0">
+              {{ settingsStore.settings[item.iconKey] }}
+            </span>
+          </template>
+          <component v-else :is="item.icon" class="w-5 h-5 flex-shrink-0" />
+          <span class="truncate">{{ item.label }}</span>
         </router-link>
       </nav>
 
@@ -55,8 +81,8 @@
             <p class="text-xs text-gray-500">{{ roleBadge }}</p>
           </div>
           <button @click="handleLogout" class="p-1.5 text-gray-500 hover:text-red-400 transition-colors" title="Logout">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
             </svg>
           </button>
         </div>
@@ -76,8 +102,8 @@
       <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between gap-4 lg:px-6 no-print transition-colors duration-300">
         <div class="flex items-center gap-4">
           <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
           </button>
           <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">{{ $route.name }}</h2>
@@ -87,8 +113,12 @@
         <div class="flex items-center gap-3">
           <!-- Dark Mode Toggle -->
           <button @click="toggleDarkMode" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Toggle Dark Mode">
-            <svg v-if="!isDark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            <svg v-if="!isDark" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+            </svg>
+            <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+            </svg>
           </button>
           
           <!-- Offline Indicator -->
@@ -110,6 +140,36 @@
         </router-view>
       </main>
     </div>
+
+    <!-- iOS Install Guide Modal -->
+    <div v-if="pwaStore.showIOSGuide" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+      <div class="bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border border-gray-100 dark:border-gray-800 animate-fade-in">
+        <div class="text-center space-y-6">
+          <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-2xl mx-auto flex items-center justify-center">
+            <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M15.536 8.464a5 5 0 00-7.072 0M12 14v-2" /></svg>
+          </div>
+          <div class="space-y-2">
+            <h3 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Instal di iPhone</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Ikuti langkah berikut untuk memasang aplikasi di layar utama Anda:</p>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6 text-left space-y-4">
+            <div class="flex items-start gap-3">
+              <div class="w-6 h-6 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center text-[10px] font-black border border-gray-200 dark:border-gray-600 flex-shrink-0">1</div>
+              <p class="text-xs text-gray-600 dark:text-gray-300">Ketuk ikon <span class="font-bold text-primary-600">Share</span> (kotak dengan panah ke atas) di bagian bawah Safari.</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-6 h-6 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center text-[10px] font-black border border-gray-200 dark:border-gray-600 flex-shrink-0">2</div>
+              <p class="text-xs text-gray-600 dark:text-gray-300">Gulir ke bawah dan ketuk <span class="font-bold text-primary-600">"Add to Home Screen"</span>.</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-6 h-6 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center text-[10px] font-black border border-gray-200 dark:border-gray-600 flex-shrink-0">3</div>
+              <p class="text-xs text-gray-600 dark:text-gray-300">Ketuk <span class="font-bold text-primary-600">"Add"</span> di pojok kanan atas.</p>
+            </div>
+          </div>
+          <button @click="pwaStore.showIOSGuide = false" class="w-full py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-xs font-black tracking-widest uppercase transition-transform active:scale-95">MENGERTI</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -118,13 +178,14 @@ import { ref, computed, h, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useSettingsStore } from '../stores/settings'
+import { usePwaStore } from '../stores/pwa'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const settingsStore = useSettingsStore()
+const pwaStore = usePwaStore()
 const sidebarOpen = ref(false)
 const isOffline = ref(!navigator.onLine)
-const installPrompt = ref(null)
 
 const isDark = ref(localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches))
 
@@ -146,12 +207,6 @@ const updateOnlineStatus = () => {
 onMounted(() => {
   window.addEventListener('online', updateOnlineStatus)
   window.addEventListener('offline', updateOnlineStatus)
-  window.addEventListener('beforeinstallprompt', (e) => {
-    // Prevent the mini-infobar from appearing on mobile
-    e.preventDefault()
-    // Stash the event so it can be triggered later.
-    installPrompt.value = e
-  })
   
   if (isDark.value) {
     document.documentElement.classList.add('dark')
@@ -181,6 +236,7 @@ const IconLocations = { render: () => h('svg', { fill: 'none', stroke: 'currentC
 const IconBorrow = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 4v16m8-8H4' })]) }
 const IconReturn = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' })]) }
 const IconMyBorrowings = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' })]) }
+const IconReports = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' })]) }
 const IconStudent = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 14l9-5-9-5-9 5 9 5z' }), h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z' }), h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222' })]) }
 const IconSettings = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' }), h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z' })]) }
 const IconAuditLog = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' })]) }
@@ -188,21 +244,21 @@ const IconStockOpname = { render: () => h('svg', { fill: 'none', stroke: 'curren
 const IconMaintenance = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' }), h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z' })]) }
 
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: IconDashboard, roles: ['ADMIN', 'TEACHER'] },
-  { to: '/items', label: 'Barang', icon: IconItems, roles: ['ADMIN', 'TEACHER'] },
-  { to: '/borrow', label: 'Pinjam', icon: IconBorrow, roles: ['ADMIN', 'TEACHER'] },
-  { to: '/return', label: 'Pengembalian', icon: IconReturn, roles: ['ADMIN', 'TEACHER'] },
-  { to: '/my-borrowings', label: 'Peminjaman Saya', icon: IconMyBorrowings, roles: ['ADMIN', 'TEACHER'] },
-  { to: '/student-history', label: 'Cek Riwayat Siswa', icon: IconStudent, roles: ['ADMIN', 'TEACHER'] },
-  { to: '/reports', label: 'Laporan', icon: IconMyBorrowings, roles: ['ADMIN'] },
-  { to: '/users', label: 'Kelola User', icon: IconUsers, roles: ['ADMIN'] },
-  { to: '/students', label: 'Kelola Siswa', icon: IconStudent, roles: ['ADMIN'] },
-  { to: '/categories', label: 'Kategori', icon: IconCategories, roles: ['ADMIN'] },
-  { to: '/locations', label: 'Lokasi', icon: IconLocations, roles: ['ADMIN'] },
-  { to: '/maintenance', label: 'Perbaikan', icon: IconMaintenance, roles: ['ADMIN'] },
-  { to: '/stock-opname', label: 'Stock Opname', icon: IconStockOpname, roles: ['ADMIN'] },
-  { to: '/audit-logs', label: 'Log Audit', icon: IconAuditLog, roles: ['ADMIN'] },
-  { to: '/settings', label: 'Pengaturan', icon: IconSettings, roles: ['ADMIN', 'TEACHER'] },
+  { to: '/', label: 'Dashboard', icon: IconDashboard, iconKey: 'icon_dashboard', roles: ['ADMIN', 'TEACHER'] },
+  { to: '/items', label: 'Barang', icon: IconItems, iconKey: 'icon_items', roles: ['ADMIN', 'TEACHER'] },
+  { to: '/borrow', label: 'Pinjam', icon: IconBorrow, iconKey: 'icon_borrow', roles: ['ADMIN', 'TEACHER'] },
+  { to: '/return', label: 'Pengembalian', icon: IconReturn, iconKey: 'icon_return', roles: ['ADMIN', 'TEACHER'] },
+  { to: '/my-borrowings', label: 'Peminjaman Saya', icon: IconMyBorrowings, iconKey: 'icon_my_borrowings', roles: ['ADMIN', 'TEACHER'] },
+  { to: '/student-history', label: 'Cek Riwayat Siswa', icon: IconStudent, iconKey: 'icon_student_history', roles: ['ADMIN', 'TEACHER'] },
+  { to: '/reports', label: 'Laporan', icon: IconReports, iconKey: 'icon_reports', roles: ['ADMIN'] },
+  { to: '/users', label: 'Kelola User', icon: IconUsers, iconKey: 'icon_users', roles: ['ADMIN'] },
+  { to: '/students', label: 'Kelola Siswa', icon: IconStudent, iconKey: 'icon_students', roles: ['ADMIN'] },
+  { to: '/categories', label: 'Kategori', icon: IconCategories, iconKey: 'icon_categories', roles: ['ADMIN'] },
+  { to: '/locations', label: 'Lokasi', icon: IconLocations, iconKey: 'icon_locations', roles: ['ADMIN'] },
+  { to: '/maintenance', label: 'Perbaikan', icon: IconMaintenance, iconKey: 'icon_maintenance', roles: ['ADMIN'] },
+  { to: '/stock-opname', label: 'Stock Opname', icon: IconStockOpname, iconKey: 'icon_stock_opname', roles: ['ADMIN'] },
+  { to: '/audit-logs', label: 'Log Audit', icon: IconAuditLog, iconKey: 'icon_audit_logs', roles: ['ADMIN'] },
+  { to: '/settings', label: 'Pengaturan', icon: IconSettings, iconKey: 'icon_settings', roles: ['ADMIN', 'TEACHER'] },
 ]
 
 const filteredNav = computed(() =>
@@ -212,20 +268,6 @@ const filteredNav = computed(() =>
 async function handleLogout() {
   authStore.logout()
   router.push('/login')
-}
-
-async function handleInstall() {
-  if (!installPrompt.value) return
-  
-  // Show the install prompt
-  installPrompt.value.prompt()
-  
-  // Wait for the user to respond to the prompt
-  const { outcome } = await installPrompt.value.userChoice
-  if (outcome === 'accepted') {
-    console.log('User accepted the install prompt')
-  }
-  installPrompt.value = null
 }
 </script>
 

@@ -4,8 +4,10 @@
     <div v-if="auditStore.currentSession" class="relative overflow-hidden bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm p-10 transition-all duration-300">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div class="space-y-1">
-                <router-link to="/stock-opname" class="inline-flex items-center gap-2 text-[10px] font-black text-primary-600 uppercase tracking-widest mb-4 hover:translate-x-[-1px] transition-transform">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                <router-link to="/stock-opname" class="inline-flex items-center gap-2 text-[10px] font-black text-primary-600 uppercase tracking-widest mb-4 hover:translate-x-[-2px] transition-transform">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                    </svg>
                     KEMBALI KE DAFTAR
                 </router-link>
                 <div class="flex items-center gap-3">
@@ -22,7 +24,9 @@
                 <button v-if="auditStore.currentSession.session?.status === 'CLOSED'" 
                         @click="exportAudit" 
                         class="btn-premium-action !bg-emerald-500 !shadow-emerald-500/20">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2-2z" /></svg>
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
                     EKSPOR EXCEL
                 </button>
                 <template v-if="auditStore.currentSession.session?.status === 'OPEN'">
@@ -126,7 +130,9 @@
         <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-scale-up border border-gray-100 dark:border-gray-700">
             <div class="bg-primary-600 p-8 text-white relative">
                 <button @click="showScanModal = false" class="absolute top-6 right-6 text-white/50 hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                 </button>
                 <h3 class="text-2xl font-black uppercase tracking-tight">Scan Verifikasi</h3>
             </div>

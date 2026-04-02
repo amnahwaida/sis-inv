@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -24,9 +25,10 @@ func (h *ReportHandler) ExportItems(c *gin.Context) {
 	ctx := context.Background()
 
 	query := `
-		SELECT i.code, i.name, c.name as category, COALESCE(i.location, ''), i.condition, i.status, i.purchase_date, i.purchase_price
+		SELECT i.code, i.name, c.name as category, COALESCE(l.name, i.location, ''), i.condition, i.status, i.purchase_date, i.purchase_price
 		FROM items i
 		LEFT JOIN categories c ON i.category_id = c.id
+		LEFT JOIN locations l ON i.location_id = l.id
 		ORDER BY i.name ASC
 	`
 
@@ -298,8 +300,43 @@ func (h *ReportHandler) ImportStudentsTemplate(c *gin.Context) {
 
 // ActiveBorrowings returns all currently active borrowings with optional class filter (F05.2, F05.3)
 func (h *ReportHandler) ActiveBorrowings(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "15"))
+	search := c.Query("search")
 	classFilter := c.Query("class")
+
+	if page < 1 { page = 1 }
+	if pageSize < 1 || pageSize > 100 { pageSize = 15 }
+	offset := (page - 1) * pageSize
+
 	ctx := context.Background()
+
+	baseQuery := `
+		FROM transactions t
+		JOIN items i ON t.item_id = i.id
+		JOIN users u ON t.borrowed_by = u.id
+		WHERE t.status = 'ACTIVE'
+	`
+	args := []interface{}{}
+	argIdx := 1
+
+	if classFilter != "" {
+		baseQuery += fmt.Sprintf(" AND t.student_class = $%d", argIdx)
+		args = append(args, classFilter)
+		argIdx++
+	}
+
+	if search != "" {
+		searchStr := "%" + search + "%"
+		baseQuery += fmt.Sprintf(" AND (i.name ILIKE $%d OR i.code ILIKE $%d OR t.student_name ILIKE $%d OR u.full_name ILIKE $%d)", argIdx, argIdx, argIdx, argIdx)
+		args = append(args, searchStr)
+		argIdx++
+	}
+
+	var total int
+	countQuery := "SELECT COUNT(*)" + baseQuery
+	err := h.db.QueryRow(ctx, countQuery, args...).Scan(&total)
+	if err != nil { total = 0 }
 
 	query := `
 		SELECT 
@@ -307,17 +344,11 @@ func (h *ReportHandler) ActiveBorrowings(c *gin.Context) {
 			t.borrowed_at, t.due_date, t.purpose, t.borrow_photo_url,
 			i.code as item_code, i.name as item_name,
 			u.full_name as teacher_name
-		FROM transactions t
-		JOIN items i ON t.item_id = i.id
-		JOIN users u ON t.borrowed_by = u.id
-		WHERE t.status = 'ACTIVE'
-	`
-	args := []interface{}{}
-	if classFilter != "" {
-		query += " AND t.student_class = $1"
-		args = append(args, classFilter)
-	}
-	query += " ORDER BY t.borrowed_at DESC"
+	` + baseQuery + `
+		ORDER BY t.borrowed_at DESC
+		LIMIT $` + fmt.Sprint(argIdx) + ` OFFSET $` + fmt.Sprint(argIdx+1)
+	
+	args = append(args, pageSize, offset)
 
 	rows, err := h.db.Query(ctx, query, args...)
 	if err != nil {
@@ -360,16 +391,58 @@ func (h *ReportHandler) ActiveBorrowings(c *gin.Context) {
 		})
 	}
 
-	if result == nil {
-		result = []map[string]interface{}{}
-	}
-	c.JSON(http.StatusOK, utils.SuccessResponse(result, ""))
+	if result == nil { result = []map[string]interface{}{} }
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{
+		"items": result,
+		"meta": gin.H{
+			"page":        page,
+			"page_size":   pageSize,
+			"total":       total,
+			"total_pages": (total + pageSize - 1) / pageSize,
+		},
+	}, ""))
 }
 
 // OverdueReport returns only overdue borrowings (F05.2)
 func (h *ReportHandler) OverdueReport(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "15"))
+	search := c.Query("search")
 	classFilter := c.Query("class")
+
+	if page < 1 { page = 1 }
+	if pageSize < 1 || pageSize > 100 { pageSize = 15 }
+	offset := (page - 1) * pageSize
+
 	ctx := context.Background()
+
+	baseQuery := `
+		FROM transactions t
+		JOIN items i ON t.item_id = i.id
+		JOIN users u ON t.borrowed_by = u.id
+		WHERE t.status = 'ACTIVE' AND t.due_date < NOW()
+	`
+	args := []interface{}{}
+	argIdx := 1
+
+	if classFilter != "" {
+		baseQuery += fmt.Sprintf(" AND t.student_class = $%d", argIdx)
+		args = append(args, classFilter)
+		argIdx++
+	}
+
+	if search != "" {
+		searchStr := "%" + search + "%"
+		baseQuery += fmt.Sprintf(" AND (i.name ILIKE $%d OR i.code ILIKE $%d OR t.student_name ILIKE $%d OR u.full_name ILIKE $%d)", argIdx, argIdx, argIdx, argIdx)
+		args = append(args, searchStr)
+		argIdx++
+	}
+
+	var total int
+	countQuery := "SELECT COUNT(*)" + baseQuery
+	err := h.db.QueryRow(ctx, countQuery, args...).Scan(&total)
+	if err != nil { total = 0 }
 
 	query := `
 		SELECT 
@@ -377,17 +450,11 @@ func (h *ReportHandler) OverdueReport(c *gin.Context) {
 			t.borrowed_at, t.due_date, t.purpose, t.borrow_photo_url,
 			i.code as item_code, i.name as item_name,
 			u.full_name as teacher_name
-		FROM transactions t
-		JOIN items i ON t.item_id = i.id
-		JOIN users u ON t.borrowed_by = u.id
-		WHERE t.status = 'ACTIVE' AND t.due_date < NOW()
-	`
-	args := []interface{}{}
-	if classFilter != "" {
-		query += " AND t.student_class = $1"
-		args = append(args, classFilter)
-	}
-	query += " ORDER BY t.due_date ASC"
+	` + baseQuery + `
+		ORDER BY t.due_date ASC
+		LIMIT $` + fmt.Sprint(argIdx) + ` OFFSET $` + fmt.Sprint(argIdx+1)
+	
+	args = append(args, pageSize, offset)
 
 	rows, err := h.db.Query(ctx, query, args...)
 	if err != nil {
@@ -423,34 +490,72 @@ func (h *ReportHandler) OverdueReport(c *gin.Context) {
 		})
 	}
 
-	if result == nil {
-		result = []map[string]interface{}{}
-	}
-	c.JSON(http.StatusOK, utils.SuccessResponse(result, ""))
+	if result == nil { result = []map[string]interface{}{} }
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{
+		"items": result,
+		"meta": gin.H{
+			"page":        page,
+			"page_size":   pageSize,
+			"total":       total,
+			"total_pages": (total + pageSize - 1) / pageSize,
+		},
+	}, ""))
 }
 
 // TransactionHistory returns all transactions with a limit of 100 (F05.2)
 func (h *ReportHandler) TransactionHistory(c *gin.Context) {
-	ctx := context.Background()
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	search := c.Query("search")
 	classFilter := c.Query("class")
 
-	query := `
-		SELECT 
-			t.borrower_type, t.student_name, t.student_class,
-			t.status, t.borrowed_at, t.returned_at, t.borrow_photo_url, t.return_photo_url,
-			i.code as item_code, i.name as item_name,
-			u.full_name as teacher_name
+	if page < 1 { page = 1 }
+	if pageSize < 1 || pageSize > 100 { pageSize = 10 }
+	offset := (page - 1) * pageSize
+
+	ctx := context.Background()
+
+	baseQuery := `
 		FROM transactions t
 		JOIN items i ON t.item_id = i.id
 		JOIN users u ON t.borrowed_by = u.id
+		WHERE 1=1
 	`
+	var args []interface{}
+	argIdx := 1
 
-	args := []interface{}{}
 	if classFilter != "" {
-		query += " WHERE t.student_class = $1"
+		baseQuery += fmt.Sprintf(" AND t.student_class = $%d", argIdx)
 		args = append(args, classFilter)
+		argIdx++
 	}
-	query += " ORDER BY t.borrowed_at DESC LIMIT 100"
+
+	if search != "" {
+		searchStr := "%" + search + "%"
+		baseQuery += fmt.Sprintf(" AND (i.name ILIKE $%d OR i.code ILIKE $%d OR t.student_name ILIKE $%d)", argIdx, argIdx, argIdx)
+		args = append(args, searchStr)
+		argIdx++
+	}
+
+	// Get total count
+	var total int
+	countQuery := "SELECT COUNT(*)" + baseQuery
+	err := h.db.QueryRow(ctx, countQuery, args...).Scan(&total)
+	if err != nil { total = 0 }
+
+	// Main query
+	query := `
+		SELECT 
+			t.borrower_type, COALESCE(t.student_name, ''), COALESCE(t.student_class, ''),
+			t.status, t.borrowed_at, t.returned_at, t.borrow_photo_url, t.return_photo_url,
+			i.code as item_code, i.name as item_name,
+			u.full_name as teacher_name
+	` + baseQuery + `
+		ORDER BY t.borrowed_at DESC
+		LIMIT $` + fmt.Sprint(argIdx) + ` OFFSET $` + fmt.Sprint(argIdx+1)
+	
+	args = append(args, pageSize, offset)
 
 	rows, err := h.db.Query(ctx, query, args...)
 	if err != nil {
@@ -488,25 +593,71 @@ func (h *ReportHandler) TransactionHistory(c *gin.Context) {
 	}
 
 	if result == nil { result = []map[string]interface{}{} }
-	c.JSON(http.StatusOK, utils.SuccessResponse(result, ""))
+	
+	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{
+		"items": result,
+		"meta": gin.H{
+			"page":        page,
+			"page_size":   pageSize,
+			"total":       total,
+			"total_pages": (total + pageSize - 1) / pageSize,
+		},
+	}, ""))
 }
 
 // AuditLogs returns the last 100 system audit logs (F06.3)
 func (h *ReportHandler) AuditLogs(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	search := c.Query("search")
+	action := c.Query("action")
+
+	if page < 1 { page = 1 }
+	if pageSize < 1 || pageSize > 100 { pageSize = 20 }
+	offset := (page - 1) * pageSize
+
 	ctx := context.Background()
 
-	query := `
-		SELECT 
-			a.id, a.action, a.entity_type, a.entity_id, a.description, 
-			a.ip_address, a.created_at,
-			u.full_name as user_name
+	baseQuery := `
 		FROM audit_logs a
 		LEFT JOIN users u ON a.user_id = u.id
-		ORDER BY a.created_at DESC
-		LIMIT 100
+		WHERE 1=1
 	`
+	var args []interface{}
+	argIdx := 1
 
-	rows, err := h.db.Query(ctx, query)
+	if action != "" {
+		baseQuery += fmt.Sprintf(" AND a.action = $%d", argIdx)
+		args = append(args, action)
+		argIdx++
+	}
+
+	if search != "" {
+		searchStr := "%" + search + "%"
+		baseQuery += fmt.Sprintf(" AND (a.description ILIKE $%d OR u.full_name ILIKE $%d OR a.entity_type ILIKE $%d)", argIdx, argIdx, argIdx)
+		args = append(args, searchStr)
+		argIdx++
+	}
+
+	// Get total count
+	var total int
+	countQuery := "SELECT COUNT(*)" + baseQuery
+	err := h.db.QueryRow(ctx, countQuery, args...).Scan(&total)
+	if err != nil { total = 0 }
+
+	// Main query
+	query := `
+		SELECT 
+			a.id, a.action, COALESCE(a.entity_type, ''), a.entity_id, COALESCE(a.description, ''), 
+			a.ip_address, a.created_at,
+			COALESCE(u.full_name, 'System') as user_name
+	` + baseQuery + `
+		ORDER BY a.created_at DESC
+		LIMIT $` + fmt.Sprint(argIdx) + ` OFFSET $` + fmt.Sprint(argIdx+1)
+	
+	args = append(args, pageSize, offset)
+
+	rows, err := h.db.Query(ctx, query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal mengambil log audit"))
 		return
@@ -538,7 +689,16 @@ func (h *ReportHandler) AuditLogs(c *gin.Context) {
 	}
 
 	if result == nil { result = []map[string]interface{}{} }
-	c.JSON(http.StatusOK, utils.SuccessResponse(result, ""))
+	
+	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{
+		"items": result,
+		"meta": gin.H{
+			"page":        page,
+			"page_size":   pageSize,
+			"total":       total,
+			"total_pages": (total + pageSize - 1) / pageSize,
+		},
+	}, ""))
 }
 
 // ExportAuditLogs exports the audit logs to Excel

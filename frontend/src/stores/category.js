@@ -11,9 +11,9 @@ export const useCategoryStore = defineStore('categories', () => {
     loading.value = true
     error.value = null
     try {
-      const { data } = await api.get('/categories')
+      const { data } = await api.get('/categories?page_size=1000')
       if (data.success) {
-        categories.value = data.data || []
+        categories.value = data.data?.items || data.data || []
       }
     } catch (err) {
       error.value = err.response?.data?.error || 'Gagal mengambil data kategori'

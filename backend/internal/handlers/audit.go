@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -125,20 +126,49 @@ func (h *AuditHandler) CloseSession(c *gin.Context) {
 
 // ListSessions returns a list of audit sessions
 func (h *AuditHandler) ListSessions(c *gin.Context) {
-	ctx := context.Background()
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	search := c.Query("search")
 
+	if page < 1 { page = 1 }
+	if pageSize < 1 || pageSize > 100 { pageSize = 10 }
+	offset := (page - 1) * pageSize
+
+	baseQuery := `
+		FROM audit_sessions s
+		JOIN locations l ON s.location_id = l.id
+		JOIN users u ON s.user_id = u.id
+		WHERE 1=1
+	`
+	var args []interface{}
+	argIdx := 1
+
+	if search != "" {
+		searchStr := "%" + search + "%"
+		baseQuery += fmt.Sprintf(" AND (l.name ILIKE $%d OR u.full_name ILIKE $%d OR s.notes ILIKE $%d)", argIdx, argIdx, argIdx)
+		args = append(args, searchStr)
+		argIdx++
+	}
+
+	// Get total count
+	var total int
+	countQuery := "SELECT COUNT(*)" + baseQuery
+	err := h.db.QueryRow(context.Background(), countQuery, args...).Scan(&total)
+	if err != nil { total = 0 }
+
+	// Main query with pagination
 	query := `
 		SELECT s.id, s.location_id, l.name as location_name, s.user_id, u.full_name as user_name,
 		       s.status, s.started_at, s.finished_at, s.notes, s.created_at,
 		       (SELECT COUNT(*) FROM items WHERE location_id = l.id) as total_expected,
 		       (SELECT COUNT(*) FROM audit_items WHERE session_id = s.id) as total_found
-		FROM audit_sessions s
-		JOIN locations l ON s.location_id = l.id
-		JOIN users u ON s.user_id = u.id
+		` + baseQuery + `
 		ORDER BY s.created_at DESC
-	`
+		LIMIT $` + fmt.Sprint(argIdx) + ` OFFSET $` + fmt.Sprint(argIdx+1)
+	
+	args = append(args, pageSize, offset)
 
-	rows, err := h.db.Query(ctx, query)
+	rows, err := h.db.Query(context.Background(), query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to fetch audit sessions"))
 		return
@@ -160,7 +190,17 @@ func (h *AuditHandler) ListSessions(c *gin.Context) {
 		sessions = append(sessions, s)
 	}
 
-	c.JSON(http.StatusOK, utils.SuccessResponse(sessions, ""))
+	if sessions == nil { sessions = []models.AuditSession{} }
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{
+		"items": sessions,
+		"meta": gin.H{
+			"page":        page,
+			"page_size":   pageSize,
+			"total":       total,
+			"total_pages": (total + pageSize - 1) / pageSize,
+		},
+	}, ""))
 }
 
 // GetSessionDetail returns detailed report of a session

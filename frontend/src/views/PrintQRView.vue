@@ -11,8 +11,8 @@
           Kembali
         </button>
         <button @click="printLabels" class="btn-premium-action !py-2 !px-5 !rounded-lg flex items-center gap-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.618 0-1.11-.51-1.107-1.127L6.34 18m11.32 0h-11.32m0 0l1.107-1.107m11.32 1.107l-1.107-1.107m1.107 0c.34-.034.67-.07.999-.111m-1.339.111l-.39-4.881a3 3 0 013-3.238h.75m-6.75 3.238L12 3m0 0l-3.75 3.238M12 3v10.5" />
           </svg>
           Cetak Sekarang
         </button>

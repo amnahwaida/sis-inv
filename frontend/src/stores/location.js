@@ -11,9 +11,9 @@ export const useLocationStore = defineStore('locations', () => {
     loading.value = true
     error.value = null
     try {
-      const { data } = await api.get('/locations')
+      const { data } = await api.get('/locations?page_size=1000')
       if (data.success) {
-        locations.value = data.data || []
+        locations.value = data.data?.items || data.data || []
       }
     } catch (err) {
       error.value = err.response?.data?.error || 'Gagal mengambil data lokasi'

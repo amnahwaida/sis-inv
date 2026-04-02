@@ -23,31 +23,56 @@ func NewMaintenanceHandler(db *pgxpool.Pool) *MaintenanceHandler {
 
 // List returns all maintenance logs with item info
 func (h *MaintenanceHandler) List(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	search := c.Query("search")
 	statusFilter := c.Query("status")
-	ctx := context.Background()
 
-	query := `
-		SELECT m.id, m.item_id, i.code as item_code, i.name as item_name,
-		       u.full_name as reported_by_name,
-		       m.reported_at, m.issue_description, m.cost, m.vendor,
-		       m.status, m.completed_at, m.notes, m.created_at
+	if page < 1 { page = 1 }
+	if pageSize < 1 || pageSize > 100 { pageSize = 10 }
+	offset := (page - 1) * pageSize
+
+	baseQuery := `
 		FROM maintenance_logs m
 		JOIN items i ON m.item_id = i.id
 		LEFT JOIN users u ON m.reported_by = u.id
 		WHERE 1=1
 	`
-	args := []interface{}{}
+	var args []interface{}
 	argIdx := 1
 
 	if statusFilter != "" {
-		query += fmt.Sprintf(" AND m.status = $%d", argIdx)
+		baseQuery += fmt.Sprintf(" AND m.status = $%d", argIdx)
 		args = append(args, statusFilter)
 		argIdx++
 	}
 
-	query += " ORDER BY m.created_at DESC"
+	if search != "" {
+		searchStr := "%" + search + "%"
+		baseQuery += fmt.Sprintf(" AND (i.name ILIKE $%d OR i.code ILIKE $%d OR m.issue_description ILIKE $%d OR m.vendor ILIKE $%d)", argIdx, argIdx, argIdx, argIdx)
+		args = append(args, searchStr)
+		argIdx++
+	}
 
-	rows, err := h.db.Query(ctx, query, args...)
+	// Get total count
+	var total int
+	countQuery := "SELECT COUNT(*)" + baseQuery
+	err := h.db.QueryRow(context.Background(), countQuery, args...).Scan(&total)
+	if err != nil { total = 0 }
+
+	// Main query with pagination
+	query := `
+		SELECT m.id, m.item_id, i.code as item_code, i.name as item_name,
+		       COALESCE(u.full_name, 'System') as reported_by_name,
+		       m.reported_at, m.issue_description, m.cost, m.vendor,
+		       m.status, m.completed_at, m.notes, m.created_at
+		` + baseQuery + `
+		ORDER BY m.created_at DESC
+		LIMIT $` + fmt.Sprint(argIdx) + ` OFFSET $` + fmt.Sprint(argIdx+1)
+	
+	args = append(args, pageSize, offset)
+
+	rows, err := h.db.Query(context.Background(), query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal mengambil data maintenance"))
 		return
@@ -87,10 +112,33 @@ func (h *MaintenanceHandler) List(c *gin.Context) {
 		})
 	}
 
-	if result == nil {
-		result = []map[string]interface{}{}
-	}
-	c.JSON(http.StatusOK, utils.SuccessResponse(result, ""))
+	// Get summary stats
+	var pendingCount, inProgressCount, doneCount, cancelledCount int
+	statsQuery := `
+		SELECT 
+			COUNT(*) FILTER (WHERE status = 'PENDING'),
+			COUNT(*) FILTER (WHERE status = 'IN_PROGRESS'),
+			COUNT(*) FILTER (WHERE status = 'DONE'),
+			COUNT(*) FILTER (WHERE status = 'CANCELLED')
+		FROM maintenance_logs
+	`
+	h.db.QueryRow(context.Background(), statsQuery).Scan(&pendingCount, &inProgressCount, &doneCount, &cancelledCount)
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{
+		"items": result,
+		"meta": gin.H{
+			"page":        page,
+			"page_size":   pageSize,
+			"total":       total,
+			"total_pages": (total + pageSize - 1) / pageSize,
+		},
+		"summary": gin.H{
+			"pending":     pendingCount,
+			"in_progress": inProgressCount,
+			"done":        doneCount,
+			"cancelled":   cancelledCount,
+		},
+	}, ""))
 }
 
 // Create adds a new maintenance log entry
@@ -138,7 +186,9 @@ func (h *MaintenanceHandler) Create(c *gin.Context) {
 		return
 	}
 
-	utils.LogAudit(h.db, userId.(string), "CREATE_MAINTENANCE", "MAINTENANCE", itemId, "Reported maintenance for: "+req.ItemCode+" - "+req.IssueDescription, c.ClientIP())
+	utils.LogAudit(h.db, userId.(string), "CREATE_MAINTENANCE", "MAINTENANCE", itemId, 
+		fmt.Sprintf("Mencatatkan laporan perbaikan untuk barang [%s] '%s'. Masalah: %s. Biaya awal: %.2f. Vendor: %s. Melalui menu Pemeliharaan.", 
+			req.ItemCode, itemName, req.IssueDescription, req.Cost, req.Vendor), c.ClientIP())
 
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{"id": logId, "item_name": itemName}, "Log perbaikan berhasil dibuat"))
 }
@@ -211,9 +261,13 @@ func (h *MaintenanceHandler) UpdateStatus(c *gin.Context) {
 	}
 
 	userId, _ := c.Get("userID")
-	auditDesc := "Updated maintenance record."
+	// Fetch item name for better log
+	var itemName string
+	_ = h.db.QueryRow(ctx, "SELECT name FROM items WHERE id = $1", itemId).Scan(&itemName)
+	
+	auditDesc := fmt.Sprintf("Memperbarui status perbaikan barang '%s'. Status: %s.", itemName, req.Status)
 	if len(changes) > 0 {
-		auditDesc = "Updated maintenance. Changes: " + strings.Join(changes, " | ")
+		auditDesc += " Perubahan: " + strings.Join(changes, " | ")
 	}
 	utils.LogAudit(h.db, userId.(string), "UPDATE_MAINTENANCE", "MAINTENANCE", itemId, auditDesc, c.ClientIP())
 
@@ -250,8 +304,13 @@ func (h *MaintenanceHandler) Delete(c *gin.Context) {
 		_, _ = h.db.Exec(ctx, "UPDATE items SET status = 'AVAILABLE', updated_at = NOW() WHERE id = $1", itemId)
 	}
 
-	userId, _ := c.Get("userID")
-	utils.LogAudit(h.db, userId.(string), "DELETE_MAINTENANCE", "MAINTENANCE", itemId, fmt.Sprintf("Deleted maintenance log #%d", id), c.ClientIP())
+	actorId, _ := c.Get("userID")
+	// Fetch item details for audit
+	var itemCode, itemName string
+	h.db.QueryRow(context.Background(), "SELECT code, name FROM items WHERE id = $1", itemId).Scan(&itemCode, &itemName)
+	
+	auditDesc := fmt.Sprintf("Menghapus catatan riwayat perbaikan #%d untuk barang [%s] '%s' dari sistem.", id, itemCode, itemName)
+	utils.LogAudit(h.db, actorId.(string), "DELETE_MAINTENANCE", "MAINTENANCE", itemId, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Log perbaikan berhasil dihapus"))
 }

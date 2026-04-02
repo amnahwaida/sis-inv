@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -38,6 +39,14 @@ func (h *TransactionHandler) Borrow(c *gin.Context) {
 	}
 
 	ctx := context.Background()
+
+	// Pre-check: Ensure the actor (staff) exists in the database to avoid FK violations (stale sessions)
+	var actorExists bool
+	err := h.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)", userId).Scan(&actorExists)
+	if err != nil || !actorExists {
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(http.StatusUnauthorized, "Sesi tidak valid atau akun tidak ditemukan. Silakan login kembali."))
+		return
+	}
 
 	// Start a transaction
 	tx, err := h.db.Begin(ctx)
@@ -94,20 +103,29 @@ func (h *TransactionHandler) Borrow(c *gin.Context) {
 	query := `
 		INSERT INTO transactions 
 		(item_id, borrower_type, user_id, student_nis, student_name, student_class, borrowed_by, status, due_date, purpose, borrow_photo_url)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, 'ACTIVE', $8, $9, $10)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		RETURNING id
 	`
 	
-	var borrowerUserId *string
+	// Normalize IDs
+	operatorId := userId.(string)
+	var borrowerId interface{} = nil
 	if req.BorrowerType == "STAFF" {
-		uid := userId.(string)
-		borrowerUserId = &uid
+		borrowerId = operatorId
 	}
 
 	err = tx.QueryRow(ctx, query, 
-		itemId, req.BorrowerType, borrowerUserId, 
-		utils.NullString(req.StudentNIS), utils.NullString(req.StudentName), utils.NullString(req.StudentClass),
-		userId, dueDate, req.Purpose, utils.NullString(req.PhotoURL),
+		itemId, 
+		req.BorrowerType, 
+		borrowerId, 
+		utils.NullString(req.StudentNIS), 
+		utils.NullString(req.StudentName), 
+		utils.NullString(req.StudentClass),
+		operatorId, 
+		"ACTIVE",
+		dueDate, 
+		req.Purpose, 
+		utils.NullString(req.PhotoURL),
 	).Scan(&trxId)
 	
 	if err != nil {
@@ -138,7 +156,18 @@ func (h *TransactionHandler) Borrow(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "BORROW_ITEM", "ITEM", itemId, "Borrowed item: "+req.ItemCode+" to "+req.BorrowerType, c.ClientIP())
+	// 5W1H: Who (actorId), What (Borrowed item + details), When (automatic), Where (internal/handlers/transaction.go), Why (Purpose), How (via UI)
+	var borrowerInfo string
+	if req.BorrowerType == "STUDENT" {
+		borrowerInfo = fmt.Sprintf("Siswa: %s (%s, NIS: %s)", req.StudentName, req.StudentClass, req.StudentNIS)
+	} else {
+		// Fetch staff name if possible, or use "Staff"
+		borrowerInfo = "Staff/Ybs"
+	}
+
+	auditDesc := fmt.Sprintf("Peminjaman barang [%s] '%s' kepada %s. Durasi: %d hari. Tujuan: %s.", 
+		req.ItemCode, itemName, borrowerInfo, req.ExpectedReturnDays, req.Purpose)
+	utils.LogAudit(h.db, actorId.(string), "BORROW_ITEM", "ITEM", itemId, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{
 		"transaction_id": trxId,
@@ -276,25 +305,52 @@ func (h *TransactionHandler) Return(c *gin.Context) {
 func (h *TransactionHandler) MyBorrowings(c *gin.Context) {
 	userId, _ := c.Get("userID")
 
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	if page < 1 { page = 1 }
+	if pageSize < 1 || pageSize > 100 { pageSize = 10 }
+	offset := (page - 1) * pageSize
+	search := c.Query("search")
+
+	ctx := context.Background()
+
+	baseQuery := " FROM transactions t JOIN items i ON t.item_id = i.id WHERE t.borrowed_by = $1 AND t.status = 'ACTIVE'"
+	var args []interface{}
+	args = append(args, userId)
+	argIdx := 2
+
+	if search != "" {
+		searchStr := "%" + search + "%"
+		baseQuery += fmt.Sprintf(" AND (i.name ILIKE $%d OR i.code ILIKE $%d)", argIdx, argIdx)
+		args = append(args, searchStr)
+		argIdx++
+	}
+
+	// Get total count
+	var total int
+	countQuery := "SELECT COUNT(*)" + baseQuery
+	err := h.db.QueryRow(ctx, countQuery, args...).Scan(&total)
+	if err != nil { total = 0 }
+
 	query := `
 		SELECT 
 			t.id, t.item_id, t.status, t.borrowed_at, t.due_date,
-			t.borrower_type, t.student_name, t.student_class, t.borrow_photo_url,
+			t.borrower_type, COALESCE(t.student_name, ''), COALESCE(t.student_class, ''), t.borrow_photo_url,
 			i.code, i.name
-		FROM transactions t
-		JOIN items i ON t.item_id = i.id
-		WHERE t.borrowed_by = $1 AND t.status = 'ACTIVE'
+	` + baseQuery + `
 		ORDER BY t.borrowed_at DESC
-	`
+		LIMIT $` + fmt.Sprint(argIdx) + ` OFFSET $` + fmt.Sprint(argIdx+1)
+	
+	args = append(args, pageSize, offset)
 
-	rows, err := h.db.Query(context.Background(), query, userId)
+	rows, err := h.db.Query(ctx, query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to fetch borrowings"))
 		return
 	}
 	defer rows.Close()
 
-	var borrowings []map[string]interface{}
+	borrowings := []map[string]interface{}{}
 	for rows.Next() {
 		var id, itemId, status, code, itemName, borrowerType string
 		var borrowDate, dueDate time.Time
@@ -327,34 +383,70 @@ func (h *TransactionHandler) MyBorrowings(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, utils.SuccessResponse(borrowings, "Fetched active borrowings successfully"))
+	if borrowings == nil { borrowings = []map[string]interface{}{} }
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{
+		"items": borrowings,
+		"meta": gin.H{
+			"page":        page,
+			"page_size":   pageSize,
+			"total":       total,
+			"total_pages": (total + pageSize - 1) / pageSize,
+		},
+	}, "Fetched active borrowings successfully"))
 }
 
 // MyBorrowingsHistory returns historical (RETURNED) transactions managed by this user
 func (h *TransactionHandler) MyBorrowingsHistory(c *gin.Context) {
 	userId, _ := c.Get("userID")
 
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	if page < 1 { page = 1 }
+	if pageSize < 1 || pageSize > 100 { pageSize = 10 }
+	offset := (page - 1) * pageSize
+	search := c.Query("search")
+
+	ctx := context.Background()
+
+	baseQuery := " FROM transactions t JOIN items i ON t.item_id = i.id WHERE t.borrowed_by = $1 AND t.status = 'RETURNED'"
+	var args []interface{}
+	args = append(args, userId)
+	argIdx := 2
+
+	if search != "" {
+		searchStr := "%" + search + "%"
+		baseQuery += fmt.Sprintf(" AND (i.name ILIKE $%d OR i.code ILIKE $%d)", argIdx, argIdx)
+		args = append(args, searchStr)
+		argIdx++
+	}
+
+	// Get total count
+	var total int
+	countQuery := "SELECT COUNT(*)" + baseQuery
+	err := h.db.QueryRow(ctx, countQuery, args...).Scan(&total)
+	if err != nil { total = 0 }
+
 	query := `
 		SELECT 
 			t.id, t.status, t.borrowed_at, t.returned_at, t.due_date,
-			t.borrower_type, t.student_name, t.student_class,
+			t.borrower_type, COALESCE(t.student_name, ''), COALESCE(t.student_class, ''),
 			t.return_condition, t.return_notes, t.borrow_photo_url, t.return_photo_url,
 			i.code, i.name
-		FROM transactions t
-		JOIN items i ON t.item_id = i.id
-		WHERE t.borrowed_by = $1 AND t.status = 'RETURNED'
+	` + baseQuery + `
 		ORDER BY t.returned_at DESC
-		LIMIT 50
-	`
+		LIMIT $` + fmt.Sprint(argIdx) + ` OFFSET $` + fmt.Sprint(argIdx+1)
+	
+	args = append(args, pageSize, offset)
 
-	rows, err := h.db.Query(context.Background(), query, userId)
+	rows, err := h.db.Query(ctx, query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to fetch history"))
 		return
 	}
 	defer rows.Close()
 
-	var history []map[string]interface{}
+	history := []map[string]interface{}{}
 	for rows.Next() {
 		var id, status, code, itemName, borrowerType string
 		var borrowDate, returnedAt, dueDate time.Time
@@ -386,7 +478,17 @@ func (h *TransactionHandler) MyBorrowingsHistory(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, utils.SuccessResponse(history, "Fetched history successfully"))
+	if history == nil { history = []map[string]interface{}{} }
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{
+		"items": history,
+		"meta": gin.H{
+			"page":        page,
+			"page_size":   pageSize,
+			"total":       total,
+			"total_pages": (total + pageSize - 1) / pageSize,
+		},
+	}, "Fetched history successfully"))
 }
 
 // GetStudentHistory returns all transactions for a specific student (F04.6)
@@ -397,28 +499,55 @@ func (h *TransactionHandler) GetStudentHistory(c *gin.Context) {
 		return
 	}
 
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	if page < 1 { page = 1 }
+	if pageSize < 1 || pageSize > 100 { pageSize = 10 }
+	offset := (page - 1) * pageSize
+
+	search := c.Query("search")
+
+	ctx := context.Background()
+
+	baseQuery := " FROM transactions t JOIN items i ON t.item_id = i.id LEFT JOIN users u ON t.borrowed_by = u.id WHERE t.student_nis = $1 OR t.student_name ILIKE $1"
+	var args []interface{}
+	args = append(args, nis)
+	argIdx := 2
+
+	if search != "" {
+		searchStr := "%" + search + "%"
+		baseQuery += fmt.Sprintf(" AND (i.name ILIKE $%d OR i.code ILIKE $%d)", argIdx, argIdx)
+		args = append(args, searchStr)
+		argIdx++
+	}
+
+	// Get total count
+	var total int
+	countQuery := "SELECT COUNT(*)" + baseQuery
+	err := h.db.QueryRow(ctx, countQuery, args...).Scan(&total)
+	if err != nil { total = 0 }
+
 	query := `
 		SELECT 
 			t.id, t.status, t.borrowed_at, t.returned_at, t.due_date,
-			t.student_name, t.student_class, t.purpose,
+			COALESCE(t.student_name, ''), COALESCE(t.student_class, ''), COALESCE(t.purpose, ''),
 			t.borrow_photo_url, t.return_photo_url, t.return_condition,
 			i.code as item_code, i.name as item_name,
 			COALESCE(u.full_name, 'System') as teacher_name
-		FROM transactions t
-		JOIN items i ON t.item_id = i.id
-		LEFT JOIN users u ON t.borrowed_by = u.id
-		WHERE t.student_nis = $1 OR t.student_name ILIKE $1
+	` + baseQuery + `
 		ORDER BY t.borrowed_at DESC
-	`
+		LIMIT $` + fmt.Sprint(argIdx) + ` OFFSET $` + fmt.Sprint(argIdx+1)
 
-	rows, err := h.db.Query(context.Background(), query, nis)
+	args = append(args, pageSize, offset)
+
+	rows, err := h.db.Query(ctx, query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to fetch student history"))
 		return
 	}
 	defer rows.Close()
 
-	var history []map[string]interface{}
+	history := []map[string]interface{}{}
 	for rows.Next() {
 		var id, status, itemCode, itemName, teacherName string
 		var studentName, studentClass, purpose, borrowPhoto, returnPhoto, returnCondition *string
@@ -451,7 +580,17 @@ func (h *TransactionHandler) GetStudentHistory(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, utils.SuccessResponse(history, "Fetched student history successfully"))
+	if history == nil { history = []map[string]interface{}{} }
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{
+		"items": history,
+		"meta": gin.H{
+			"page":        page,
+			"page_size":   pageSize,
+			"total":       total,
+			"total_pages": (total + pageSize - 1) / pageSize,
+		},
+	}, "Fetched student history successfully"))
 }
 
 func (h *TransactionHandler) StudentHistoryExport(c *gin.Context) {

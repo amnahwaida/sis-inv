@@ -7,14 +7,24 @@ export const useAuditStore = defineStore('audit', () => {
   const currentSession = ref(null)
   const loading = ref(false)
   const error = ref(null)
+  const meta = ref({
+    total: 0,
+    total_pages: 1,
+    page: 1,
+    page_size: 10
+  })
 
-  async function fetchSessions() {
+  async function fetchSessions(params = {}) {
     loading.value = true
     try {
-      const { data } = await api.get('/reports/audit-sessions')
-      sessions.value = data.data || []
+      const { data } = await api.get('/reports/audit-sessions', { params })
+      if (data.success) {
+        sessions.value = data.data.items || []
+        meta.value = data.data.meta || { total: 0, total_pages: 1, page: 1, page_size: 10 }
+      }
     } catch (err) {
       error.value = 'Gagal mengambil daftar audit'
+      sessions.value = []
     } finally {
       loading.value = false
     }
@@ -77,6 +87,7 @@ export const useAuditStore = defineStore('audit', () => {
     currentSession,
     loading,
     error,
+    meta,
     fetchSessions,
     startSession,
     fetchSessionDetail,

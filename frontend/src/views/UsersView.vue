@@ -3,7 +3,7 @@
     <!-- Header Section -->
     <div class="relative overflow-hidden bg-gradient-to-br from-gray-900 to-primary-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-primary-900/20 transition-all duration-500">
       <div class="absolute top-0 right-0 -mt-12 -mr-12 w-64 h-64 bg-primary-500/20 rounded-full blur-3xl"></div>
-      <div class="absolute bottom-0 left-0 -mb-12 -ml-12 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-0 left-0 -mb-12 -ml-12 w-48 h-48 bg-primary-500/10 rounded-full blur-3xl"></div>
       
       <div class="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div class="space-y-1">
@@ -13,31 +13,33 @@
         
         <div class="flex items-center gap-3 backdrop-blur-md bg-white/10 p-2 rounded-2xl border border-white/10">
           <button @click="showModal = true" class="btn-premium-primary">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
             TAMBAH USER BARU
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Filters Row -->
-    <div class="flex flex-col sm:flex-row items-center gap-3 w-full">
+    <!-- Search & Filters Container -->
+    <div class="bg-white dark:bg-gray-800 p-3 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row items-center gap-3 w-full">
       <!-- Search Input -->
       <div class="relative w-full sm:w-80">
         <input type="text" v-model="filters.search" @input="debouncedFetch" placeholder="Cari nama, username..." 
-               class="input-field pl-10 h-11 rounded-2xl text-sm w-full" />
-        <svg class="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+               class="input-field pl-10 h-12 rounded-2xl text-sm w-full" />
+        <svg class="w-5 h-5 absolute left-3 top-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
       </div>
 
       <!-- Role Filter -->
-      <div class="flex items-center gap-2 bg-white dark:bg-gray-800 p-2 px-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm w-full sm:w-auto">
-        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Role:</label>
-        <select v-model="filters.role" @change="debouncedFetch" class="bg-transparent border-none focus:ring-0 text-sm font-black text-gray-900 dark:text-white py-0 w-full sm:w-auto">
-          <option value="">Semua Role</option>
-          <option value="ADMIN">Admin</option>
-          <option value="TEACHER">Guru/Staff</option>
-        </select>
-      </div>
+      <select v-model="filters.role" @change="debouncedFetch" 
+              class="input-field h-12 rounded-2xl text-sm w-full sm:w-auto appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%20%3D%22none%22%20viewBox%20%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%20%3D%22%236b7280%22%20stroke-linecap%20%3D%22round%22%20stroke-linejoin%20%3D%22round%22%20stroke-width%20%3D%221.5%22%20d%20%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10">
+        <option value="">Semua Role</option>
+        <option value="ADMIN">Admin</option>
+        <option value="TEACHER">Guru/Staff</option>
+      </select>
     </div>
 
     <!-- Main Table Card -->
@@ -88,10 +90,14 @@
                 <td class="px-8 py-6 text-right">
                   <div class="flex items-center justify-end gap-2 transition-opacity">
                     <button @click="openEditModal(u)" class="btn-action-edit" title="Edit">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                      </svg>
                     </button>
                     <button @click="deleteUser(u)" class="btn-action-delete" title="Hapus">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                      </svg>
                     </button>
                   </div>
                 </td>
@@ -113,6 +119,13 @@
           <button @click="changePage(meta.page - 1)" :disabled="meta.page === 1" class="pagination-btn-standard">
             Kembali
           </button>
+          <div class="flex gap-1">
+            <button v-for="p in visiblePages" :key="p" @click="changePage(p)"
+                    class="w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm active:scale-95 border"
+                    :class="p === meta.page ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700'">
+              {{ p }}
+            </button>
+          </div>
           <button @click="changePage(meta.page + 1)" :disabled="meta.page === meta.total_pages || meta.total_pages === 0" class="pagination-btn-standard">
             Lanjut
           </button>
@@ -129,7 +142,9 @@
             <p class="text-[10px] font-black text-primary-500 uppercase tracking-widest mt-2">{{ editingUser ? 'Perbarui Hak Akses' : 'Atur Akun Baru' }}</p>
           </div>
           <button @click="closeModal" class="text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 p-3 rounded-2xl transition-all">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
         
@@ -203,7 +218,21 @@ const debouncedFetch = () => {
   searchTimeout = setTimeout(() => { filters.value.page = 1; fetchUsers() }, 500)
 }
 
-const changePage = (p) => { filters.value.page = p; fetchUsers() }
+const changePage = (p) => { 
+  if (p < 1 || p > meta.value.total_pages) return
+  filters.value.page = p
+  fetchUsers() 
+}
+
+const visiblePages = computed(() => {
+  const pages = []
+  const current = meta.value.page
+  const total = meta.value.total_pages
+  const start = Math.max(1, current - 2)
+  const end = Math.min(total, current + 2)
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
+})
 
 async function fetchUsers() {
   loading.value = true

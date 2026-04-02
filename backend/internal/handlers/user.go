@@ -119,7 +119,9 @@ func (h *UserHandler) Create(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "CREATE_USER", "USER", userID, "Created user: "+req.Username, c.ClientIP())
+	auditDesc := fmt.Sprintf("Menambahkan pengguna baru: %s (Username: %s, Role: %s, NIP: %s). Melalui panel administrasi.", 
+		req.FullName, req.Username, req.Role, req.NIP)
+	utils.LogAudit(h.db, actorId.(string), "CREATE_USER", "USER", userID, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{"id": userID}, "User berhasil dibuat"))
 }
@@ -144,6 +146,16 @@ func (h *UserHandler) Update(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "User tidak ditemukan"))
 		return
+	}
+
+	// Validate if user is disabling the last active admin
+	if req.IsActive != nil && !*req.IsActive && oldActive && oldRole == "ADMIN" {
+		var activeAdminCount int
+		err := h.db.QueryRow(ctx, "SELECT COUNT(*) FROM users WHERE role = 'ADMIN' AND is_active = true").Scan(&activeAdminCount)
+		if err == nil && activeAdminCount <= 1 {
+			c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Pencegahan Sistem: Minimal harus ada 1 akun Admin yang aktif"))
+			return
+		}
 	}
 
 	changes := []string{}
@@ -226,6 +238,25 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	}
 
 	// Soft delete - set is_active to false
+	// First check if target is an active admin
+	var targetRole string
+	var targetActive bool
+	var targetName string
+	err := h.db.QueryRow(context.Background(), "SELECT full_name, role, is_active FROM users WHERE id = $1", id).Scan(&targetName, &targetRole, &targetActive)
+	if err != nil {
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "User tidak ditemukan"))
+		return
+	}
+
+	if targetRole == "ADMIN" && targetActive {
+		var activeAdminCount int
+		err := h.db.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE role = 'ADMIN' AND is_active = true").Scan(&activeAdminCount)
+		if err == nil && activeAdminCount <= 1 {
+			c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Pencegahan Sistem: Minimal harus ada 1 akun Admin yang aktif"))
+			return
+		}
+	}
+
 	result, err := h.db.Exec(context.Background(),
 		"UPDATE users SET is_active = false, updated_at = $1 WHERE id = $2", time.Now(), id,
 	)
@@ -239,15 +270,14 @@ func (h *UserHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	// Get target username for log
-	var targetName string
-	err = h.db.QueryRow(context.Background(), "SELECT full_name FROM users WHERE id = $1", id).Scan(&targetName)
-	if err != nil {
-		targetName = id // Fallback to ID
+	if targetName == "" {
+		targetName = id
 	}
 
 	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "DISABLE_USER", "USER", id, "Disabled user login access for: "+targetName, c.ClientIP())
+	auditDesc := fmt.Sprintf("Menonaktifkan akses login pengguna: %s (Username: %s). Akun tidak lagi dapat digunakan untuk masuk ke sistem.", 
+		targetName, id)
+	utils.LogAudit(h.db, actorId.(string), "DISABLE_USER", "USER", id, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "User berhasil dinonaktifkan"))
 }

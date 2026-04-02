@@ -3,7 +3,7 @@
     <!-- Header Section -->
     <div class="relative overflow-hidden bg-gradient-to-br from-gray-900 to-primary-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-primary-900/20 transition-all duration-500">
       <div class="absolute top-0 right-0 -mt-12 -mr-12 w-64 h-64 bg-primary-500/20 rounded-full blur-3xl"></div>
-      <div class="absolute bottom-0 left-0 -mb-12 -ml-12 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-0 left-0 -mb-12 -ml-12 w-48 h-48 bg-primary-500/10 rounded-full blur-3xl"></div>
       
       <div class="relative flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div class="space-y-1">
@@ -13,28 +13,38 @@
         
         <div class="flex flex-wrap items-center gap-3 backdrop-blur-md bg-white/10 p-2 rounded-2xl border border-white/10">
           <button v-if="authStore.isAdmin" @click="goToPrint" :disabled="selectedIds.length === 0"
-                  class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 px-4 py-3 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 active:scale-95 disabled:opacity-30">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                  class="bg-primary-500/20 hover:bg-primary-500/30 text-primary-400 px-4 py-3 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 active:scale-95 disabled:opacity-30">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.618 0-1.113-.493-1.12-1.112L6.34 18m11.32 0c.068 0 .135-.01.2-.03m-11.51 0a.2.2 0 00.2.03m11.31 0h.375c.621 0 1.125-.504 1.125-1.125v-4.135c0-.621-.504-1.125-1.125-1.125h-1.125M6.34 18h-.375A1.125 1.125 0 014.84 16.875v-4.135c0-.621.504-1.125 1.125-1.125h1.125M16.5 7.5h.375c.621 0 1.125-.504 1.125-1.125V4.125c0-.621-.504-1.125-1.125-1.125H6.375c-.621 0-1.125.504-1.125 1.125v2.25c0 .621.504 1.125 1.125 1.125h1.125m10.5 0h-10.5" />
+            </svg>
             CETAK ({{ selectedIds.length }})
           </button>
           <button v-if="authStore.isAdmin" @click="handleExportExcel" 
                   class="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 px-4 py-3 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 active:scale-95">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m.75 12l3 3m0 0l3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
             EXCEL
           </button>
           <button v-if="authStore.isAdmin" @click="$refs.fileInput.click()" 
-                  class="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 px-4 py-3 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 active:scale-95">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                  class="bg-primary-500/20 hover:bg-primary-500/30 text-primary-400 px-4 py-3 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 active:scale-95">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+            </svg>
             IMPORT
             <input type="file" ref="fileInput" @change="handleImportExcel" class="hidden" accept=".xlsx, .xls" />
           </button>
           <button v-if="authStore.isAdmin" @click="downloadTemplate" 
                   class="bg-gray-500/20 hover:bg-gray-500/30 text-gray-400 px-4 py-3 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 active:scale-95">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 3h5.25m-5.25 3h5.25m-5.25 3h5.25m-10.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
             TEMPLATE
           </button>
           <button v-if="authStore.isAdmin" @click="openAddModal" class="btn-premium-primary">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
             TAMBAH BARANG
           </button>
         </div>
@@ -46,24 +56,26 @@
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
         <div class="lg:col-span-1 relative">
           <input type="text" class="input-field pl-10 h-12 rounded-2xl" placeholder="Cari nama / kode..." v-model="filters.search" @input="debouncedFetch" />
-          <svg class="w-5 h-5 absolute left-3 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <svg class="w-5 h-5 absolute left-3 top-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+          </svg>
         </div>
-        <select class="input-field h-12 rounded-2xl" v-model="filters.status" @change="fetchData">
+        <select class="input-field h-12 rounded-2xl appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10" v-model="filters.status" @change="fetchData">
           <option value="">Semua Status</option>
           <option value="AVAILABLE">Tersedia</option>
           <option value="BORROWED">Dipinjam</option>
           <option value="MAINTENANCE">Perbaikan</option>
           <option value="LOST">Hilang</option>
         </select>
-        <select class="input-field h-12 rounded-2xl" v-model="filters.category_id" @change="fetchData">
+        <select class="input-field h-12 rounded-2xl appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10" v-model="filters.category_id" @change="fetchData">
           <option value="">Semua Kategori</option>
           <option v-for="cat in categoryStore.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
         </select>
-        <select class="input-field h-12 rounded-2xl" v-model="filters.location" @change="fetchData">
+        <select class="input-field h-12 rounded-2xl appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10" v-model="filters.location" @change="fetchData">
           <option value="">Semua Lokasi</option>
           <option v-for="loc in locationStore.locations" :key="loc.id" :value="loc.name">{{ loc.name }}</option>
         </select>
-        <select class="input-field h-12 rounded-2xl" v-model="filters.condition" @change="fetchData">
+        <select class="input-field h-12 rounded-2xl appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10" v-model="filters.condition" @change="fetchData">
           <option value="">Semua Kondisi</option>
           <option value="GOOD">Baik</option>
           <option value="DAMAGED">Rusak</option>
@@ -102,7 +114,9 @@
                 <td class="px-8 py-6">
                   <div class="flex items-center gap-4">
                     <div class="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center text-gray-400 dark:text-gray-500 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/50 group-hover:text-primary-600 transition-colors">
-                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-5.25v9" />
+                      </svg>
                     </div>
                     <div>
                       <div class="font-black text-gray-900 dark:text-white text-sm">{{ item.name }}</div>
@@ -129,17 +143,27 @@
                 <td class="px-8 py-6 text-right">
                   <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button @click="openDetailModal(item)" class="btn-action-view" title="Detail">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
                     </button>
                     <template v-if="authStore.isAdmin">
                       <button @click="openQrModal(item)" class="p-2 text-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl hover:bg-emerald-500 hover:text-white transition-all transform hover:scale-110 active:scale-95" title="QR Code">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1|0 11v1|9-9h-1|4 12H3|15.364 6.364l-.707-.707|6.343 6.343l-.707-.707|12.728 0l-.707.707|6.343 17.657l-.707.707|16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" />
+                        </svg>
                       </button>
                       <button @click="openEditModal(item)" class="btn-action-edit" title="Edit">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                        </svg>
                       </button>
                       <button @click="deleteItem(item)" class="btn-action-delete" title="Hapus">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        </svg>
                       </button>
                     </template>
                   </div>
@@ -149,7 +173,9 @@
             <tr v-else-if="!itemStore.loading" class="text-center">
               <td colspan="6" class="px-8 py-24">
                 <div class="bg-gray-50 dark:bg-gray-700/50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-300 dark:text-gray-600">
-                  <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                  <svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-5.25v9" />
+                  </svg>
                 </div>
                 <p class="text-gray-900 dark:text-white font-black text-xl">Aset Tidak Ditemukan</p>
                 <p class="text-gray-400 text-sm mt-2 max-w-xs mx-auto">Coba sesuaikan kata kunci pencarian atau filter kategori Anda.</p>
@@ -167,6 +193,13 @@
             <button @click="changePage(itemStore.meta.page - 1)" :disabled="itemStore.meta.page === 1" class="pagination-btn-standard">
               Kembali
             </button>
+            <div class="flex gap-1">
+              <button v-for="p in visiblePages" :key="p" @click="changePage(p)"
+                      class="w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm active:scale-95 border"
+                      :class="p === itemStore.meta.page ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700'">
+                {{ p }}
+              </button>
+            </div>
             <button @click="changePage(itemStore.meta.page + 1)" :disabled="itemStore.meta.page === itemStore.meta.total_pages" class="pagination-btn-standard">
               Lanjut
             </button>
@@ -302,7 +335,21 @@ const debouncedFetch = () => {
   searchTimeout = setTimeout(() => { filters.value.page = 1; fetchData() }, 500)
 }
 const fetchData = async () => { await itemStore.fetchItems(filters.value) }
-const changePage = (newPage) => { filters.value.page = newPage; fetchData() }
+const changePage = (newPage) => { 
+  if (newPage < 1 || newPage > itemStore.meta.total_pages) return
+  filters.value.page = newPage; 
+  fetchData() 
+}
+
+const visiblePages = computed(() => {
+  const pages = []
+  const current = itemStore.meta.page
+  const total = itemStore.meta.total_pages
+  const start = Math.max(1, current - 2)
+  const end = Math.min(total, current + 2)
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
+})
 
 const openAddModal = () => { selectedItem.value = null; isModalOpen.value = true }
 const openEditModal = (item) => { selectedItem.value = { ...item }; isModalOpen.value = true }
