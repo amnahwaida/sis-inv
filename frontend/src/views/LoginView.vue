@@ -6,10 +6,11 @@
 
     <!-- Theme Toggle (Floating Top Right) -->
     <button @click="toggleDarkMode" 
-          class="fixed top-8 right-8 z-50 p-4 rounded-[1.5rem] bg-white/20 dark:bg-gray-800/40 backdrop-blur-2xl border border-white/30 dark:border-gray-700/50 shadow-2xl hover:scale-110 active:scale-95 transition-all duration-500 group">
-      <span v-if="isDark" class="text-xl">🌙</span>
-      <span v-else class="text-xl">☀️</span>
-      <div class="absolute inset-0 rounded-[1.5rem] bg-primary-500/10 scale-0 group-hover:scale-100 transition-transform duration-500"></div>
+          class="fixed top-8 right-8 z-50 p-3 rounded-2xl bg-white/20 dark:bg-gray-800/40 backdrop-blur-2xl border border-white/30 dark:border-gray-700/50 shadow-2xl hover:scale-110 active:scale-95 transition-all duration-500 group text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          title="Toggle Dark Mode">
+      <svg v-if="!isDark" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+      <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+      <div class="absolute inset-0 rounded-2xl bg-primary-500/10 scale-0 group-hover:scale-100 transition-transform duration-500 -z-10"></div>
     </button>
 
     <!-- Main Login Card -->
@@ -89,7 +90,7 @@ const username = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref('')
-const isDark = ref(false)
+const isDark = ref(localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches))
 
 const handleLogin = async () => {
   loading.value = true
@@ -112,8 +113,6 @@ const toggleDarkMode = () => {
 }
 
 onMounted(() => {
-  const savedTheme = localStorage.getItem('theme')
-  isDark.value = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
   if (isDark.value) document.documentElement.classList.add('dark')
   else document.documentElement.classList.remove('dark')
 })
