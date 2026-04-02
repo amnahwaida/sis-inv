@@ -437,6 +437,12 @@ func (h *ItemHandler) Delete(c *gin.Context) {
 		return
 	}
 
+	actorId, _ := c.Get("userID")
+	
+	// Fetch item details for more descriptive audit log BEFORE deleting
+	var delCode, delName string
+	h.db.QueryRow(context.Background(), "SELECT code, name FROM items WHERE id = $1", id).Scan(&delCode, &delName)
+
 	result, err := h.db.Exec(context.Background(), "DELETE FROM items WHERE id = $1", id)
 	if err != nil {
 		// Could be a foreign key constraint violation (has transaction history)
@@ -455,11 +461,6 @@ func (h *ItemHandler) Delete(c *gin.Context) {
 		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Item not found"))
 		return
 	}
-
-	actorId, _ := c.Get("userID")
-	// Fetch item details for more descriptive audit log
-	var delCode, delName string
-	h.db.QueryRow(context.Background(), "SELECT code, name FROM items WHERE id = $1", id).Scan(&delCode, &delName)
 	
 	auditDesc := fmt.Sprintf("Menghapus/Arsip barang [%s] '%s' dari sistem.", delCode, delName)
 	utils.LogAudit(h.db, actorId.(string), "DELETE_ITEM", "ITEM", id, auditDesc, c.ClientIP())
@@ -598,6 +599,7 @@ func (h *ItemHandler) ImportExcel(c *gin.Context) {
 	defer tx.Rollback(ctx)
 
 	imported := 0
+	var importedNames []string
 	for i, row := range rows {
 		if i == 0 { continue } // Skip header
 		if len(row) < 2 { continue }
@@ -674,6 +676,9 @@ func (h *ItemHandler) ImportExcel(c *gin.Context) {
 		
 		if err == nil {
 			imported++
+			if len(importedNames) < 3 {
+				importedNames = append(importedNames, name)
+			}
 		}
 	}
 
@@ -683,7 +688,17 @@ func (h *ItemHandler) ImportExcel(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "IMPORT_ITEMS", "ITEM", "00000000-0000-0000-0000-000000000000", fmt.Sprintf("Imported %d items via Excel", imported), c.ClientIP())
+
+	desc := "Gagal mengimpor barang atau tidak ada data yang valid"
+	if imported > 0 {
+		exampleNames := strings.Join(importedNames, ", ")
+		if imported > 3 {
+			exampleNames += ", dll"
+		}
+		desc = fmt.Sprintf("Mengimpor %d barang melalui Excel (Contoh: %s)", imported, exampleNames)
+	}
+
+	utils.LogAudit(h.db, actorId.(string), "IMPORT_ITEMS", "ITEM", "00000000-0000-0000-0000-000000000000", desc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{"total": imported}, "Berhasil mengimpor data barang"))
 }
