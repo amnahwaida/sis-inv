@@ -36,7 +36,6 @@
           <option value="">Semua Role</option>
           <option value="ADMIN">Admin</option>
           <option value="TEACHER">Guru/Staff</option>
-          <option value="HEAD">Kepala Sekolah</option>
         </select>
       </div>
     </div>
@@ -157,7 +156,6 @@
               <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Role Utama</label>
               <select v-model="form.role" class="input-field rounded-2xl h-14" required>
                 <option value="TEACHER">Guru/Staff</option>
-                <option value="HEAD">Kepasek</option>
                 <option value="ADMIN">Administrator</option>
               </select>
             </div>
@@ -198,13 +196,12 @@ const currentPage = ref(1)
 const perPage = 10
 
 const form = ref({ full_name: '', username: '', password: '', role: 'TEACHER', is_active: true })
-const roleLabels = { ADMIN: 'Admin', TEACHER: 'Guru/Staff', HEAD: 'Kepasek' }
+const roleLabels = { ADMIN: 'Admin', TEACHER: 'Guru/Staff' }
 const roleLabel = (role) => roleLabels[role] || role
 
 const roleBadgeClass = (role) => ({
   ADMIN: 'bg-purple-50 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400',
   TEACHER: 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400',
-  HEAD: 'bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400',
 }[role] || 'bg-gray-50 text-gray-800')
 
 // Search and Filter logic

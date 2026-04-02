@@ -10,7 +10,6 @@ export const useAuthStore = defineStore('auth', () => {
   const userRole = computed(() => user.value?.role || '')
   const isAdmin = computed(() => userRole.value === 'ADMIN')
   const isTeacher = computed(() => userRole.value === 'TEACHER')
-  const isHead = computed(() => userRole.value === 'HEAD')
 
   async function login(username, password) {
     const { data } = await api.post('/auth/login', { username, password })
@@ -61,7 +60,6 @@ export const useAuthStore = defineStore('auth', () => {
     userRole,
     isAdmin,
     isTeacher,
-    isHead,
     login,
     fetchMe,
     changePassword,

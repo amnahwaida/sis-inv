@@ -77,7 +77,7 @@ const routes = [
         path: 'reports',
         name: 'Laporan',
         component: () => import('../views/ReportsView.vue'),
-        meta: { roles: ['ADMIN', 'HEAD'] },
+        meta: { roles: ['ADMIN'] },
       },
       {
         path: 'maintenance',

@@ -170,7 +170,7 @@ const userInitials = computed(() => {
   return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 })
 
-const roleLabels = { ADMIN: 'Administrator', TEACHER: 'Guru/Staff', HEAD: 'Kepala Sekolah' }
+const roleLabels = { ADMIN: 'Administrator', TEACHER: 'Guru/Staff' }
 const roleBadge = computed(() => roleLabels[authStore.userRole] || authStore.userRole)
 
 const IconDashboard = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' })]) }
@@ -188,13 +188,13 @@ const IconStockOpname = { render: () => h('svg', { fill: 'none', stroke: 'curren
 const IconMaintenance = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' }), h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z' })]) }
 
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: IconDashboard, roles: ['ADMIN', 'TEACHER', 'HEAD'] },
-  { to: '/items', label: 'Barang', icon: IconItems, roles: ['ADMIN', 'TEACHER', 'HEAD'] },
-  { to: '/borrow', label: 'Pinjam', icon: IconBorrow, roles: ['ADMIN', 'TEACHER', 'HEAD'] },
-  { to: '/return', label: 'Pengembalian', icon: IconReturn, roles: ['ADMIN', 'TEACHER', 'HEAD'] },
-  { to: '/my-borrowings', label: 'Peminjaman Saya', icon: IconMyBorrowings, roles: ['ADMIN', 'TEACHER', 'HEAD'] },
+  { to: '/', label: 'Dashboard', icon: IconDashboard, roles: ['ADMIN', 'TEACHER'] },
+  { to: '/items', label: 'Barang', icon: IconItems, roles: ['ADMIN', 'TEACHER'] },
+  { to: '/borrow', label: 'Pinjam', icon: IconBorrow, roles: ['ADMIN', 'TEACHER'] },
+  { to: '/return', label: 'Pengembalian', icon: IconReturn, roles: ['ADMIN', 'TEACHER'] },
+  { to: '/my-borrowings', label: 'Peminjaman Saya', icon: IconMyBorrowings, roles: ['ADMIN', 'TEACHER'] },
   { to: '/student-history', label: 'Cek Riwayat Siswa', icon: IconStudent, roles: ['ADMIN', 'TEACHER'] },
-  { to: '/reports', label: 'Laporan', icon: IconMyBorrowings, roles: ['ADMIN', 'HEAD'] },
+  { to: '/reports', label: 'Laporan', icon: IconMyBorrowings, roles: ['ADMIN'] },
   { to: '/users', label: 'Kelola User', icon: IconUsers, roles: ['ADMIN'] },
   { to: '/students', label: 'Kelola Siswa', icon: IconStudent, roles: ['ADMIN'] },
   { to: '/categories', label: 'Kategori', icon: IconCategories, roles: ['ADMIN'] },
@@ -202,7 +202,7 @@ const navItems = [
   { to: '/maintenance', label: 'Perbaikan', icon: IconMaintenance, roles: ['ADMIN'] },
   { to: '/stock-opname', label: 'Stock Opname', icon: IconStockOpname, roles: ['ADMIN'] },
   { to: '/audit-logs', label: 'Log Audit', icon: IconAuditLog, roles: ['ADMIN'] },
-  { to: '/settings', label: 'Pengaturan', icon: IconSettings, roles: ['ADMIN', 'TEACHER', 'HEAD'] },
+  { to: '/settings', label: 'Pengaturan', icon: IconSettings, roles: ['ADMIN', 'TEACHER'] },
 ]
 
 const filteredNav = computed(() =>
