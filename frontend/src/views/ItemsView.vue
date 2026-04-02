@@ -28,6 +28,11 @@
             IMPORT
             <input type="file" ref="fileInput" @change="handleImportExcel" class="hidden" accept=".xlsx, .xls" />
           </button>
+          <button v-if="authStore.isAdmin" @click="downloadTemplate" 
+                  class="bg-gray-500/20 hover:bg-gray-500/30 text-gray-400 px-4 py-3 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            TEMPLATE
+          </button>
           <button v-if="authStore.isAdmin" @click="openAddModal" class="btn-premium-primary">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
             TAMBAH BARANG
@@ -232,6 +237,19 @@ const handleExportExcel = async () => {
     link.click()
     document.body.removeChild(link)
   } catch (err) { alert('Gagal mendownload laporan Excel') }
+}
+
+const downloadTemplate = async () => {
+  try {
+    const response = await api.get('/items/import/template', { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'SIS-INV_Template_Barang.xlsx')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (err) { alert('Gagal mendownload template Excel') }
 }
 
 const handleImportExcel = async (event) => {

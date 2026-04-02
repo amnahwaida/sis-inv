@@ -23,6 +23,11 @@
             IMPORT EXCEL
             <input type="file" ref="fileInput" @change="handleImportExcel" class="hidden" accept=".xlsx, .xls" />
           </button>
+          <button @click="downloadTemplate" 
+                  class="btn-premium-action !bg-gray-500/10 !text-gray-400 !shadow-none hover:!bg-gray-500/20 !border-gray-500/20">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            TEMPLATE
+          </button>
           <button @click="openCreateModal" class="btn-premium-primary">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
             TAMBAH SISWA BARU
@@ -238,6 +243,19 @@ async function exportExcel() {
     link.click()
     document.body.removeChild(link)
   } catch (e) { alert('Gagal mendownload data siswa') }
+}
+
+async function downloadTemplate() {
+  try {
+    const response = await api.get('/students/import/template', { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'SIS-INV_Template_Siswa.xlsx')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (e) { alert('Gagal mendownload template excel') }
 }
 
 async function handleImportExcel(event) {

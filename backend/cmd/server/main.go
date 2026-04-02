@@ -50,6 +50,7 @@ func main() {
 	authHandler := handlers.NewAuthHandler(db, cfg)
 	userHandler := handlers.NewUserHandler(db)
 	systemHandler := handlers.NewSystemHandler(db)
+	reportHandler := handlers.NewReportHandler(db)
 
 	// Setup router
 	r := gin.Default()
@@ -110,6 +111,7 @@ func main() {
 				adminStudents.DELETE("/:id", studentHandler.Delete)
 				adminStudents.GET("/export", studentHandler.ExportExcel)
 				adminStudents.POST("/import", studentHandler.ImportExcel)
+				adminStudents.GET("/import/template", reportHandler.ImportStudentsTemplate)
 			}
 		}
 
@@ -133,6 +135,7 @@ func main() {
 				adminItems.DELETE("/:id", itemHandler.Delete)
 				adminItems.POST("/:id/qr", itemHandler.GenerateQRCode)
 				adminItems.POST("/import", itemHandler.ImportExcel)
+				adminItems.GET("/import/template", reportHandler.ImportItemsTemplate)
 			}
 		}
 
@@ -191,7 +194,6 @@ func main() {
 			}
 		}
 		// Reports & Audit
-		reportHandler := handlers.NewReportHandler(db)
 		auditHandler := handlers.NewAuditHandler(db)
 		reports := v1.Group("/reports")
 		reports.Use(middleware.AuthMiddleware())

@@ -228,6 +228,74 @@ func (h *ReportHandler) ExportTransactions(c *gin.Context) {
 	f.Write(c.Writer)
 }
 
+// ImportItemsTemplate generates a template for bulk item import
+func (h *ReportHandler) ImportItemsTemplate(c *gin.Context) {
+	f := excelize.NewFile()
+	defer f.Close()
+
+	sheet := "Template Import Barang"
+	idx, _ := f.NewSheet(sheet)
+	f.DeleteSheet("Sheet1")
+
+	// Headers and Sample Data
+	hdrs := []string{"Kode Aset", "Nama Barang", "Kategori", "Lokasi", "Kondisi", "Tipe Peminjam", "Tanggal Pembelian", "Harga", "Catatan"}
+	sample := []string{"LAB-001", "Laptop ASUS Vivobook", "Elektronik", "Lab Komputer", "GOOD", "STUDENT_ALLOWED", "2024-01-20", "7500000", "Bantuan BOS 2024"}
+
+	for i, hd := range hdrs {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheet, cell, hd)
+		
+		// Style header
+		style, _ := f.NewStyle(&excelize.Style{
+			Font: &excelize.Font{Bold: true, Color: "FFFFFF"},
+			Fill: excelize.Fill{Type: "pattern", Color: []string{"4F46E5"}, Pattern: 1},
+		})
+		f.SetCellStyle(sheet, cell, cell, style)
+		
+		// Fill sample
+		sampleCell, _ := excelize.CoordinatesToCellName(i+1, 2)
+		f.SetCellValue(sheet, sampleCell, sample[i])
+	}
+
+	// Add instructions as comments or a separate sheet (optional, keeping it simple for now)
+	f.SetActiveSheet(idx)
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", "attachment; filename=SIS-INV_Template_Barang.xlsx")
+	f.Write(c.Writer)
+}
+
+// ImportStudentsTemplate generates a template for bulk student import
+func (h *ReportHandler) ImportStudentsTemplate(c *gin.Context) {
+	f := excelize.NewFile()
+	defer f.Close()
+
+	sheet := "Template Import Siswa"
+	idx, _ := f.NewSheet(sheet)
+	f.DeleteSheet("Sheet1")
+
+	hdrs := []string{"NIS", "Nama Lengkap", "Kelas"}
+	sample := []string{"2024001", "Ahmad Yusuf", "X-MIPA-1"}
+
+	for i, hd := range hdrs {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheet, cell, hd)
+		
+		style, _ := f.NewStyle(&excelize.Style{
+			Font: &excelize.Font{Bold: true, Color: "FFFFFF"},
+			Fill: excelize.Fill{Type: "pattern", Color: []string{"4F46E5"}, Pattern: 1},
+		})
+		f.SetCellStyle(sheet, cell, cell, style)
+		
+		sampleCell, _ := excelize.CoordinatesToCellName(i+1, 2)
+		f.SetCellValue(sheet, sampleCell, sample[i])
+	}
+
+	f.SetActiveSheet(idx)
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", "attachment; filename=SIS-INV_Template_Siswa.xlsx")
+	f.Write(c.Writer)
+}
+
 // ActiveBorrowings returns all currently active borrowings with optional class filter (F05.2, F05.3)
 func (h *ReportHandler) ActiveBorrowings(c *gin.Context) {
 	classFilter := c.Query("class")
