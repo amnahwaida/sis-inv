@@ -68,13 +68,42 @@ func (h *CategoryHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{"id": id}, "Category created successfully"))
 }
 
+func (h *CategoryHandler) Update(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		Name        string  `json:"name" binding:"required"`
+		Description *string `json:"description"`
+		ColorCode   *string `json:"color_code"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Invalid data"))
+		return
+	}
+
+	_, err := h.db.Exec(context.Background(),
+		"UPDATE categories SET name = $1, description = $2, color_code = $3 WHERE id = $4",
+		req.Name, req.Description, req.ColorCode, id,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to update category"))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Category updated successfully"))
+}
+
 func (h *CategoryHandler) Delete(c *gin.Context) {
 	idStr := c.Param("id")
-	id, _ := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "ID kategori tidak valid"))
+		return
+	}
 
 	// Check if any items are using this category
 	var count int
-	err := h.db.QueryRow(context.Background(), "SELECT COUNT(*) FROM items WHERE category_id = $1", id).Scan(&count)
+	err = h.db.QueryRow(context.Background(), "SELECT COUNT(*) FROM items WHERE category_id = $1", id).Scan(&count)
 	if err == nil && count > 0 {
 		c.JSON(http.StatusConflict, utils.ErrorResponse(http.StatusConflict, "Cannot delete category being used by items"))
 		return

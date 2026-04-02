@@ -21,6 +21,27 @@ func NewStudentHandler(db *pgxpool.Pool) *StudentHandler {
 	return &StudentHandler{db: db}
 }
 
+func (h *StudentHandler) GetUniqueClasses(c *gin.Context) {
+	query := `SELECT DISTINCT class FROM students WHERE class IS NOT NULL AND class != '' ORDER BY class ASC`
+	rows, err := h.db.Query(context.Background(), query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal mengambil data kelas"))
+		return
+	}
+	defer rows.Close()
+
+	var classes []string
+	for rows.Next() {
+		var className string
+		if err := rows.Scan(&className); err == nil {
+			classes = append(classes, className)
+		}
+	}
+	
+	if classes == nil { classes = []string{} }
+	c.JSON(http.StatusOK, utils.SuccessResponse(classes, ""))
+}
+
 func (h *StudentHandler) List(c *gin.Context) {
 	query := `SELECT id, nis, full_name, class, is_active, created_at FROM students ORDER BY full_name ASC`
 	rows, err := h.db.Query(context.Background(), query)
@@ -147,13 +168,17 @@ func (h *StudentHandler) Update(c *gin.Context) {
 func (h *StudentHandler) Delete(c *gin.Context) {
 	idStr := c.Param("id")
 	// Convert ID string to int since students.id is SERIAL
-	id, _ := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "ID siswa tidak valid"))
+		return
+	}
 
 	// Get student info for audit
 	var stName, stNis string
-	_ = h.db.QueryRow(context.Background(), "SELECT full_name, nis FROM students WHERE id = $1", id).Scan(&stName, &stNis)
+	err = h.db.QueryRow(context.Background(), "SELECT full_name, nis FROM students WHERE id = $1", id).Scan(&stName, &stNis)
 
-	_, err := h.db.Exec(context.Background(), "DELETE FROM students WHERE id = $1", id)
+	_, err = h.db.Exec(context.Background(), "DELETE FROM students WHERE id = $1", id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal menghapus data: Siswa mungkin sudah memiliki transaksi"))
 		return

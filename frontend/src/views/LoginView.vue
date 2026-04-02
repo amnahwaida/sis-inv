@@ -59,8 +59,8 @@
           </div>
 
           <button :disabled="loading" 
-                  class="w-full h-16 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-2xl shadow-primary-500/40 active:scale-95 disabled:opacity-30 transition-all mt-4 relative overflow-hidden group/btn">
-            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
+                  class="btn-premium-primary w-full py-5 text-sm">
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
             {{ loading ? 'SINKRONISASI...' : 'AUTENTIKASI MASUK' }}
           </button>
         </form>

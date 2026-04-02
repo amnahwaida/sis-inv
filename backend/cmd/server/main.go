@@ -98,6 +98,7 @@ func main() {
 		students.Use(middleware.AuthMiddleware())
 		{
 			students.GET("/search", studentHandler.Search)
+			students.GET("/classes", studentHandler.GetUniqueClasses)
 			
 			// Admin only CRUD
 			adminStudents := students.Group("")
@@ -146,6 +147,7 @@ func main() {
 			transactions.GET("/my", trxHandler.MyBorrowings)
 			transactions.GET("/my/history", trxHandler.MyBorrowingsHistory)
 			transactions.GET("/student/:nis", trxHandler.GetStudentHistory)
+			transactions.GET("/student/:nis/export", trxHandler.StudentHistoryExport)
 		}
 
 		// Dashboard
@@ -168,6 +170,7 @@ func main() {
 			adminCats.Use(middleware.RoleMiddleware("ADMIN"))
 			{
 				adminCats.POST("", catHandler.Create)
+				adminCats.PUT("/:id", catHandler.Update)
 				adminCats.DELETE("/:id", catHandler.Delete)
 			}
 		}
@@ -183,6 +186,7 @@ func main() {
 			adminLocs.Use(middleware.RoleMiddleware("ADMIN"))
 			{
 				adminLocs.POST("", locHandler.Create)
+				adminLocs.PUT("/:id", locHandler.Update)
 				adminLocs.DELETE("/:id", locHandler.Delete)
 			}
 		}

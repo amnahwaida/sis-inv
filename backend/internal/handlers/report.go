@@ -111,6 +111,8 @@ func (h *ReportHandler) ExportItems(c *gin.Context) {
 // ExportTransactions exports all transactions to Excel (F05.4)
 func (h *ReportHandler) ExportTransactions(c *gin.Context) {
 	ctx := context.Background()
+	classFilter := c.Query("class")
+	typeFilter := c.Query("type")
 
 	query := `
 		SELECT 
@@ -122,10 +124,30 @@ func (h *ReportHandler) ExportTransactions(c *gin.Context) {
 		FROM transactions t
 		JOIN items i ON t.item_id = i.id
 		JOIN users u ON t.borrowed_by = u.id
-		ORDER BY t.borrowed_at DESC
+		WHERE 1=1
 	`
+	
+	args := []interface{}{}
+	argIndex := 1
 
-	rows, err := h.db.Query(ctx, query)
+	if classFilter != "" {
+		query += fmt.Sprintf(" AND t.student_class = $%d", argIndex)
+		args = append(args, classFilter)
+		argIndex++
+	}
+
+	if typeFilter == "active" {
+		query += " AND t.status = 'ACTIVE'"
+	} else if typeFilter == "overdue" {
+		query += " AND t.status = 'ACTIVE' AND t.due_date < NOW()"
+	} else if typeFilter == "history" {
+		// History usually implies all or returned, but we'll show all if history is requested
+		// as per the frontend's current logic for history tab.
+	}
+
+	query += " ORDER BY t.borrowed_at DESC"
+
+	rows, err := h.db.Query(ctx, query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal mengambil data"))
 		return
@@ -214,7 +236,7 @@ func (h *ReportHandler) ActiveBorrowings(c *gin.Context) {
 	query := `
 		SELECT 
 			t.id, t.borrower_type, t.student_nis, t.student_name, t.student_class,
-			t.borrowed_at, t.due_date, t.purpose,
+			t.borrowed_at, t.due_date, t.purpose, t.borrow_photo_url,
 			i.code as item_code, i.name as item_name,
 			u.full_name as teacher_name
 		FROM transactions t
@@ -239,12 +261,12 @@ func (h *ReportHandler) ActiveBorrowings(c *gin.Context) {
 	var result []map[string]interface{}
 	for rows.Next() {
 		var id, borrowerType, itemCode, itemName, teacherName string
-		var studentNIS, studentName, studentClass, purpose *string
+		var studentNIS, studentName, studentClass, purpose, borrowPhoto *string
 		var borrowedAt time.Time
 		var dueDate *time.Time
 
 		if err := rows.Scan(&id, &borrowerType, &studentNIS, &studentName, &studentClass,
-			&borrowedAt, &dueDate, &purpose, &itemCode, &itemName, &teacherName); err != nil {
+			&borrowedAt, &dueDate, &purpose, &borrowPhoto, &itemCode, &itemName, &teacherName); err != nil {
 			continue
 		}
 
@@ -254,18 +276,19 @@ func (h *ReportHandler) ActiveBorrowings(c *gin.Context) {
 		}
 
 		result = append(result, map[string]interface{}{
-			"id":            id,
-			"borrower_type": borrowerType,
-			"student_nis":   studentNIS,
-			"student_name":  studentName,
-			"student_class": studentClass,
-			"borrowed_at":   borrowedAt,
-			"due_date":      dueDate,
-			"purpose":       purpose,
-			"item_code":     itemCode,
-			"item_name":     itemName,
-			"teacher_name":  teacherName,
-			"is_overdue":    overdue,
+			"id":               id,
+			"borrower_type":    borrowerType,
+			"student_nis":      studentNIS,
+			"student_name":     studentName,
+			"student_class":    studentClass,
+			"borrowed_at":      borrowedAt,
+			"due_date":         dueDate,
+			"purpose":          purpose,
+			"borrow_photo_url": borrowPhoto,
+			"item_code":        itemCode,
+			"item_name":        itemName,
+			"teacher_name":     teacherName,
+			"is_overdue":       overdue,
 		})
 	}
 
@@ -277,22 +300,28 @@ func (h *ReportHandler) ActiveBorrowings(c *gin.Context) {
 
 // OverdueReport returns only overdue borrowings (F05.2)
 func (h *ReportHandler) OverdueReport(c *gin.Context) {
+	classFilter := c.Query("class")
 	ctx := context.Background()
 
 	query := `
 		SELECT 
 			t.id, t.borrower_type, t.student_nis, t.student_name, t.student_class,
-			t.borrowed_at, t.due_date, t.purpose,
+			t.borrowed_at, t.due_date, t.purpose, t.borrow_photo_url,
 			i.code as item_code, i.name as item_name,
 			u.full_name as teacher_name
 		FROM transactions t
 		JOIN items i ON t.item_id = i.id
 		JOIN users u ON t.borrowed_by = u.id
 		WHERE t.status = 'ACTIVE' AND t.due_date < NOW()
-		ORDER BY t.due_date ASC
 	`
+	args := []interface{}{}
+	if classFilter != "" {
+		query += " AND t.student_class = $1"
+		args = append(args, classFilter)
+	}
+	query += " ORDER BY t.due_date ASC"
 
-	rows, err := h.db.Query(ctx, query)
+	rows, err := h.db.Query(ctx, query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal mengambil data"))
 		return
@@ -302,12 +331,12 @@ func (h *ReportHandler) OverdueReport(c *gin.Context) {
 	var result []map[string]interface{}
 	for rows.Next() {
 		var id, borrowerType, itemCode, itemName, teacherName string
-		var studentNIS, studentName, studentClass, purpose *string
+		var studentNIS, studentName, studentClass, purpose, borrowPhoto *string
 		var borrowedAt time.Time
 		var dueDate *time.Time
 
 		if err := rows.Scan(&id, &borrowerType, &studentNIS, &studentName, &studentClass,
-			&borrowedAt, &dueDate, &purpose, &itemCode, &itemName, &teacherName); err != nil {
+			&borrowedAt, &dueDate, &purpose, &borrowPhoto, &itemCode, &itemName, &teacherName); err != nil {
 			continue
 		}
 
@@ -335,21 +364,27 @@ func (h *ReportHandler) OverdueReport(c *gin.Context) {
 // TransactionHistory returns all transactions with a limit of 100 (F05.2)
 func (h *ReportHandler) TransactionHistory(c *gin.Context) {
 	ctx := context.Background()
+	classFilter := c.Query("class")
 
 	query := `
 		SELECT 
 			t.borrower_type, t.student_name, t.student_class,
-			t.status, t.borrowed_at, t.returned_at,
+			t.status, t.borrowed_at, t.returned_at, t.borrow_photo_url, t.return_photo_url,
 			i.code as item_code, i.name as item_name,
 			u.full_name as teacher_name
 		FROM transactions t
 		JOIN items i ON t.item_id = i.id
 		JOIN users u ON t.borrowed_by = u.id
-		ORDER BY t.borrowed_at DESC
-		LIMIT 100
 	`
 
-	rows, err := h.db.Query(ctx, query)
+	args := []interface{}{}
+	if classFilter != "" {
+		query += " WHERE t.student_class = $1"
+		args = append(args, classFilter)
+	}
+	query += " ORDER BY t.borrowed_at DESC LIMIT 100"
+
+	rows, err := h.db.Query(ctx, query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal mengambil riwayat"))
 		return
@@ -359,26 +394,28 @@ func (h *ReportHandler) TransactionHistory(c *gin.Context) {
 	var result []map[string]interface{}
 	for rows.Next() {
 		var borrowerType, status, itemCode, itemName, teacherName string
-		var studentName, studentClass *string
+		var studentName, studentClass, borrowPhoto, returnPhoto *string
 		var borrowedAt time.Time
 		var returnedAt *time.Time
 
 		if err := rows.Scan(&borrowerType, &studentName, &studentClass,
-			&status, &borrowedAt, &returnedAt,
+			&status, &borrowedAt, &returnedAt, &borrowPhoto, &returnPhoto,
 			&itemCode, &itemName, &teacherName); err != nil {
 			continue
 		}
 
 		result = append(result, map[string]interface{}{
-			"borrower_type": borrowerType,
-			"student_name":  studentName,
-			"student_class": studentClass,
-			"status":        status,
-			"borrowed_at":   borrowedAt,
-			"returned_at":   returnedAt,
-			"item_code":     itemCode,
-			"item_name":     itemName,
-			"teacher_name":  teacherName,
+			"borrower_type":    borrowerType,
+			"student_name":     studentName,
+			"student_class":    studentClass,
+			"status":           status,
+			"borrowed_at":      borrowedAt,
+			"returned_at":      returnedAt,
+			"borrow_photo_url": borrowPhoto,
+			"return_photo_url": returnPhoto,
+			"item_code":        itemCode,
+			"item_name":        itemName,
+			"teacher_name":     teacherName,
 		})
 	}
 
@@ -723,9 +760,9 @@ func (h *ReportHandler) ExportAuditSession(c *gin.Context) {
 	rows, _ = h.db.Query(ctx,
 		`SELECT i.code, i.name, i.status, i.condition
 		 FROM items i
-		 WHERE i.location = $1
-		 AND i.id NOT IN (SELECT item_id FROM audit_items WHERE session_id = $2)`,
-		s.LocationName, sessionId)
+		 WHERE i.location_id = (SELECT location_id FROM audit_sessions WHERE id = $1)
+		 AND i.id NOT IN (SELECT item_id FROM audit_items WHERE session_id = $1)`,
+		sessionId)
 	
 	rowIdx++
 	missingCount := 0

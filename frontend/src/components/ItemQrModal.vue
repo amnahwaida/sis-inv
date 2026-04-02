@@ -6,12 +6,12 @@
 
       <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-      <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
-        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-100">
+      <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-transparent dark:border-gray-700">
+        <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-100 dark:border-gray-700">
           <div class="sm:flex sm:items-start">
             <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
               <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl leading-6 font-semibold text-gray-900" id="modal-title">
+                <h3 class="text-xl leading-6 font-semibold text-gray-900 dark:text-white" id="modal-title">
                   QR Code Barang
                 </h3>
                 <button @click="close" class="text-gray-400 hover:text-gray-500">
@@ -35,8 +35,8 @@
               </div>
 
               <div v-else-if="qrCodeData" class="flex flex-col items-center justify-center py-6" id="print-area">
-                <div class="bg-white p-4 border-2 border-dashed border-gray-300 rounded-xl mb-4 text-center">
-                  <p class="text-sm font-bold text-gray-800 mb-2 uppercase">{{ itemData?.name }}</p>
+                <div class="bg-white dark:bg-gray-800 p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl mb-4 text-center">
+                  <p class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2 uppercase">{{ itemData?.name }}</p>
                   <img :src="qrCodeData" alt="QR Code" class="w-48 h-48 mx-auto" />
                   <p class="text-xs font-mono text-gray-600 mt-2 tracking-widest">{{ itemData?.code }}</p>
                 </div>
@@ -49,18 +49,18 @@
           </div>
         </div>
         
-        <div class="bg-gray-50 px-4 py-4 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 rounded-b-xl border-t border-gray-100">
+        <div class="bg-gray-50 dark:bg-gray-800/80 px-6 py-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 rounded-b-xl border-t border-gray-100 dark:border-gray-700">
           <button type="button" @click="close"
-                  class="w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm transition-colors">
+                  class="btn-secondary flex-1 sm:flex-none">
             Tutup
           </button>
           
           <button type="button" @click="printQR" :disabled="loading || !qrCodeData"
-                  class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm disabled:opacity-50 transition-colors">
+                  class="btn-premium-action flex-1 sm:flex-none !px-8">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
             </svg>
-            Cetak Label
+            CETAK LABEL
           </button>
         </div>
       </div>

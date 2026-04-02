@@ -73,13 +73,26 @@ func (h *AuditHandler) ScanItem(c *gin.Context) {
 		return
 	}
 
-	// Insert audit item record
-	_, err = h.db.Exec(ctx,
-		`INSERT INTO audit_items (session_id, item_id, found_condition, notes)
-		 VALUES ($1, $2, $3, $4)
-		 ON CONFLICT (id) DO UPDATE SET found_condition = EXCLUDED.found_condition, notes = EXCLUDED.notes`,
-		sessionId, itemId, req.Condition, utils.NullString(req.Notes),
-	)
+	// Upsert audit item record based on (session_id, item_id)
+	// We check if it exists first because we don't have a unique constraint on (session_id, item_id) yet
+	var existingId string
+	err = h.db.QueryRow(ctx, "SELECT id FROM audit_items WHERE session_id = $1 AND item_id = $2", sessionId, itemId).Scan(&existingId)
+	
+	if err != nil {
+		// New scan
+		_, err = h.db.Exec(ctx,
+			`INSERT INTO audit_items (session_id, item_id, found_condition, notes)
+			 VALUES ($1, $2, $3, $4)`,
+			sessionId, itemId, req.Condition, utils.NullString(req.Notes),
+		)
+	} else {
+		// Update existing scan
+		_, err = h.db.Exec(ctx,
+			`UPDATE audit_items SET found_condition = $1, notes = $2, scanned_at = NOW()
+			 WHERE id = $3`,
+			req.Condition, utils.NullString(req.Notes), existingId,
+		)
+	}
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to record audited item: "+err.Error()))
@@ -117,7 +130,7 @@ func (h *AuditHandler) ListSessions(c *gin.Context) {
 	query := `
 		SELECT s.id, s.location_id, l.name as location_name, s.user_id, u.full_name as user_name,
 		       s.status, s.started_at, s.finished_at, s.notes, s.created_at,
-		       (SELECT COUNT(*) FROM items WHERE location = l.name) as total_expected,
+		       (SELECT COUNT(*) FROM items WHERE location_id = l.id) as total_expected,
 		       (SELECT COUNT(*) FROM audit_items WHERE session_id = s.id) as total_found
 		FROM audit_sessions s
 		JOIN locations l ON s.location_id = l.id
@@ -132,7 +145,7 @@ func (h *AuditHandler) ListSessions(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	var sessions []models.AuditSession
+	sessions := []models.AuditSession{}
 	for rows.Next() {
 		var s models.AuditSession
 		err := rows.Scan(
@@ -140,9 +153,11 @@ func (h *AuditHandler) ListSessions(c *gin.Context) {
 			&s.Status, &s.StartedAt, &s.FinishedAt, &s.Notes, &s.CreatedAt,
 			&s.TotalExpected, &s.TotalFound,
 		)
-		if err == nil {
-			sessions = append(sessions, s)
+		if err != nil {
+			fmt.Printf("⚠️ Scan error in ListSessions: %v\n", err)
+			continue
 		}
+		sessions = append(sessions, s)
 	}
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(sessions, ""))
@@ -157,13 +172,16 @@ func (h *AuditHandler) GetSessionDetail(c *gin.Context) {
 	var s models.AuditSession
 	err := h.db.QueryRow(ctx,
 		`SELECT s.id, s.location_id, l.name as location_name, s.user_id, u.full_name as user_name,
-		        s.status, s.started_at, s.finished_at, s.notes, s.created_at
+		        s.status, s.started_at, s.finished_at, s.notes, s.created_at,
+		        (SELECT COUNT(*) FROM items WHERE location_id = l.id) as total_expected,
+		        (SELECT COUNT(*) FROM audit_items WHERE session_id = s.id) as total_found
 		 FROM audit_sessions s
 		 JOIN locations l ON s.location_id = l.id
 		 JOIN users u ON s.user_id = u.id
 		 WHERE s.id = $1`, sessionId).Scan(
 		&s.ID, &s.LocationID, &s.LocationName, &s.UserID, &s.UserName,
 		&s.Status, &s.StartedAt, &s.FinishedAt, &s.Notes, &s.CreatedAt,
+		&s.TotalExpected, &s.TotalFound,
 	)
 
 	if err != nil {
@@ -193,9 +211,9 @@ func (h *AuditHandler) GetSessionDetail(c *gin.Context) {
 	missingRows, err := h.db.Query(ctx,
 		`SELECT i.id, i.code, i.name, i.condition
 		 FROM items i
-		 WHERE i.location = $1
+		 WHERE i.location_id = $1
 		 AND i.id NOT IN (SELECT item_id FROM audit_items WHERE session_id = $2)`,
-		s.LocationName, sessionId)
+		s.LocationID, sessionId)
 	
 	missingItems := []map[string]interface{}{}
 	if err == nil {

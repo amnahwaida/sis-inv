@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vannyezha/sis-inv/internal/models"
 	"github.com/vannyezha/sis-inv/internal/utils"
+	"github.com/xuri/excelize/v2"
 )
 
 type TransactionHandler struct {
@@ -182,21 +184,25 @@ func (h *TransactionHandler) Return(c *gin.Context) {
 		return
 	}
 
-	// Find the active transaction
+	// Find the active transaction with borrower details for comprehensive logging
 	var trxId string
 	var borrowedBy string
 	var borrowerType string
-	err = tx.QueryRow(ctx, "SELECT id, borrowed_by, borrower_type FROM transactions WHERE item_id = $1 AND status = 'ACTIVE' ORDER BY borrowed_at DESC LIMIT 1", itemId).Scan(&trxId, &borrowedBy, &borrowerType)
+	var studentName, studentClass *string
+	var facilitatorName string
+	err = tx.QueryRow(ctx, `
+		SELECT t.id, t.borrowed_by, t.borrower_type, t.student_name, t.student_class, u.full_name
+		FROM transactions t
+		JOIN users u ON t.borrowed_by = u.id
+		WHERE t.item_id = $1 AND t.status = 'ACTIVE'
+		ORDER BY t.borrowed_at DESC LIMIT 1
+	`, itemId).Scan(&trxId, &borrowedBy, &borrowerType, &studentName, &studentClass, &facilitatorName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Active borrow record not found"))
 		return
 	}
 
-	// RELAXED PERMISSION:
-	// - Admins can return anything.
-	// - ANY staff/teacher can return an item borrowed for a STUDENT.
-	// - Staff return for THEMSELVES: Should strictly be the same person OR any other teacher can receive it too (as per user request).
-	// We'll allow any teacher to accept the return of ANY active transaction for practicality.
+	// Any authenticated staff can accept the return
 	
 	// Update Transaction
 	_, err = tx.Exec(ctx, `
@@ -234,8 +240,33 @@ func (h *TransactionHandler) Return(c *gin.Context) {
 		return
 	}
 
+	// Build comprehensive audit description
 	actorId, _ := c.Get("userID")
-	auditDesc := fmt.Sprintf("Returned item: %s. Condition: %s. Notes: %s", req.ItemCode, req.Condition, req.Notes)
+
+	// Resolve receiver name
+	var receiverName string
+	_ = h.db.QueryRow(context.Background(), "SELECT full_name FROM users WHERE id = $1", actorId).Scan(&receiverName)
+	if receiverName == "" {
+		receiverName = "Unknown"
+	}
+
+	// Build borrower info string
+	var borrowerInfo string
+	if borrowerType == "STUDENT" && studentName != nil {
+		borrowerInfo = fmt.Sprintf("Siswa: %s", *studentName)
+		if studentClass != nil {
+			borrowerInfo += fmt.Sprintf(" (%s)", *studentClass)
+		}
+		borrowerInfo += fmt.Sprintf(" | Perantara Guru: %s", facilitatorName)
+	} else {
+		borrowerInfo = fmt.Sprintf("Staff: %s", facilitatorName)
+	}
+
+	auditDesc := fmt.Sprintf("Pengembalian barang [%s]. Peminjam: %s. Diterima oleh: %s. Kondisi: %s", 
+		req.ItemCode, borrowerInfo, receiverName, req.Condition)
+	if req.Notes != "" {
+		auditDesc += fmt.Sprintf(". Catatan: %s", req.Notes)
+	}
 	utils.LogAudit(h.db, actorId.(string), "RETURN_ITEM", "ITEM", itemId, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{"new_status": newItemStatus}, "Item returned successfully"))
@@ -248,7 +279,7 @@ func (h *TransactionHandler) MyBorrowings(c *gin.Context) {
 	query := `
 		SELECT 
 			t.id, t.item_id, t.status, t.borrowed_at, t.due_date,
-			t.borrower_type, t.student_name, t.student_class,
+			t.borrower_type, t.student_name, t.student_class, t.borrow_photo_url,
 			i.code, i.name
 		FROM transactions t
 		JOIN items i ON t.item_id = i.id
@@ -267,9 +298,9 @@ func (h *TransactionHandler) MyBorrowings(c *gin.Context) {
 	for rows.Next() {
 		var id, itemId, status, code, itemName, borrowerType string
 		var borrowDate, dueDate time.Time
-		var studentName, studentClass *string
+		var studentName, studentClass, borrowPhoto *string
 
-		err := rows.Scan(&id, &itemId, &status, &borrowDate, &dueDate, &borrowerType, &studentName, &studentClass, &code, &itemName)
+		err := rows.Scan(&id, &itemId, &status, &borrowDate, &dueDate, &borrowerType, &studentName, &studentClass, &borrowPhoto, &code, &itemName)
 		if err == nil {
 			displayName := "Diri Sendiri"
 			if borrowerType == "STUDENT" && studentName != nil {
@@ -289,6 +320,7 @@ func (h *TransactionHandler) MyBorrowings(c *gin.Context) {
 				"student_class":    studentClass,
 				"borrow_date":      borrowDate,
 				"due_date":         dueDate,
+				"borrow_photo_url": borrowPhoto,
 				"status":           status,
 				"is_overdue":       time.Now().After(dueDate),
 			})
@@ -306,7 +338,7 @@ func (h *TransactionHandler) MyBorrowingsHistory(c *gin.Context) {
 		SELECT 
 			t.id, t.status, t.borrowed_at, t.returned_at, t.due_date,
 			t.borrower_type, t.student_name, t.student_class,
-			t.return_condition, t.return_notes,
+			t.return_condition, t.return_notes, t.borrow_photo_url, t.return_photo_url,
 			i.code, i.name
 		FROM transactions t
 		JOIN items i ON t.item_id = i.id
@@ -326,9 +358,9 @@ func (h *TransactionHandler) MyBorrowingsHistory(c *gin.Context) {
 	for rows.Next() {
 		var id, status, code, itemName, borrowerType string
 		var borrowDate, returnedAt, dueDate time.Time
-		var studentName, studentClass, returnCondition, returnNotes *string
+		var studentName, studentClass, returnCondition, returnNotes, borrowPhoto, returnPhoto *string
 
-		err := rows.Scan(&id, &status, &borrowDate, &returnedAt, &dueDate, &borrowerType, &studentName, &studentClass, &returnCondition, &returnNotes, &code, &itemName)
+		err := rows.Scan(&id, &status, &borrowDate, &returnedAt, &dueDate, &borrowerType, &studentName, &studentClass, &returnCondition, &returnNotes, &borrowPhoto, &returnPhoto, &code, &itemName)
 		if err == nil {
 			displayName := "Diri Sendiri"
 			if borrowerType == "STUDENT" && studentName != nil {
@@ -347,6 +379,8 @@ func (h *TransactionHandler) MyBorrowingsHistory(c *gin.Context) {
 				"due_date":         dueDate,
 				"return_condition": returnCondition,
 				"return_notes":     returnNotes,
+				"borrow_photo_url": borrowPhoto,
+				"return_photo_url": returnPhoto,
 				"status":           status,
 			})
 		}
@@ -369,10 +403,10 @@ func (h *TransactionHandler) GetStudentHistory(c *gin.Context) {
 			t.student_name, t.student_class, t.purpose,
 			t.borrow_photo_url, t.return_photo_url, t.return_condition,
 			i.code as item_code, i.name as item_name,
-			u.full_name as teacher_name
+			COALESCE(u.full_name, 'System') as teacher_name
 		FROM transactions t
 		JOIN items i ON t.item_id = i.id
-		JOIN users u ON t.borrowed_by = u.id
+		LEFT JOIN users u ON t.borrowed_by = u.id
 		WHERE t.student_nis = $1 OR t.student_name ILIKE $1
 		ORDER BY t.borrowed_at DESC
 	`
@@ -418,4 +452,127 @@ func (h *TransactionHandler) GetStudentHistory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(history, "Fetched student history successfully"))
+}
+
+func (h *TransactionHandler) StudentHistoryExport(c *gin.Context) {
+	nis := c.Param("nis")
+	if nis == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Student NIS is required"))
+		return
+	}
+
+	query := `
+		SELECT 
+			t.status, t.borrowed_at, t.returned_at,
+			t.student_name, t.student_class, t.purpose,
+			t.return_condition, 
+			i.code as item_code, i.name as item_name,
+			COALESCE(u.full_name, 'System') as teacher_name
+		FROM transactions t
+		JOIN items i ON t.item_id = i.id
+		LEFT JOIN users u ON t.borrowed_by = u.id
+		WHERE t.student_nis = $1 OR t.student_name ILIKE $1
+		ORDER BY t.borrowed_at DESC
+	`
+
+	rows, err := h.db.Query(context.Background(), query, nis)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal mengambil data untuk ekspor"))
+		return
+	}
+	defer rows.Close()
+
+	f := excelize.NewFile()
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Printf("Error closing excel file: %v", err)
+		}
+	}()
+
+	sheet := "Riwayat Peminjaman"
+	index, _ := f.NewSheet(sheet)
+	f.DeleteSheet("Sheet1")
+
+	// Headers
+	hdrs := []string{"Tanggal Pinjam", "Tanggal Kembali", "Aset", "Kode Aset", "Guru Piket", "Keperluan", "Kondisi", "Status"}
+	for i, hd := range hdrs {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheet, cell, hd)
+	}
+
+	// Stylings
+	style, _ := f.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Bold: true, Color: "FFFFFF"},
+		Fill:      excelize.Fill{Type: "pattern", Color: []string{"4F46E5"}, Pattern: 1},
+		Alignment: &excelize.Alignment{Horizontal: "center"},
+	})
+	f.SetRowStyle(sheet, 1, 1, style)
+
+	row := 2
+	var studentNameForTitle string = nis
+	rowCount := 0
+	for rows.Next() {
+		var status, itemCode, itemName, teacherName string
+		var stdName, stdClass, purpose, resCondition *string
+		var borrowedAt time.Time
+		var returnedAt *time.Time
+
+		err := rows.Scan(
+			&status, &borrowedAt, &returnedAt,
+			&stdName, &stdClass, &purpose, &resCondition,
+			&itemCode, &itemName, &teacherName,
+		)
+		if err == nil {
+			if rowCount == 0 && stdName != nil && *stdName != "" { 
+				studentNameForTitle = *stdName 
+			}
+			
+			retDate := "-"
+			if returnedAt != nil { retDate = returnedAt.Format("02 Jan 2006 15:04") }
+
+			cond := "-"
+			if resCondition != nil { cond = *resCondition }
+
+			purp := "-"
+			if purpose != nil { purp = *purpose }
+
+			f.SetCellValue(sheet, fmt.Sprintf("A%d", row), borrowedAt.Format("02 Jan 2006 15:04"))
+			f.SetCellValue(sheet, fmt.Sprintf("B%d", row), retDate)
+			f.SetCellValue(sheet, fmt.Sprintf("C%d", row), itemName)
+			f.SetCellValue(sheet, fmt.Sprintf("D%d", row), itemCode)
+			f.SetCellValue(sheet, fmt.Sprintf("E%d", row), teacherName)
+			f.SetCellValue(sheet, fmt.Sprintf("F%d", row), purp)
+			f.SetCellValue(sheet, fmt.Sprintf("G%d", row), cond)
+			f.SetCellValue(sheet, fmt.Sprintf("H%d", row), status)
+			row++
+			rowCount++
+		}
+	}
+
+	f.SetActiveSheet(index)
+	
+	// Sanitize filename to prevent header injection or filesystem issues
+	sanitizedName := strings.Map(func(r rune) rune {
+		if strings.ContainsRune("/\\?%*:|\"<>", r) {
+			return '-'
+		}
+		if r < 32 || r > 126 { // Basic ASCII only for safe filename in headers
+			return '_'
+		}
+		return r
+	}, studentNameForTitle)
+
+	if sanitizedName == "" {
+		sanitizedName = "Student"
+	}
+
+	filename := fmt.Sprintf("Riwayat_Siswa_%s_%s.xlsx", sanitizedName, time.Now().Format("2006-01-02"))
+	
+	c.Header("Content-Type", "application/octet-stream")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	c.Header("Content-Transfer-Encoding", "binary")
+	
+	if err := f.Write(c.Writer); err != nil {
+		log.Printf("Error writing excel to response: %v", err)
+	}
 }

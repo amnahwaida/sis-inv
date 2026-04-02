@@ -91,10 +91,10 @@ func (h *UserHandler) Update(c *gin.Context) {
 	ctx := context.Background()
 
 	// 1. Fetch current user data for audit
-	var oldName, oldRole, oldNip, oldEmail, oldPhone string
+	var oldUsername, oldName, oldRole, oldNip, oldEmail, oldPhone string
 	var oldActive bool
-	err := h.db.QueryRow(ctx, "SELECT full_name, role, COALESCE(nip, ''), COALESCE(email, ''), COALESCE(phone, ''), is_active FROM users WHERE id = $1", id).
-		Scan(&oldName, &oldRole, &oldNip, &oldEmail, &oldPhone, &oldActive)
+	err := h.db.QueryRow(ctx, "SELECT username, full_name, role, COALESCE(nip, ''), COALESCE(email, ''), COALESCE(phone, ''), is_active FROM users WHERE id = $1", id).
+		Scan(&oldUsername, &oldName, &oldRole, &oldNip, &oldEmail, &oldPhone, &oldActive)
 
 	if err != nil {
 		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "User tidak ditemukan"))
@@ -106,6 +106,12 @@ func (h *UserHandler) Update(c *gin.Context) {
 	args := []interface{}{time.Now()}
 	argIdx := 2
 
+	if req.Username != nil {
+		query += fmt.Sprintf(", username = $%d", argIdx)
+		args = append(args, *req.Username)
+		argIdx++
+		if *req.Username != oldUsername { changes = append(changes, fmt.Sprintf("Username: %s -> %s", oldUsername, *req.Username)) }
+	}
 	if req.FullName != nil {
 		query += fmt.Sprintf(", full_name = $%d", argIdx)
 		args = append(args, *req.FullName)
@@ -169,6 +175,10 @@ func (h *UserHandler) Update(c *gin.Context) {
 
 func (h *UserHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
+	if id == "" || id == "undefined" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "ID user tidak valid"))
+		return
+	}
 
 	// Soft delete - set is_active to false
 	result, err := h.db.Exec(context.Background(),

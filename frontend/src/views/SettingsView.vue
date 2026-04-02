@@ -98,7 +98,7 @@
 
               <div class="flex justify-end pt-6">
                 <button type="submit" :disabled="submitting"
-                        class="bg-primary-600 text-white px-10 py-5 rounded-2xl font-black text-xs tracking-[0.3em] shadow-xl shadow-primary-500/20 active:scale-95 disabled:opacity-30 transition-all uppercase">
+                        class="btn-premium-action !px-10">
                   {{ submitting ? 'MEMPROSES...' : 'GANTI PASSWORD' }}
                 </button>
               </div>

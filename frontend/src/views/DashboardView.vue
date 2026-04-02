@@ -12,8 +12,7 @@
         </div>
         
         <div class="flex items-center gap-3 backdrop-blur-md bg-white/10 p-2 rounded-2xl border border-white/10">
-          <button @click="dashboardStore.fetchSummary" 
-                  class="bg-white/20 hover:bg-white/30 text-white px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 active:scale-95">
+          <button @click="dashboardStore.fetchSummary" class="bg-white/10 hover:bg-white/20 text-white border border-white/10 px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 active:scale-95">
             <svg class="w-4 h-4" :class="{'animate-spin': dashboardStore.loading}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
@@ -34,8 +33,8 @@
     <!-- Stats Cards Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <!-- Total Items -->
-      <div class="group relative overflow-hidden bg-white dark:bg-gray-800 p-6 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl transition-all duration-500">
-        <div class="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 bg-indigo-500 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
+      <div class="card-premium group">
+        <div class="card-decoration bg-indigo-500"></div>
         <div class="relative flex items-center gap-4">
           <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-indigo-200 dark:shadow-none">
             <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
@@ -48,8 +47,8 @@
       </div>
 
       <!-- Borrowed -->
-      <div class="group relative overflow-hidden bg-white dark:bg-gray-800 p-6 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl transition-all duration-500">
-        <div class="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 bg-blue-500 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
+      <div class="card-premium group">
+        <div class="card-decoration bg-blue-500"></div>
         <div class="relative flex items-center gap-4">
           <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg bg-gradient-to-br from-blue-500 to-blue-700 shadow-blue-200 dark:shadow-none">
             <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -59,14 +58,14 @@
             <p class="text-3xl font-black text-gray-900 dark:text-white leading-none">{{ dashboardStore.summary?.items_by_status?.BORROWED || 0 }}</p>
           </div>
         </div>
-        <div v-if="dashboardStore.summary?.overdue_count" class="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[9px] font-black uppercase tracking-tighter">
+        <div v-if="dashboardStore.summary?.overdue_count" class="relative mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-black uppercase tracking-widest shadow-sm w-fit">
           ⚠️ {{ dashboardStore.summary.overdue_count }} Terlambat
         </div>
       </div>
 
       <!-- Maintenance -->
-      <div class="group relative overflow-hidden bg-white dark:bg-gray-800 p-6 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl transition-all duration-500">
-        <div class="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 bg-amber-500 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
+      <div class="card-premium group">
+        <div class="card-decoration bg-amber-500"></div>
         <div class="relative flex items-center gap-4">
           <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg bg-gradient-to-br from-amber-500 to-amber-700 shadow-amber-200 dark:shadow-none">
             <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -79,8 +78,8 @@
       </div>
 
       <!-- Lost -->
-      <div class="group relative overflow-hidden bg-white dark:bg-gray-800 p-6 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl transition-all duration-500">
-        <div class="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 bg-rose-500 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
+      <div class="card-premium group">
+        <div class="card-decoration bg-rose-500"></div>
         <div class="relative flex items-center gap-4">
           <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg bg-gradient-to-br from-rose-500 to-rose-700 shadow-rose-200 dark:shadow-none">
             <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3.L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
@@ -102,7 +101,7 @@
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <router-link to="/items" class="group bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-2xl hover:border-indigo-500 dark:hover:border-indigo-500 transition-all duration-500 text-center">
+        <router-link to="/items" class="card-premium group text-center">
           <div class="w-20 h-20 mx-auto bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500 shadow-inner">
             <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
           </div>
@@ -110,15 +109,15 @@
           <p class="text-xs text-gray-400 mt-2 font-medium">Input aset baru ke sistem</p>
         </router-link>
         
-        <router-link to="/borrow" class="group bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-2xl hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-500 text-center">
+        <router-link to="/borrow" class="card-premium group text-center !hover:border-blue-500">
           <div class="w-20 h-20 mx-auto bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-inner">
             <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
           </div>
           <span class="block text-lg font-black text-gray-900 dark:text-white tracking-tight">Pinjam Barang</span>
           <p class="text-xs text-gray-400 mt-2 font-medium">Proses peminjaman inventaris</p>
         </router-link>
-
-        <router-link to="/return" class="group bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-2xl hover:border-teal-500 dark:hover:border-teal-500 transition-all duration-500 text-center">
+ 
+        <router-link to="/return" class="card-premium group text-center !hover:border-teal-500">
           <div class="w-20 h-20 mx-auto bg-teal-50 dark:bg-teal-900/30 text-teal-600 rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-teal-600 group-hover:text-white transition-all duration-500 shadow-inner">
             <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           </div>

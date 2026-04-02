@@ -12,8 +12,7 @@
         </div>
         
         <div class="flex items-center gap-3 backdrop-blur-md bg-white/10 p-2 rounded-2xl border border-white/10">
-          <router-link to="/my-borrowings" 
-                    class="bg-white/20 hover:bg-white/30 text-white px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 active:scale-95">
+          <router-link to="/my-borrowings" class="bg-white/10 hover:bg-white/20 text-white border border-white/10 px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 active:scale-95">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
             RIWAYAT SAYA
           </router-link>
@@ -27,7 +26,8 @@
       <!-- Left Column: Selection & Details -->
       <div class="lg:col-span-7 space-y-8">
         <!-- Step 1: Barang -->
-        <section class="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 border border-gray-100 dark:border-gray-700 shadow-sm">
+        <section class="card-premium group">
+          <div class="card-decoration"></div>
           <div class="flex items-center gap-4 mb-8">
             <div class="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black">1</div>
             <h2 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Pilih Barang</h2>
@@ -88,7 +88,8 @@
         </section>
 
         <!-- Step 2: Form Peminjam -->
-        <section class="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 border border-gray-100 dark:border-gray-700 shadow-sm">
+        <section class="card-premium group">
+          <div class="card-decoration"></div>
           <div class="flex items-center gap-4 mb-8">
             <div class="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black">2</div>
             <h2 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Informasi Peminjam</h2>
@@ -204,7 +205,7 @@
           </div>
           
           <button @click="handleBorrow" :disabled="loading || uploading || !selectedItem || (borrowerType === 'STUDENT' && !selectedStudent)" 
-                  class="w-full bg-white text-gray-900 hover:bg-primary-50 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] transition-all active:scale-95 disabled:opacity-20 disabled:cursor-not-allowed shadow-xl">
+                   class="btn-premium-primary w-full py-5 text-gray-900">
             {{ loading ? 'MENYIMPAN...' : 'KONFIRMASI SEKARANG' }}
           </button>
           

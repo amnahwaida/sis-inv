@@ -41,7 +41,7 @@
               <p class="text-3xl font-black font-mono tracking-tighter leading-none">{{ scannedItemCode }}</p>
             </div>
           </div>
-          <button @click="resetScan" class="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all active:scale-95">
+          <button @click="resetScan" class="bg-white/10 hover:bg-white/20 text-white border border-white/10 px-6 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all active:scale-95">
             GANTI BARANG
           </button>
         </div>
@@ -119,7 +119,7 @@
           <div v-if="!successMsg" class="pt-8 border-t border-gray-100 dark:border-gray-700 flex gap-4">
             <button @click="resetScan" type="button" class="btn-secondary py-5 flex-1 rounded-2xl font-black text-xs">BATAL</button>
             <button type="submit" :disabled="transactionStore.loading || uploading" 
-                    class="bg-primary-600 text-white py-5 flex-[2] rounded-2xl font-black text-xs tracking-[0.3em] shadow-xl hover:bg-primary-700 active:scale-95 transition-all">
+                    class="btn-premium-action flex-[2]">
               KONFIRMASI SEKARANG
             </button>
           </div>

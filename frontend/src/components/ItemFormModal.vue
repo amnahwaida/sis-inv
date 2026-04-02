@@ -6,12 +6,12 @@
 
       <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-      <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full animate-scale-up">
+      <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full animate-scale-up border border-transparent dark:border-gray-700">
         <form @submit.prevent="submitForm">
           <!-- Header -->
-          <div class="bg-gray-50/50 px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+          <div class="bg-gray-50/50 dark:bg-gray-800/50 px-6 py-5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <div>
-              <h3 class="text-xl font-extrabold text-gray-900" id="modal-title">
+              <h3 class="text-xl font-extrabold text-gray-900 dark:text-white" id="modal-title">
                 {{ isEdit ? 'Perbarui Data Barang' : 'Registrasi Barang Baru' }}
               </h3>
               <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Master Data Inventaris Sekolah</p>
@@ -24,7 +24,7 @@
           </div>
 
           <!-- Body -->
-          <div class="bg-white px-6 py-6 pb-8">
+          <div class="bg-white dark:bg-gray-800 px-6 py-6 pb-8">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <!-- Kode Barang -->
               <div>
@@ -113,7 +113,7 @@
                       </svg>
                     </button>
                   </div>
-                  <label class="flex-1 flex flex-col items-center justify-center h-24 border-2 border-gray-100 border-dashed rounded-2xl cursor-pointer bg-gray-50/50 hover:bg-gray-100/50 transition-all group">
+                  <label class="flex-1 flex flex-col items-center justify-center h-24 border-2 border-gray-100 dark:border-gray-600 border-dashed rounded-2xl cursor-pointer bg-gray-50/50 dark:bg-gray-700/30 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-all group">
                     <div class="flex flex-col items-center justify-center pt-2">
                       <svg class="w-6 h-6 text-gray-400 group-hover:text-primary-600 transition-colors mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -155,13 +155,13 @@
           </div>
           
           <!-- Footer -->
-          <div class="bg-gray-50/80 px-6 py-5 flex gap-3 border-t border-gray-100">
+          <div class="bg-gray-50/80 dark:bg-gray-800/80 px-6 py-5 flex gap-3 border-t border-gray-100 dark:border-gray-700">
             <button type="button" @click="close" :disabled="loading"
-                    class="btn-secondary flex-1 py-3 text-sm font-black uppercase tracking-widest rounded-xl hover:bg-gray-100 transition-all">
+                    class="btn-secondary flex-1 py-4">
               Batal
             </button>
             <button type="submit" :disabled="loading"
-                    class="btn-primary flex-1 py-3 text-sm font-black uppercase tracking-widest rounded-xl shadow-xl shadow-primary-200 active:scale-95 transition-all">
+                    class="btn-premium-action flex-[2]">
               {{ loading ? 'Sinkronisasi...' : 'Simpan Perubahan' }}
             </button>
           </div>

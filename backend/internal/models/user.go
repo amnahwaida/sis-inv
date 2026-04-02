@@ -46,6 +46,7 @@ type CreateUserRequest struct {
 }
 
 type UpdateUserRequest struct {
+	Username *string `json:"username"`
 	FullName *string `json:"full_name"`
 	Role     *string `json:"role" binding:"omitempty,oneof=ADMIN TEACHER HEAD"`
 	NIP      *string `json:"nip"`

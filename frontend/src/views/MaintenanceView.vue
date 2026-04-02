@@ -12,23 +12,14 @@
         </div>
         
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 backdrop-blur-md bg-white/10 p-2 md:p-1.5 rounded-2xl border border-white/10 w-full md:w-auto mt-4 md:mt-0">
-          <select v-model="filterStatus" @change="fetchLogs" class="bg-transparent border-none text-white text-xs font-bold focus:ring-0 cursor-pointer pr-8 w-full sm:w-auto">
-            <option value="" class="text-gray-900">Semua Status</option>
-            <option value="PENDING" class="text-gray-900">Menunggu</option>
-            <option value="IN_PROGRESS" class="text-gray-900">Dikerjakan</option>
-            <option value="DONE" class="text-gray-900">Selesai</option>
-            <option value="CANCELLED" class="text-gray-900">Dibatalkan</option>
-          </select>
-          <div class="flex items-center gap-2 w-full sm:w-auto">
-            <button @click="exportExcel" class="flex-1 sm:flex-none justify-center bg-white/20 hover:bg-white/30 text-white px-4 py-2.5 rounded-xl text-[10px] sm:text-xs font-black transition-all flex items-center gap-2 shadow-sm active:scale-95 whitespace-nowrap">
-              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2-2z"/></svg>
-              EXCEL
-            </button>
-            <button @click="showCreateModal = true" class="flex-1 sm:flex-none justify-center bg-white text-primary-900 hover:bg-primary-50 px-4 md:px-6 py-2.5 rounded-xl text-[10px] sm:text-xs font-black transition-all flex items-center gap-2 shadow-xl shadow-black/10 active:scale-95 whitespace-nowrap">
-              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
-              LAPOR KERUSAKAN
-            </button>
-          </div>
+          <button @click="exportExcel" class="bg-white/10 hover:bg-white/20 text-white border border-white/10 px-4 py-2.5 rounded-xl text-[10px] sm:text-xs font-black transition-all flex items-center gap-2 shadow-sm active:scale-95 whitespace-nowrap">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2-2z"/></svg>
+            EXCEL
+          </button>
+          <button @click="showCreateModal = true" class="btn-premium-primary">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+            LAPOR KERUSAKAN
+          </button>
         </div>
       </div>
     </div>
@@ -50,9 +41,37 @@
       </div>
     </div>
 
+    <!-- Filters Row -->
+    <div class="flex flex-col sm:flex-row items-center gap-3 w-full">
+      <!-- Search Input -->
+      <div class="relative w-full sm:w-80">
+        <input type="text" v-model="searchQuery" placeholder="Cari barang, vendor, keluhan..." 
+               class="input-field pl-10 h-11 rounded-2xl text-sm w-full" />
+        <svg class="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="flex items-center gap-2 bg-white dark:bg-gray-800 p-2 px-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm w-full sm:w-auto">
+        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Status:</label>
+        <select v-model="filterStatus" class="bg-transparent border-none focus:ring-0 text-sm font-black text-gray-900 dark:text-white py-0 w-full sm:w-auto">
+          <option value="">Semua Status</option>
+          <option value="PENDING">Menunggu</option>
+          <option value="IN_PROGRESS">Dikerjakan</option>
+          <option value="DONE">Selesai</option>
+          <option value="CANCELLED">Dibatalkan</option>
+        </select>
+      </div>
+    </div>
+
     <!-- Main Content Card -->
     <div class="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden transition-colors duration-300">
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto relative">
+        <!-- Loading Overlay -->
+        <div v-if="loading" class="absolute inset-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm z-10 flex flex-col items-center justify-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <span class="mt-4 text-xs font-black text-primary-600 uppercase tracking-widest">Memuat Log...</span>
+        </div>
+
         <table class="w-full">
           <thead>
             <tr class="bg-gray-50/50 dark:bg-gray-700/50">
@@ -61,64 +80,77 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50 dark:divide-gray-700">
-            <tr v-if="loading" class="animate-pulse">
-              <td colspan="8" class="px-8 py-12 text-center text-gray-400 font-bold uppercase tracking-widest text-xs italic">Menyelaraskan Data...</td>
-            </tr>
-            <tr v-else-if="logs.length === 0" class="text-center">
-              <td colspan="8" class="px-8 py-20">
-                <div class="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
-                  <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                </div>
-                <p class="text-gray-900 font-black text-lg">Belum Ada Catatan</p>
-                <p class="text-gray-400 text-sm mt-1 max-w-xs mx-auto">Semua riwayat perbaikan barang akan muncul di daftar ini.</p>
-              </td>
-            </tr>
-            <tr v-for="log in logs" :key="log.id" class="group hover:bg-gray-50/80 dark:hover:bg-gray-700/50 transition-all duration-300">
-              <td class="px-8 py-6">
-                <div class="flex items-center gap-4">
-                  <div class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center text-gray-400 dark:text-gray-500 group-hover:bg-primary-100 group-hover:text-primary-600 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            <template v-if="paginatedData.length > 0">
+              <tr v-for="log in paginatedData" :key="log.id" class="group hover:bg-gray-50/80 dark:hover:bg-gray-700/50 transition-all duration-300">
+                <td class="px-8 py-6">
+                  <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center text-gray-400 dark:text-gray-500 group-hover:bg-primary-100 group-hover:text-primary-600 transition-colors">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    </div>
+                    <div>
+                      <div class="font-black text-gray-900 dark:text-gray-100 text-sm">{{ log.item_name }}</div>
+                      <div class="text-[10px] text-gray-400 dark:text-gray-500 font-bold font-mono tracking-tighter">{{ log.item_code }}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div class="font-black text-gray-900 dark:text-gray-100 text-sm">{{ log.item_name }}</div>
-                    <div class="text-[10px] text-gray-400 dark:text-gray-500 font-bold font-mono tracking-tighter">{{ log.item_code }}</div>
+                </td>
+                <td class="px-8 py-6">
+                  <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed font-medium max-w-[200px] truncate" :title="log.issue_description">{{ log.issue_description }}</p>
+                </td>
+                <td class="px-8 py-6">
+                  <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed italic max-w-[150px] truncate" :title="log.notes || '-'">{{ log.notes || '-' }}</p>
+                </td>
+                <td class="px-8 py-6 text-xs font-bold text-gray-700 dark:text-gray-300">{{ log.vendor || '---' }}</td>
+                <td class="px-8 py-6">
+                  <span class="text-sm font-black text-gray-900 dark:text-gray-100">{{ log.cost ? formatCurrency(log.cost) : 'Rp 0' }}</span>
+                </td>
+                <td class="px-8 py-6">
+                  <span class="px-3 py-1 rounded-lg font-black uppercase text-[9px] tracking-widest shadow-sm inline-block" :class="getStatusBadge(log.status)">
+                    {{ statusLabels[log.status] }}
+                  </span>
+                </td>
+                <td class="px-8 py-6 whitespace-nowrap text-[11px] font-bold text-gray-400">{{ formatDate(log.reported_at) }}</td>
+                <td class="px-8 py-6 text-right">
+                  <div class="flex items-center justify-end gap-2 transition-all duration-300">
+                    <button v-if="log.status === 'PENDING'" @click="updateLog(log, 'IN_PROGRESS')"
+                      class="btn-action-view !text-blue-600 !bg-blue-50 hover:!bg-blue-600 hover:!text-white" title="Kerjakan">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
+                    </button>
+                    <button v-if="log.status === 'IN_PROGRESS'" @click="openFinishModal(log)"
+                      class="btn-action-view !text-green-600 !bg-green-50 hover:!bg-green-600 hover:!text-white" title="Selesaikan">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    </button>
+                    <button @click="deleteLog(log)" class="btn-action-delete" title="Hapus">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
                   </div>
-                </div>
-              </td>
-              <td class="px-8 py-6">
-                <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed font-medium max-w-[200px] truncate" :title="log.issue_description">{{ log.issue_description }}</p>
-              </td>
-              <td class="px-8 py-6">
-                <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed italic max-w-[150px] truncate" :title="log.notes || '-'">{{ log.notes || '-' }}</p>
-              </td>
-              <td class="px-8 py-6 text-xs font-bold text-gray-700 dark:text-gray-300">{{ log.vendor || '---' }}</td>
-              <td class="px-8 py-6">
-                <span class="text-sm font-black text-gray-900 dark:text-gray-100">{{ log.cost ? formatCurrency(log.cost) : 'Rp 0' }}</span>
-              </td>
-              <td class="px-8 py-6">
-                <span class="px-3 py-1 rounded-lg font-black uppercase text-[9px] tracking-widest shadow-sm inline-block" :class="getStatusBadge(log.status)">
-                  {{ statusLabels[log.status] }}
-                </span>
-              </td>
-              <td class="px-8 py-6 whitespace-nowrap text-[11px] font-bold text-gray-400">{{ formatDate(log.reported_at) }}</td>
-              <td class="px-8 py-6 text-right">
-                <div class="flex items-center justify-end gap-2 transition-all duration-300">
-                  <button v-if="log.status === 'PENDING'" @click="updateLog(log, 'IN_PROGRESS')"
-                    class="p-2 text-blue-600 bg-blue-50 rounded-xl hover:bg-blue-600 hover:text-white transition-all transform hover:scale-110 active:scale-95 relative z-10" title="Kerjakan">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
-                  </button>
-                  <button v-if="log.status === 'IN_PROGRESS'" @click="openFinishModal(log)"
-                    class="p-2 text-green-600 bg-green-50 rounded-xl hover:bg-green-600 hover:text-white transition-all transform hover:scale-110 active:scale-95 relative z-10" title="Selesaikan">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                  </button>
-                  <button @click="deleteLog(log)" class="p-2 text-red-500 bg-red-50 rounded-xl hover:bg-red-600 hover:text-white transition-all transform hover:scale-110 active:scale-95 relative z-10" title="Hapus">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                  </button>
-                </div>
-              </td>
+                </td>
+              </tr>
+            </template>
+            <tr v-else-if="!loading" class="text-center">
+              <td colspan="8" class="px-8 py-24 italic text-gray-400 font-medium tracking-widest text-xs uppercase">{{ searchQuery || filterStatus ? 'Pencarian Tidak Ditemukan' : 'Belum Ada Catatan Perbaikan' }}</td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Pagination Bar -->
+      <div v-if="totalPages > 1" class="px-8 py-5 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+          Menampilkan <span class="text-primary-600">{{ startRow }}-{{ endRow }}</span> dari <span class="text-gray-900 dark:text-white">{{ filteredData.length }}</span> data
+        </span>
+        <div class="flex gap-2">
+          <button @click="currentPage--" :disabled="currentPage === 1" class="pagination-btn-standard">
+            Kembali
+          </button>
+          <button v-for="p in visiblePages" :key="p" @click="currentPage = p"
+                  class="w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm active:scale-95 border"
+                  :class="p === currentPage ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700'">
+            {{ p }}
+          </button>
+          <button @click="currentPage++" :disabled="currentPage === totalPages" class="pagination-btn-standard">
+            Lanjut
+          </button>
+        </div>
       </div>
     </div>
 
@@ -230,7 +262,7 @@
               <button 
                 @click="submitCreate" 
                 :disabled="submitting || !form.item_code || !form.issue_description" 
-                class="flex-[2] bg-primary-900 text-white px-8 py-4 rounded-2xl text-xs font-black shadow-2xl shadow-primary-900/40 translate-y-0 active:translate-y-1 transition-all disabled:opacity-50 disabled:translate-y-0 uppercase tracking-widest"
+                class="btn-premium-action flex-[2]"
               >
                 {{ submitting ? 'MEMPROSES...' : 'KIRIM LAPORAN' }}
               </button>
@@ -283,7 +315,7 @@
               <button 
                 @click="submitFinish" 
                 :disabled="submitting"
-                class="flex-[2] bg-green-600 text-white px-8 py-4 rounded-2xl text-xs font-black shadow-2xl shadow-green-200 transition-all active:scale-95 uppercase tracking-widest"
+                class="btn-premium-action flex-[2] !bg-green-600 !shadow-green-200"
               >
                 {{ submitting ? 'MENYIMPAN...' : 'KONFIRMASI SELESAI' }}
               </button>
@@ -296,7 +328,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, h } from 'vue'
+import { ref, computed, onMounted, watch, h } from 'vue'
 import api from '../utils/api'
 
 // Icons for stats cards
@@ -308,6 +340,10 @@ const IconCancel = { render: () => h('svg', { fill: 'none', stroke: 'currentColo
 const logs = ref([])
 const loading = ref(false)
 const filterStatus = ref('')
+const searchQuery = ref('')
+const currentPage = ref(1)
+const perPage = 10
+
 const showCreateModal = ref(false)
 const showFinishModal = ref(false)
 const submitting = ref(false)
@@ -339,11 +375,49 @@ const statsMap = computed(() => ({
   cancelled: { label: 'Batal', value: stats.value.cancelled, color: 'bg-gray-500', gradient: 'bg-gradient-to-br from-gray-400 to-slate-600', icon: IconCancel },
 }))
 
+// Client-side Search and Pagination
+const filteredData = computed(() => {
+  let result = logs.value
+  
+  if (filterStatus.value) {
+    result = result.filter(l => l.status === filterStatus.value)
+  }
+  
+  const q = searchQuery.value.toLowerCase().trim()
+  if (q) {
+    result = result.filter(l => 
+      l.item_name?.toLowerCase().includes(q) || 
+      l.item_code?.toLowerCase().includes(q) ||
+      l.issue_description?.toLowerCase().includes(q) ||
+      l.vendor?.toLowerCase().includes(q)
+    )
+  }
+  
+  return result
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredData.value.length / perPage)))
+const startRow = computed(() => (currentPage.value - 1) * perPage + 1)
+const endRow = computed(() => Math.min(currentPage.value * perPage, filteredData.value.length))
+const paginatedData = computed(() => filteredData.value.slice((currentPage.value - 1) * perPage, currentPage.value * perPage))
+
+const visiblePages = computed(() => {
+  const pages = []
+  const start = Math.max(1, currentPage.value - 2)
+  const end = Math.min(totalPages.value, currentPage.value + 2)
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
+})
+
+watch([searchQuery, filterStatus], () => {
+  currentPage.value = 1
+})
+
 async function fetchLogs() {
   loading.value = true
   try {
-    const params = filterStatus.value ? { status: filterStatus.value } : {}
-    const { data } = await api.get('/maintenance', { params })
+    // We fetch all records locally to allow smooth client-side filtering and stats calculation
+    const { data } = await api.get('/maintenance')
     if (data.success) logs.value = data.data
   } catch (e) { console.error(e) }
   finally { loading.value = false }
@@ -377,7 +451,6 @@ const debounceItemSearch = () => {
     try {
       const { data } = await api.get(`/items?search=${form.value.search_query}&page_size=10`)
       if (data.success) {
-        // Fix: API returns { data: { items: [], meta: {} } }
         suggestedItems.value = data.data.items || []
       }
     } catch (e) { 

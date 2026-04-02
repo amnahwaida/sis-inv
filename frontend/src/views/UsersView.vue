@@ -12,12 +12,32 @@
         </div>
         
         <div class="flex items-center gap-3 backdrop-blur-md bg-white/10 p-2 rounded-2xl border border-white/10">
-          <button @click="showModal = true" 
-                  class="bg-white text-primary-900 hover:bg-primary-50 px-6 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 shadow-xl active:scale-95">
+          <button @click="showModal = true" class="btn-premium-primary">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
             TAMBAH USER BARU
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Filters Row -->
+    <div class="flex flex-col sm:flex-row items-center gap-3 w-full">
+      <!-- Search Input -->
+      <div class="relative w-full sm:w-80">
+        <input type="text" v-model="searchQuery" placeholder="Cari nama, username..." 
+               class="input-field pl-10 h-11 rounded-2xl text-sm w-full" />
+        <svg class="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
+
+      <!-- Role Filter -->
+      <div class="flex items-center gap-2 bg-white dark:bg-gray-800 p-2 px-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm w-full sm:w-auto">
+        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Role:</label>
+        <select v-model="roleFilter" class="bg-transparent border-none focus:ring-0 text-sm font-black text-gray-900 dark:text-white py-0 w-full sm:w-auto">
+          <option value="">Semua Role</option>
+          <option value="ADMIN">Admin</option>
+          <option value="TEACHER">Guru/Staff</option>
+          <option value="HEAD">Kepala Sekolah</option>
+        </select>
       </div>
     </div>
 
@@ -38,8 +58,8 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50 dark:divide-gray-700">
-            <template v-if="users.length > 0">
-              <tr v-for="u in users" :key="u.id" class="group hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-all duration-300">
+            <template v-if="paginatedData.length > 0">
+              <tr v-for="u in paginatedData" :key="u.id" class="group hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-all duration-300">
                 <td class="px-8 py-6">
                   <div class="flex items-center gap-4">
                     <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white flex items-center justify-center text-sm font-black shadow-lg shadow-primary-500/20 uppercase border border-white/20">
@@ -68,10 +88,10 @@
                 </td>
                 <td class="px-8 py-6 text-right">
                   <div class="flex items-center justify-end gap-2 transition-opacity">
-                    <button @click="openEditModal(u)" class="p-2 text-blue-500 bg-blue-50 dark:bg-blue-900/30 rounded-xl hover:bg-blue-500 hover:text-white transition-all transform hover:scale-110 active:scale-95 relative z-10" title="Edit">
+                    <button @click="openEditModal(u)" class="btn-action-edit" title="Edit">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                     </button>
-                    <button @click="deleteUser(u)" class="p-2 text-red-500 bg-red-50 dark:bg-red-900/30 rounded-xl hover:bg-red-500 hover:text-white transition-all transform hover:scale-110 active:scale-95 relative z-10" title="Hapus">
+                    <button @click="deleteUser(u)" class="btn-action-delete" title="Hapus">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                   </div>
@@ -79,10 +99,30 @@
               </tr>
             </template>
             <tr v-else-if="!loading" class="text-center">
-              <td colspan="5" class="px-8 py-24 italic text-gray-400 font-medium tracking-widest text-xs uppercase">Belum ada data user tersimpan</td>
+              <td colspan="5" class="px-8 py-24 italic text-gray-400 font-medium tracking-widest text-xs uppercase">{{ searchQuery || roleFilter ? 'Pencarian Tidak Ditemukan' : 'Belum ada data user tersimpan' }}</td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Pagination Bar -->
+      <div v-if="totalPages > 1" class="px-8 py-5 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+          Menampilkan <span class="text-primary-600">{{ startRow }}-{{ endRow }}</span> dari <span class="text-gray-900 dark:text-white">{{ filteredData.length }}</span> data
+        </span>
+        <div class="flex gap-2">
+          <button @click="currentPage--" :disabled="currentPage === 1" class="pagination-btn-standard">
+            Kembali
+          </button>
+          <button v-for="p in visiblePages" :key="p" @click="currentPage = p"
+                  class="w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm active:scale-95 border"
+                  :class="p === currentPage ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300'">
+            {{ p }}
+          </button>
+          <button @click="currentPage++" :disabled="currentPage === totalPages" class="pagination-btn-standard">
+            Lanjut
+          </button>
+        </div>
       </div>
     </div>
 
@@ -106,7 +146,7 @@
           </div>
           <div class="space-y-2">
             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Username</label>
-            <input v-model="form.username" class="input-field rounded-2xl h-14" placeholder="budi123" required :disabled="editingUser" />
+            <input v-model="form.username" class="input-field rounded-2xl h-14" placeholder="budi123" required />
           </div>
           <div class="space-y-2">
             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Password Baru</label>
@@ -132,8 +172,7 @@
           
           <div class="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-100 dark:border-gray-700">
             <button type="button" @click="closeModal" class="btn-secondary flex-1 py-4 rounded-xl font-black text-[10px] tracking-widest">BATAL</button>
-            <button type="submit" :disabled="submitting" 
-                    class="bg-primary-600 text-white flex-[2] py-4 rounded-xl font-black text-[10px] tracking-[0.3em] shadow-xl shadow-primary-500/20 active:scale-95 disabled:opacity-30 transition-all uppercase">
+            <button type="submit" :disabled="submitting" class="btn-premium-action flex-[2]">
               {{ submitting ? 'MEMPROSES...' : (editingUser ? 'PERBARUI DATA' : 'DAFTARKAN USER') }}
             </button>
           </div>
@@ -144,7 +183,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import api from '../utils/api'
 
 const users = ref([])
@@ -152,6 +191,11 @@ const loading = ref(true)
 const showModal = ref(false)
 const submitting = ref(false)
 const editingUser = ref(null)
+
+const searchQuery = ref('')
+const roleFilter = ref('')
+const currentPage = ref(1)
+const perPage = 10
 
 const form = ref({ full_name: '', username: '', password: '', role: 'TEACHER', is_active: true })
 const roleLabels = { ADMIN: 'Admin', TEACHER: 'Guru/Staff', HEAD: 'Kepasek' }
@@ -162,6 +206,44 @@ const roleBadgeClass = (role) => ({
   TEACHER: 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400',
   HEAD: 'bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400',
 }[role] || 'bg-gray-50 text-gray-800')
+
+// Search and Filter logic
+const filteredData = computed(() => {
+  let result = users.value
+  
+  if (roleFilter.value) {
+    result = result.filter(u => u.role === roleFilter.value)
+  }
+  
+  const q = searchQuery.value.toLowerCase().trim()
+  if (q) {
+    result = result.filter(u => 
+      u.full_name?.toLowerCase().includes(q) || 
+      u.username?.toLowerCase().includes(q)
+    )
+  }
+  
+  return result
+})
+
+// Pagination logic
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredData.value.length / perPage)))
+const startRow = computed(() => (currentPage.value - 1) * perPage + 1)
+const endRow = computed(() => Math.min(currentPage.value * perPage, filteredData.value.length))
+const paginatedData = computed(() => filteredData.value.slice((currentPage.value - 1) * perPage, currentPage.value * perPage))
+
+const visiblePages = computed(() => {
+  const pages = []
+  const start = Math.max(1, currentPage.value - 2)
+  const end = Math.min(totalPages.value, currentPage.value + 2)
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
+})
+
+// Reset pagination on filter change
+watch([searchQuery, roleFilter], () => {
+  currentPage.value = 1
+})
 
 async function fetchUsers() {
   loading.value = true

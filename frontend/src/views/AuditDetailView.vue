@@ -21,15 +21,15 @@
             <div class="flex flex-wrap gap-4">
                 <button v-if="auditStore.currentSession.session?.status === 'CLOSED'" 
                         @click="exportAudit" 
-                        class="bg-emerald-500 text-white px-8 py-4 rounded-2xl text-[10px] font-black hover:bg-emerald-600 active:scale-95 transition-all uppercase tracking-widest shadow-xl shadow-emerald-500/20 flex items-center gap-2">
+                        class="btn-premium-action !bg-emerald-500 !shadow-emerald-500/20">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2-2z" /></svg>
                     EKSPOR EXCEL
                 </button>
                 <template v-if="auditStore.currentSession.session?.status === 'OPEN'">
-                    <button @click="showScanModal = true" class="bg-primary-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black hover:scale-105 active:scale-95 transition-all uppercase tracking-widest shadow-xl shadow-primary-500/20">
+                    <button @click="showScanModal = true" class="btn-premium-action">
                         SCAN BARANG
                     </button>
-                    <button @click="handleFinishAudit" class="bg-gray-900 text-white dark:bg-gray-700 px-8 py-4 rounded-2xl text-[10px] font-black hover:bg-black active:scale-95 transition-all uppercase tracking-widest">
+                    <button @click="handleFinishAudit" class="btn-premium-action !bg-gray-900 dark:!bg-gray-700">
                         SELESAIKAN AUDIT
                     </button>
                 </template>
@@ -57,10 +57,10 @@
         <div class="flex border-b border-gray-50 dark:border-gray-700">
             <button v-for="tab in ['FOUND', 'MISSING']" :key="tab"
                     @click="activeTab = tab"
-                    class="flex-1 py-6 text-[10px] font-black uppercase tracking-[0.3em] transition-all relative overflow-hidden"
-                    :class="activeTab === tab ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600 bg-gray-50/50 dark:bg-gray-900/30'">
+                    class="flex-1 py-6 text-[10px] font-black uppercase tracking-[0.3em] transition-all relative overflow-hidden group/tab"
+                    :class="activeTab === tab ? 'text-primary-600 bg-primary-50/10' : 'text-gray-400 hover:text-gray-600 bg-gray-50/50 dark:bg-gray-900/30'">
                 {{ tab === 'FOUND' ? 'ASET DITEMUKAN' : 'ASET TIDAK DITEMUKAN' }}
-                <div v-if="activeTab === tab" class="absolute bottom-0 left-0 w-full h-1 bg-primary-600"></div>
+                <div v-if="activeTab === tab" class="absolute bottom-0 left-0 w-full h-1 bg-primary-600 shadow-[0_0_15px_rgba(37,99,235,0.5)]"></div>
             </button>
         </div>
 
@@ -163,7 +163,7 @@
                     </div>
 
                     <button @click="submitScanDetail" :disabled="loading" 
-                            class="w-full py-5 bg-primary-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-xl shadow-primary-500/20 transition-all active:scale-95">
+                            class="btn-premium-action w-full">
                         KONFIRMASI TEMUAN
                     </button>
                 </div>
@@ -177,6 +177,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuditStore } from '../stores/audit'
+import api from '../utils/api'
 import QrScanner from '../components/QrScanner.vue'
 
 const route = useRoute()
@@ -207,7 +208,7 @@ const handleItemScanned = (code) => {
 const submitScanDetail = async () => {
     loading.value = true
     try {
-        await auditStore.scanAuditItem(route.params.id, scannedCode.value, auditForm.condition, auditForm.notes)
+        await auditStore.scanAuditItem(route.params.id, scannedCode.value, auditForm.value.condition, auditForm.value.notes)
         scannedCode.value = ''
         auditForm.value = { condition: 'GOOD', notes: '' }
         await auditStore.fetchSessionDetail(route.params.id)

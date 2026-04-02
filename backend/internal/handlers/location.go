@@ -67,14 +67,42 @@ func (h *LocationHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{"id": id}, "Location created successfully"))
 }
 
+func (h *LocationHandler) Update(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		Name        string  `json:"name" binding:"required"`
+		Description *string `json:"description"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Invalid data"))
+		return
+	}
+
+	_, err := h.db.Exec(context.Background(),
+		"UPDATE locations SET name = $1, description = $2 WHERE id = $3",
+		req.Name, req.Description, id,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to update location"))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Location updated successfully"))
+}
+
 func (h *LocationHandler) Delete(c *gin.Context) {
 	idStr := c.Param("id")
-	id, _ := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "ID lokasi tidak valid"))
+		return
+	}
 
 	// Check if any items are using this location
 	// We check both location_id (foreign key) and location (string name backup)
 	var count int
-	err := h.db.QueryRow(context.Background(), 
+	err = h.db.QueryRow(context.Background(), 
 		"SELECT COUNT(*) FROM items WHERE location_id = $1 OR location = (SELECT name FROM locations WHERE id = $1)", 
 		id).Scan(&count)
 	if err == nil && count > 0 {

@@ -2,11 +2,11 @@
   <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
     <div class="fixed inset-0 bg-gray-900/50 transition-opacity backdrop-blur-sm" @click="$emit('close')"></div>
     
-    <div class="bg-white rounded-xl shadow-xl transform transition-all sm:max-w-2xl sm:w-full max-h-[90vh] flex flex-col relative z-10 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl transform transition-all sm:max-w-2xl sm:w-full max-h-[90vh] flex flex-col relative z-10 overflow-hidden border border-transparent dark:border-gray-700">
       <!-- Header -->
-      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
         <div>
-          <h3 class="text-lg font-bold text-gray-900">Detail Barang</h3>
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white">Detail Barang</h3>
           <p class="text-sm text-gray-500 font-mono mt-0.5">{{ itemData?.code }}</p>
         </div>
         <button @click="$emit('close')" class="text-gray-400 hover:bg-gray-200 hover:text-gray-600 rounded-lg p-1.5 transition-colors">
@@ -21,7 +21,7 @@
         <div v-if="itemData" class="space-y-6">
           
           <!-- Basic Info Card -->
-          <div class="bg-white border text-sm border-gray-100 rounded-xl p-5 shadow-sm space-y-4">
+          <div class="bg-white dark:bg-gray-800 border text-sm border-gray-100 dark:border-gray-700 rounded-xl p-5 shadow-sm space-y-4">
             <div class="flex items-center gap-4 border-b border-gray-50 pb-4">
               <div v-if="itemData.photo_url" class="w-20 h-20 rounded-xl overflow-hidden shadow-sm border border-gray-100 flex-shrink-0">
                 <img :src="getFullImageUrl(itemData.photo_url)" class="w-full h-full object-cover" />
@@ -30,19 +30,19 @@
                 {{ itemData.name.charAt(0) }}
               </div>
               <div>
-                <h4 class="text-xl font-bold text-gray-900">{{ itemData.name }}</h4>
-                <span class="inline-flex items-center px-2 py-0.5 mt-1 rounded text-xs font-medium" :class="{
-                  'bg-green-100 text-green-800': itemData.status === 'AVAILABLE',
-                  'bg-blue-100 text-blue-800': itemData.status === 'BORROWED',
-                  'bg-purple-100 text-purple-800': itemData.status === 'MAINTENANCE',
-                  'bg-red-100 text-red-800': itemData.status === 'LOST'
+                <h4 class="text-xl font-bold text-gray-900 dark:text-white">{{ itemData.name }}</h4>
+                <span class="badge" :class="{
+                  'badge-available': itemData.status === 'AVAILABLE',
+                  'badge-borrowed': itemData.status === 'BORROWED',
+                  'badge-maintenance': itemData.status === 'MAINTENANCE',
+                  'badge-lost': itemData.status === 'LOST'
                 }">
                   Status: {{ getStatusLabel(itemData.status) }}
                 </span>
-                <span class="inline-flex items-center px-2 py-0.5 mt-1 ml-2 rounded text-xs font-medium" :class="{
-                  'bg-gray-100 text-gray-800': itemData.condition === 'GOOD',
-                  'bg-orange-100 text-orange-800': itemData.condition === 'DAMAGED',
-                  'bg-yellow-100 text-yellow-800': itemData.condition === 'IN_REPAIR'
+                <span class="badge ml-2" :class="{
+                  'badge-available': itemData.condition === 'GOOD',
+                  'badge-damaged': itemData.condition === 'DAMAGED',
+                  'badge-maintenance': itemData.condition === 'IN_REPAIR'
                 }">
                   Kondisi: {{ getConditionLabel(itemData.condition) }}
                 </span>
@@ -52,11 +52,11 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
               <div>
                 <span class="block text-xs font-medium text-gray-500 uppercase">Kategori</span>
-                <span class="block mt-1 font-medium text-gray-900">{{ itemData.category_name || '-' }}</span>
+                <span class="block mt-1 font-medium text-gray-900 dark:text-gray-100">{{ itemData.category_name || '-' }}</span>
               </div>
               <div>
                 <span class="block text-xs font-medium text-gray-500 uppercase">Lokasi Asal</span>
-                <span class="block mt-1 font-medium text-gray-900">{{ itemData.location_name || itemData.location || '-' }}</span>
+                <span class="block mt-1 font-medium text-gray-900 dark:text-gray-100">{{ itemData.location_name || itemData.location || '-' }}</span>
               </div>
               <div>
                 <span class="block text-xs font-medium text-gray-500 uppercase">Aturan Peminjaman</span>
@@ -74,13 +74,13 @@
             
             <div v-if="itemData.notes" class="pt-2">
               <span class="block text-xs font-medium text-gray-500 uppercase mb-1">Catatan Tambahan</span>
-              <p class="text-gray-700 bg-gray-50 p-3 rounded-lg text-sm">{{ itemData.notes }}</p>
+              <p class="text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-sm">{{ itemData.notes }}</p>
             </div>
           </div>
 
           <!-- History Section -->
           <div class="space-y-3">
-            <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+            <h4 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
               <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -95,20 +95,20 @@
               <p class="text-sm text-gray-500">Belum ada riwayat peminjaman untuk barang ini.</p>
             </div>
 
-            <div v-else class="overflow-hidden border border-gray-100 rounded-xl shadow-sm">
+            <div v-else class="overflow-hidden border border-gray-100 dark:border-gray-700 rounded-xl shadow-sm">
               <table class="w-full text-sm text-left table-fixed">
-                <thead class="bg-gray-50 text-gray-600 font-medium border-b border-gray-100">
+                <thead class="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 font-medium border-b border-gray-100 dark:border-gray-700">
                   <tr>
                     <th class="px-4 py-2.5 w-auto">Peminjam / Ket.</th>
                     <th class="px-4 py-2.5 w-24">Status</th>
                     <th class="px-4 py-2.5 w-36 text-right">Tanggal</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 bg-white">
-                  <tr v-for="h in history" :key="h.id" class="hover:bg-gray-50/50 transition-colors align-top">
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                  <tr v-for="h in history" :key="h.id" class="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors align-top">
                     <td class="px-4 py-3 min-w-0">
                       <div class="flex flex-col">
-                        <div class="font-bold text-gray-900 truncate" :title="h.borrower_name">
+                        <div class="font-bold text-gray-900 dark:text-white truncate" :title="h.borrower_name">
                           {{ h.borrower_name }}
                           <span v-if="h.student_class" class="text-[10px] font-normal text-gray-400 ml-1">({{ h.student_class }})</span>
                         </div>
@@ -163,6 +163,9 @@
                             }"></span>
                             {{ getConditionLabel(h.return_condition) }}
                           </span>
+                          <span v-if="h.status === 'RETURNED' && h.returned_by_name" class="text-[9px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                            ✅ Diterima: {{ h.returned_by_name }}
+                          </span>
                           <!-- Photo Thumbnail -->
                           <div v-if="h.return_photo_url" class="mt-1">
                             <a :href="getFullImageUrl(h.return_photo_url)" target="_blank" class="block w-10 h-10 rounded-lg overflow-hidden border border-gray-100 shadow-sm hover:scale-110 transition-transform">
@@ -173,7 +176,7 @@
                       </div>
                     </td>
                     <td class="px-4 py-3 text-right tabular-nums whitespace-nowrap">
-                      <div class="text-xs font-semibold text-gray-800">{{ formatDateShort(h.borrowed_at) }}</div>
+                      <div class="text-xs font-semibold text-gray-800 dark:text-gray-200">{{ formatDateShort(h.borrowed_at) }}</div>
                       <div v-if="h.returned_at" class="mt-1 text-[10px] text-gray-500 flex flex-col">
                         <span class="text-[9px] uppercase tracking-tighter text-gray-400">Kembali pada:</span>
                         {{ formatDateShort(h.returned_at) }}
@@ -190,7 +193,7 @@
       </div>
 
       <!-- Footer Actions -->
-      <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+      <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/80 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
         <button type="button" @click="$emit('close')" class="btn-secondary">Tutup</button>
       </div>
     </div>

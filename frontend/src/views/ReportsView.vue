@@ -12,8 +12,7 @@
         </div>
         
         <div class="flex flex-col sm:flex-row items-stretch gap-3 backdrop-blur-md bg-white/10 p-2 rounded-2xl border border-white/10 w-full lg:w-auto">
-          <button @click="exportTransactions" 
-                  class="bg-white text-primary-900 hover:bg-primary-50 px-6 py-3 rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-2 shadow-xl active:scale-95 w-full">
+          <button @click="exportTransactions" class="bg-white/10 hover:bg-white/20 text-white border border-white/10 px-6 py-3 rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-2 active:scale-95 w-full">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
             EXPORT LAPORAN (EXCEL)
           </button>
@@ -23,12 +22,12 @@
 
     <!-- Tabs & Filter Section -->
     <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-      <div class="flex flex-wrap items-center justify-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm w-full md:w-fit">
-        <button v-for="tab in [{id:'active', label:'Peminjaman Aktif', icon:'⚡'}, {id:'overdue', label:'Terlambat', icon:'⚠️'}, {id:'history', label:'Riwayat Lengkap', icon:'📜'}, {id:'students', label:'Daftar Siswa', icon:'🎓'}]" 
+      <div class="flex flex-wrap items-center justify-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm w-full md:w-fit group">
+        <button v-for="tab in [{id:'active', label:'Peminjaman Aktif', icon:'⚡'}, {id:'overdue', label:'Terlambat', icon:'⚠️'}, {id:'history', label:'Riwayat Lengkap', icon:'📜'}]" 
                 :key="tab.id"
                 @click="activeTab = tab.id" 
                 :class="activeTab === tab.id ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'" 
-                class="px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-300 flex items-center gap-2 whitespace-nowrap">
+                class="px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95">
           <span>{{ tab.icon }}</span>
           <span>{{ tab.label }}</span>
           <span v-if="tab.id === 'active' && activeBorrowings.length" class="ml-1 px-2 py-0.5 bg-white/20 rounded-full text-[10px]">{{ activeBorrowings.length }}</span>
@@ -36,17 +35,27 @@
         </button>
       </div>
 
-      <!-- Class Filter Overlay -->
-      <div v-if="activeTab === 'active'" class="flex items-center justify-between gap-3 bg-white dark:bg-gray-800 p-2 px-4 rounded-[1.5rem] border border-gray-100 dark:border-gray-700 shadow-sm w-full md:w-auto animate-fade-in group">
-        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Filter Kelas:</label>
-        <select v-model="classFilter" @change="fetchActive" class="bg-transparent border-none focus:ring-0 text-sm font-black text-gray-900 dark:text-white py-1 w-full md:w-auto text-right md:text-left">
-          <option value="">Semua Kelas</option>
-          <option v-for="cls in uniqueClasses" :key="cls" :value="cls">{{ cls }}</option>
-        </select>
+      <!-- Filters Row -->
+      <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+        <!-- Search Input -->
+        <div class="relative w-full sm:w-64">
+          <input type="text" v-model="searchQuery" placeholder="Cari nama / kode..." 
+                 class="input-field pl-10 h-11 rounded-2xl text-sm w-full" />
+          <svg class="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+
+        <!-- Class Filter -->
+        <div class="flex items-center gap-2 bg-white dark:bg-gray-800 p-2 px-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm w-full sm:w-auto">
+          <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Kelas:</label>
+          <select v-model="classFilter" @change="handleFilterChange" class="bg-transparent border-none focus:ring-0 text-sm font-black text-gray-900 dark:text-white py-0 w-full sm:w-auto">
+            <option value="">Semua</option>
+            <option v-for="cls in uniqueClasses" :key="cls" :value="cls">{{ cls }}</option>
+          </select>
+        </div>
       </div>
     </div>
 
-    <!-- Tables Container with Ultra Rounded style -->
+    <!-- Tables Container -->
     <div class="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden transition-all duration-300">
       <div class="overflow-x-auto relative">
         <!-- Loading Overlay -->
@@ -64,16 +73,16 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50 dark:divide-gray-700">
-            <tr v-if="activeBorrowings.length === 0" class="text-center">
+            <tr v-if="paginatedData.length === 0" class="text-center">
               <td colspan="6" class="px-8 py-24">
                 <div class="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-500">
                   <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 </div>
-                <p class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Semua Aset Tersedia</p>
-                <p class="text-xs text-gray-400 font-medium mt-1">Tidak ada peminjaman aktif saat ini.</p>
+                <p class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">{{ searchQuery ? 'Tidak Ditemukan' : 'Semua Aset Tersedia' }}</p>
+                <p class="text-xs text-gray-400 font-medium mt-1">{{ searchQuery ? 'Coba kata kunci lain.' : 'Tidak ada peminjaman aktif saat ini.' }}</p>
               </td>
             </tr>
-            <tr v-for="trx in activeBorrowings" :key="trx.id" class="hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-all duration-300">
+            <tr v-for="trx in paginatedData" :key="trx.id" class="hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-all duration-300">
               <td class="px-8 py-6">
                 <div class="font-black text-gray-900 dark:text-white text-sm leading-none">{{ trx.item_name }}</div>
                 <div class="text-[10px] text-gray-400 font-bold font-mono mt-1 tracking-tighter">{{ trx.item_code }}</div>
@@ -85,7 +94,14 @@
                 </span>
               </td>
               <td class="px-8 py-6 text-sm font-bold text-gray-500">{{ trx.student_class || '-' }}</td>
-              <td class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">{{ trx.teacher_name }}</td>
+              <td class="px-8 py-6">
+                <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">{{ trx.teacher_name }}</div>
+                <div v-if="trx.borrow_photo_url" class="mt-2 text-left">
+                  <a :href="trx.borrow_photo_url" target="_blank" @click.stop class="inline-flex items-center gap-1 text-[9px] bg-primary-50 dark:bg-primary-900/30 text-primary-600 px-2 py-1 rounded-md hover:bg-primary-100 transition-colors cursor-pointer">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> Foto Pinjam
+                  </a>
+                </div>
+              </td>
               <td class="px-8 py-6">
                 <div class="text-xs font-bold text-gray-700 dark:text-gray-300">{{ formatDate(trx.borrowed_at) }}</div>
               </td>
@@ -102,7 +118,7 @@
           </tbody>
         </table>
 
-        <!-- Other tables (Overdue, History) would follow the same structure -->
+        <!-- Overdue / History Table -->
         <table v-if="activeTab === 'overdue' || activeTab === 'history'" class="w-full">
           <thead>
             <tr class="bg-gray-50/50 dark:bg-gray-700/30">
@@ -111,8 +127,8 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50 dark:divide-gray-700">
-            <template v-if="(activeTab === 'overdue' ? overdueItems : histories).length > 0">
-              <tr v-for="trx in (activeTab === 'overdue' ? overdueItems : histories)" :key="trx.id" class="hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-all duration-300">
+            <template v-if="paginatedData.length > 0">
+              <tr v-for="trx in paginatedData" :key="trx.id" class="hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-all duration-300">
                 <td class="px-8 py-6">
                   <div class="font-black text-gray-900 dark:text-white text-sm tracking-tight">{{ trx.item_name }}</div>
                   <div class="text-[10px] text-gray-400 font-mono tracking-tighter">{{ trx.item_code }}</div>
@@ -120,6 +136,11 @@
                 <td class="px-8 py-6">
                   <div class="text-xs font-black text-gray-900 dark:text-white">{{ trx.student_name || trx.teacher_name }}</div>
                   <div class="text-[10px] text-gray-400">{{ trx.student_class || 'Staff' }}</div>
+                  <div v-if="trx.borrow_photo_url" class="mt-2 text-left">
+                    <a :href="trx.borrow_photo_url" target="_blank" @click.stop class="inline-flex items-center gap-1 text-[9px] bg-primary-50 dark:bg-primary-900/30 text-primary-600 px-2 py-1 rounded-md hover:bg-primary-100 transition-colors cursor-pointer">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> Foto Pinjam
+                    </a>
+                  </div>
                 </td>
                 <td class="px-8 py-6 text-xs font-bold text-gray-500">{{ formatDate(trx.borrowed_at) }}</td>
                 <td class="px-8 py-6 text-xs" :class="activeTab === 'overdue' ? 'text-red-500 font-black' : 'text-gray-500 font-bold'">
@@ -134,55 +155,87 @@
               </tr>
             </template>
             <tr v-else class="text-center">
-              <td colspan="5" class="px-8 py-24 italic text-gray-400 font-bold tracking-[0.2em] text-[10px] uppercase">Tidak Ada Data Ditemukan</td>
+              <td colspan="5" class="px-8 py-24 italic text-gray-400 font-bold tracking-[0.2em] text-[10px] uppercase">{{ searchQuery ? 'Tidak Ditemukan' : 'Tidak Ada Data Ditemukan' }}</td>
             </tr>
           </tbody>
         </table>
 
-        <!-- Students Table -->
-        <table v-if="activeTab === 'students'" class="w-full">
-          <thead>
-            <tr class="bg-gray-50/50 dark:bg-gray-700/30">
-              <th class="text-left py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Siswa</th>
-              <th class="text-left py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">NIS</th>
-              <th class="text-left py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Kelas</th>
-              <th class="text-right py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                <button @click="exportStudents" class="bg-emerald-500 text-white px-4 py-1.5 rounded-lg text-[9px] font-black hover:bg-emerald-600 transition-all uppercase tracking-widest shadow-lg shadow-emerald-500/20">
-                  EXCEL
-                </button>
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-50 dark:divide-gray-700">
-            <tr v-for="s in studentsList" :key="s.id" class="group hover:bg-primary-50/30 dark:hover:bg-primary-900/10 transition-colors">
-              <td class="px-8 py-5">
-                <span class="text-sm font-black text-gray-900 dark:text-white uppercase">{{ s.full_name }}</span>
-              </td>
-              <td class="px-8 py-5 text-sm font-bold text-gray-500 dark:text-gray-400">{{ s.nis }}</td>
-              <td class="px-8 py-5">
-                 <span class="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded text-[10px] font-black">{{ s.class }}</span>
-              </td>
-              <td class="px-8 py-5 text-right"></td>
-            </tr>
-          </tbody>
-        </table>
+      </div>
+
+      <!-- Pagination Bar -->
+      <div v-if="totalPages > 1" class="px-8 py-5 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+          Menampilkan <span class="text-primary-600">{{ startRow }}-{{ endRow }}</span> dari <span class="text-gray-900 dark:text-white">{{ filteredData.length }}</span> data
+        </span>
+        <div class="flex gap-2">
+          <button @click="currentPage--" :disabled="currentPage === 1" class="pagination-btn-standard">
+            Kembali
+          </button>
+          <button v-for="p in visiblePages" :key="p" @click="currentPage = p"
+                  class="w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm active:scale-95 border"
+                  :class="p === currentPage ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700'">
+            {{ p }}
+          </button>
+          <button @click="currentPage++" :disabled="currentPage === totalPages" class="pagination-btn-standard">
+            Lanjut
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import api from '../utils/api'
 
 const activeTab = ref('active')
 const activeBorrowings = ref([])
 const overdueItems = ref([])
 const histories = ref([])
-const studentsList = ref([])
 const uniqueClasses = ref([])
 const classFilter = ref('')
+const searchQuery = ref('')
 const loading = ref(false)
+const currentPage = ref(1)
+const perPage = 15
+
+// Current tab's raw data
+const currentRawData = computed(() => {
+  if (activeTab.value === 'active') return activeBorrowings.value
+  if (activeTab.value === 'overdue') return overdueItems.value
+  return histories.value
+})
+
+// Filtered data (search applied)
+const filteredData = computed(() => {
+  const q = searchQuery.value.toLowerCase().trim()
+  if (!q) return currentRawData.value
+  return currentRawData.value.filter(trx => {
+    const fields = [
+      trx.item_name, trx.item_code, trx.student_name, 
+      trx.teacher_name, trx.student_class
+    ].filter(Boolean).join(' ').toLowerCase()
+    return fields.includes(q)
+  })
+})
+
+// Pagination
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredData.value.length / perPage)))
+const startRow = computed(() => (currentPage.value - 1) * perPage + 1)
+const endRow = computed(() => Math.min(currentPage.value * perPage, filteredData.value.length))
+const paginatedData = computed(() => filteredData.value.slice((currentPage.value - 1) * perPage, currentPage.value * perPage))
+
+const visiblePages = computed(() => {
+  const pages = []
+  const start = Math.max(1, currentPage.value - 2)
+  const end = Math.min(totalPages.value, currentPage.value + 2)
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
+})
+
+// Reset page on search or tab change
+watch([searchQuery, activeTab], () => { currentPage.value = 1 })
 
 async function fetchActive() {
   loading.value = true
@@ -196,7 +249,8 @@ async function fetchActive() {
 
 async function fetchOverdue() {
   try {
-    const { data } = await api.get('/reports/overdue')
+    const params = classFilter.value ? `?class=${encodeURIComponent(classFilter.value)}` : ''
+    const { data } = await api.get(`/reports/overdue${params}`)
     if (data.success) { overdueItems.value = data.data }
   } catch (e) { console.error(e) }
 }
@@ -204,51 +258,39 @@ async function fetchOverdue() {
 async function fetchHistory() {
   loading.value = true
   try {
-    const { data } = await api.get('/reports/history')
+    const params = classFilter.value ? `?class=${encodeURIComponent(classFilter.value)}` : ''
+    const { data } = await api.get(`/reports/history${params}`)
     if (data.success) { histories.value = data.data || [] }
   } catch (e) { console.error(e) } 
   finally { loading.value = false }
 }
 
-async function fetchStudents() {
-  loading.value = true
-  try {
-    const { data } = await api.get('/students')
-    if (data.success) { 
-      studentsList.value = Array.isArray(data.data) ? data.data : (data.data.items || [])
-    }
-  } catch (e) { console.error(e) } 
-  finally { loading.value = false }
+function handleFilterChange() {
+  currentPage.value = 1
+  if (activeTab.value === 'active') fetchActive()
+  else if (activeTab.value === 'overdue') fetchOverdue()
+  else if (activeTab.value === 'history') fetchHistory()
 }
 
 async function fetchClasses() {
   try {
-    const { data } = await api.get('/reports/active-borrowings')
-    if (data.success) {
-      const classes = [...new Set(data.data.filter(t => t.student_class).map(t => t.student_class))]
-      uniqueClasses.value = classes.sort()
-    }
-  } catch (e) { /* ignore */ }
+    const { data } = await api.get('/students/classes')
+    if (data.success) { uniqueClasses.value = data.data || [] }
+  } catch (e) { console.error('Gagal mengambil daftar kelas dari master data:', e) }
 }
 
 async function exportTransactions() {
   try {
-    const response = await api.get('/reports/export/transactions', { responseType: 'blob' })
+    const params = new URLSearchParams()
+    if (classFilter.value) params.append('class', classFilter.value)
+    params.append('type', activeTab.value)
+    
+    const response = await api.get(`/reports/export/transactions?${params.toString()}`, { responseType: 'blob' })
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
     link.href = url; link.setAttribute('download', `SIS-INV_Laporan_${new Date().toISOString().slice(0,10)}.xlsx`)
     document.body.appendChild(link); link.click(); document.body.removeChild(link)
   } catch (e) { alert('Gagal mendownload laporan') }
-}
-
-async function exportStudents() {
-  try {
-    const response = await api.get('/students/export', { responseType: 'blob' })
-    const url = window.URL.createObjectURL(new Blob([response.data]))
-    const link = document.createElement('a')
-    link.href = url; link.setAttribute('download', `SIS-INV_Daftar_Siswa_${new Date().toISOString().slice(0,10)}.xlsx`)
-    document.body.appendChild(link); link.click(); document.body.removeChild(link)
-  } catch (e) { alert('Gagal mendownload data siswa') }
 }
 
 const formatDate = (dateStr) => {
@@ -260,10 +302,9 @@ watch(activeTab, (newTab) => {
   if (newTab === 'active') fetchActive()
   else if (newTab === 'overdue') fetchOverdue()
   else if (newTab === 'history') fetchHistory()
-  else if (newTab === 'students') fetchStudents()
 })
 
 onMounted(() => {
-  fetchActive(); fetchOverdue(); fetchHistory(); fetchClasses(); fetchStudents()
+  fetchActive(); fetchOverdue(); fetchHistory(); fetchClasses()
 })
 </script>

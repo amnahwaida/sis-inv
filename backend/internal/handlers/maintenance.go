@@ -223,13 +223,17 @@ func (h *MaintenanceHandler) UpdateStatus(c *gin.Context) {
 // Delete removes a maintenance log
 func (h *MaintenanceHandler) Delete(c *gin.Context) {
 	idStr := c.Param("id")
-	id, _ := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "ID log tidak valid"))
+		return
+	}
 	ctx := context.Background()
 
 	// Get item_id first
 	var itemId string
 	var status string
-	err := h.db.QueryRow(ctx, "SELECT item_id, status FROM maintenance_logs WHERE id = $1", id).Scan(&itemId, &status)
+	err = h.db.QueryRow(ctx, "SELECT item_id, status FROM maintenance_logs WHERE id = $1", id).Scan(&itemId, &status)
 	if err != nil {
 		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Log perbaikan tidak ditemukan"))
 		return

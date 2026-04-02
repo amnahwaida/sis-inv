@@ -15,8 +15,7 @@
           <p class="text-primary-100/70 text-sm font-medium">Audit fisik vs sistem untuk memastikan akurasi data aset sekolah.</p>
         </div>
         
-        <button @click="showStartModal = true" 
-                class="bg-white text-primary-900 hover:scale-105 active:scale-95 px-8 py-4 rounded-2xl text-xs font-black transition-all flex items-center gap-3 shadow-2xl shadow-white/10 uppercase tracking-widest">
+        <button @click="showStartModal = true" class="btn-premium-primary">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
           MULAI AUDIT BARU
         </button>
@@ -131,8 +130,7 @@
 
                 <div class="flex gap-4 pt-4">
                     <button @click="showStartModal = false" class="flex-1 py-4 text-xs font-black text-gray-400 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-900 rounded-2xl transition-all">BATAL</button>
-                    <button @click="handleStartAudit" :disabled="!newAudit.location_id" 
-                            class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-xl shadow-indigo-600/20 transition-all hover:translate-y-[-2px] active:translate-y-0 disabled:opacity-20 disabled:translate-y-0">
+                    <button @click="handleStartAudit" :disabled="!newAudit.location_id" class="btn-premium-action flex-[2]">
                         MULAI SEKARANG
                     </button>
                 </div>
@@ -165,7 +163,7 @@ const calculateProgress = (s) => {
 
 const handleStartAudit = async () => {
   try {
-    const session = await auditStore.startSession(newAudit.location_id, newAudit.notes)
+    const session = await auditStore.startSession(newAudit.value.location_id, newAudit.value.notes)
     showStartModal.value = false
     router.push(`/stock-opname/${session.id}`)
   } catch (err) {
