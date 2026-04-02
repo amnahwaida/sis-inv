@@ -46,28 +46,56 @@
       </div>
 
       <!-- Nav -->
-      <nav class="mt-4 px-3 space-y-1">
-        <router-link 
-          v-for="item in filteredNav"
-          :key="item.to"
-          :to="item.to" 
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
-          :class="$route.path === item.to ? 'bg-primary-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'"
-          @click="sidebarOpen = false"
-        >
-          <template v-if="settingsStore.settings[item.iconKey]">
-            <div 
-              v-if="settingsStore.settings[item.iconKey].trim().startsWith('<svg')" 
-              v-html="settingsStore.settings[item.iconKey]" 
-              class="w-5 h-5 flex items-center justify-center flex-shrink-0 [&>svg]:w-full [&>svg]:h-full"
-            />
-            <span v-else class="w-5 h-5 flex items-center justify-center text-lg leading-none flex-shrink-0">
-              {{ settingsStore.settings[item.iconKey] }}
-            </span>
-          </template>
-          <component v-else :is="item.icon" class="w-5 h-5 flex-shrink-0" />
-          <span class="truncate">{{ item.label }}</span>
-        </router-link>
+      <nav class="mt-4 px-3 pb-20 overflow-y-auto max-h-[calc(100vh-250px)] space-y-6 scrollbar-hide">
+        <div v-for="(group, groupName) in groupedNav" :key="groupName" class="space-y-1">
+          <!-- Group Header (Collapsible) -->
+          <button 
+            v-if="groupName !== 'Dashboard'"
+            @click="toggleGroup(groupName)"
+            class="w-full flex items-center justify-between px-3 py-2.5 my-1 rounded-xl text-[10px] font-black text-gray-500 hover:text-white uppercase tracking-[0.2em] transition-all hover:bg-gray-800/50 group"
+          >
+            <div class="flex items-center gap-3">
+              <component :is="groupIcons[groupName]" class="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
+              <span>{{ groupName }}</span>
+            </div>
+            <svg 
+              class="w-3.5 h-3.5 transition-transform duration-300 transform-gpu" 
+              :class="openGroups[groupName] ? 'rotate-180' : ''"
+              fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+            </svg>
+          </button>
+
+          <!-- Group Items -->
+          <transition 
+            name="expand"
+          >
+            <div v-show="groupName === 'Dashboard' || openGroups[groupName]" class="overflow-hidden space-y-1">
+              <router-link 
+                v-for="item in group"
+                :key="item.to"
+                :to="item.to" 
+                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group/item active:scale-95 ml-1"
+                :class="$route.path === item.to ? 'bg-primary-600 text-white shadow-lg shadow-primary-900/20' : 'text-gray-400 hover:bg-gray-800 hover:text-white'"
+                @click="sidebarOpen = false"
+              >
+                <template v-if="settingsStore.settings[item.iconKey]">
+                  <div 
+                    v-if="settingsStore.settings[item.iconKey].trim().startsWith('<svg')" 
+                    v-html="settingsStore.settings[item.iconKey]" 
+                    class="w-5 h-5 flex items-center justify-center flex-shrink-0 opacity-80 group-hover/item:opacity-100 [&>svg]:w-full [&>svg]:h-full transition-opacity"
+                  />
+                  <span v-else class="w-5 h-5 flex items-center justify-center text-lg leading-none flex-shrink-0">
+                    {{ settingsStore.settings[item.iconKey] }}
+                  </span>
+                </template>
+                <component v-else :is="item.icon" class="w-5 h-5 flex-shrink-0 opacity-80 group-hover/item:opacity-100 transition-opacity" />
+                <span class="truncate whitespace-nowrap">{{ item.label }}</span>
+              </router-link>
+            </div>
+          </transition>
+        </div>
       </nav>
 
       <!-- User info at bottom -->
@@ -243,27 +271,56 @@ const IconAuditLog = { render: () => h('svg', { fill: 'none', stroke: 'currentCo
 const IconStockOpname = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' })]) }
 const IconMaintenance = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' }), h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z' })]) }
 
+const groupIcons = {
+  'Transaksi': { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-4 h-4' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5' })]) },
+  'Inventaris': { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-4 h-4' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' })]) },
+  'Pemeliharaan': { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-4 h-4' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M11.42 15.17L17.25 21A2.67 2.67 0 1113.5 17.25l-5.83-5.83m.57-2.57l5.41-5.41a2.67 2.67 0 113.78 3.78l-5.41 5.41M11.42 15.17l5.83 5.83M11.42 15.17l-5.83-5.83m-1.5 1.5l1.5-1.5m0 0l1.5 1.5m-1.5-1.5l1.5-1.5' })]) },
+  'Admin': { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-4 h-4' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z' })]) },
+  'Laporan': { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-4 h-4' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z' })]) },
+  'Sistem': { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-4 h-4' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M4.5 12a7.5 7.5 0 0015 0m-15 0a7.5 7.5 0 1115 0m-15 0H3m16.5 0H21m-1.5 0H12m-8.457 3.077l1.41-.513m0 0l-1.41-1.413m1.41 1.413L5.636 5.636m11.144 11.144l-1.413 1.413m0 0l1.413-1.413m-1.413 1.413L18.364 18.364' })]) }
+}
+
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: IconDashboard, iconKey: 'icon_dashboard', roles: ['ADMIN', 'TEACHER'] },
-  { to: '/items', label: 'Barang', icon: IconItems, iconKey: 'icon_items', roles: ['ADMIN', 'TEACHER'] },
-  { to: '/borrow', label: 'Pinjam', icon: IconBorrow, iconKey: 'icon_borrow', roles: ['ADMIN', 'TEACHER'] },
-  { to: '/return', label: 'Pengembalian', icon: IconReturn, iconKey: 'icon_return', roles: ['ADMIN', 'TEACHER'] },
-  { to: '/my-borrowings', label: 'Peminjaman Saya', icon: IconMyBorrowings, iconKey: 'icon_my_borrowings', roles: ['ADMIN', 'TEACHER'] },
-  { to: '/student-history', label: 'Cek Riwayat Siswa', icon: IconStudent, iconKey: 'icon_student_history', roles: ['ADMIN', 'TEACHER'] },
-  { to: '/reports', label: 'Laporan', icon: IconReports, iconKey: 'icon_reports', roles: ['ADMIN'] },
-  { to: '/users', label: 'Kelola User', icon: IconUsers, iconKey: 'icon_users', roles: ['ADMIN'] },
-  { to: '/students', label: 'Kelola Siswa', icon: IconStudent, iconKey: 'icon_students', roles: ['ADMIN'] },
-  { to: '/categories', label: 'Kategori', icon: IconCategories, iconKey: 'icon_categories', roles: ['ADMIN'] },
-  { to: '/locations', label: 'Lokasi', icon: IconLocations, iconKey: 'icon_locations', roles: ['ADMIN'] },
-  { to: '/maintenance', label: 'Perbaikan', icon: IconMaintenance, iconKey: 'icon_maintenance', roles: ['ADMIN'] },
-  { to: '/stock-opname', label: 'Stock Opname', icon: IconStockOpname, iconKey: 'icon_stock_opname', roles: ['ADMIN'] },
-  { to: '/audit-logs', label: 'Log Audit', icon: IconAuditLog, iconKey: 'icon_audit_logs', roles: ['ADMIN'] },
-  { to: '/settings', label: 'Pengaturan', icon: IconSettings, iconKey: 'icon_settings', roles: ['ADMIN', 'TEACHER'] },
+  { to: '/', label: 'Dashboard', icon: IconDashboard, iconKey: 'icon_dashboard', roles: ['ADMIN', 'TEACHER'], group: 'Dashboard' },
+  
+  { to: '/borrow', label: 'Pinjam', icon: IconBorrow, iconKey: 'icon_borrow', roles: ['ADMIN', 'TEACHER'], group: 'Transaksi' },
+  { to: '/return', label: 'Kembali', icon: IconReturn, iconKey: 'icon_return', roles: ['ADMIN', 'TEACHER'], group: 'Transaksi' },
+  { to: '/my-borrowings', label: 'Pinjaman Saya', icon: IconMyBorrowings, iconKey: 'icon_my_borrowings', roles: ['ADMIN', 'TEACHER'], group: 'Transaksi' },
+  
+  { to: '/items', label: 'Barang', icon: IconItems, iconKey: 'icon_items', roles: ['ADMIN', 'TEACHER'], group: 'Inventaris' },
+  { to: '/categories', label: 'Kategori', icon: IconCategories, iconKey: 'icon_categories', roles: ['ADMIN'], group: 'Inventaris' },
+  { to: '/locations', label: 'Lokasi', icon: IconLocations, iconKey: 'icon_locations', roles: ['ADMIN'], group: 'Inventaris' },
+  
+  { to: '/stock-opname', label: 'Opname', icon: IconStockOpname, iconKey: 'icon_stock_opname', roles: ['ADMIN'], group: 'Pemeliharaan' },
+  { to: '/maintenance', label: 'Perbaikan', icon: IconMaintenance, iconKey: 'icon_maintenance', roles: ['ADMIN'], group: 'Pemeliharaan' },
+  
+  { to: '/users', label: 'Data User', icon: IconUsers, iconKey: 'icon_users', roles: ['ADMIN'], group: 'Admin' },
+  { to: '/students', label: 'Data Siswa', icon: IconStudent, iconKey: 'icon_students', roles: ['ADMIN'], group: 'Admin' },
+  { to: '/student-history', label: 'Riwayat Siswa', icon: IconStudent, iconKey: 'icon_student_history', roles: ['ADMIN', 'TEACHER'], group: 'Admin' },
+  
+  { to: '/reports', label: 'Laporan', icon: IconReports, iconKey: 'icon_reports', roles: ['ADMIN'], group: 'Laporan' },
+  { to: '/audit-logs', label: 'Audit Log', icon: IconAuditLog, iconKey: 'icon_audit_logs', roles: ['ADMIN'], group: 'Laporan' },
+  
+  { to: '/settings', label: 'Pengaturan', icon: IconSettings, iconKey: 'icon_settings', roles: ['ADMIN', 'TEACHER'], group: 'Sistem' },
 ]
 
-const filteredNav = computed(() =>
-  navItems.filter(item => item.roles.includes(authStore.userRole))
-)
+const openGroups = ref(JSON.parse(localStorage.getItem('openGroups') || '{"Transaksi": true, "Inventaris": true}'))
+
+const toggleGroup = (groupName) => {
+  openGroups.value[groupName] = !openGroups.value[groupName]
+  localStorage.setItem('openGroups', JSON.stringify(openGroups.value))
+}
+
+const groupedNav = computed(() => {
+  const groups = {}
+  navItems.forEach(item => {
+    if (item.roles.includes(authStore.userRole)) {
+      if (!groups[item.group]) groups[item.group] = []
+      groups[item.group].push(item)
+    }
+  })
+  return groups
+})
 
 async function handleLogout() {
   authStore.logout()
@@ -277,6 +334,22 @@ async function handleLogout() {
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+.expand-enter-active, .expand-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 500px;
+}
+.expand-enter-from, .expand-leave-to {
+  opacity: 0;
+  max-height: 0;
+  transform: translateY(-8px) scale(0.98);
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 @media print {
   .no-print {
