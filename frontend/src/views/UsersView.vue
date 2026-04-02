@@ -24,7 +24,7 @@
     <div class="flex flex-col sm:flex-row items-center gap-3 w-full">
       <!-- Search Input -->
       <div class="relative w-full sm:w-80">
-        <input type="text" v-model="searchQuery" placeholder="Cari nama, username..." 
+        <input type="text" v-model="filters.search" @input="debouncedFetch" placeholder="Cari nama, username..." 
                class="input-field pl-10 h-11 rounded-2xl text-sm w-full" />
         <svg class="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
       </div>
@@ -32,7 +32,7 @@
       <!-- Role Filter -->
       <div class="flex items-center gap-2 bg-white dark:bg-gray-800 p-2 px-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm w-full sm:w-auto">
         <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Role:</label>
-        <select v-model="roleFilter" class="bg-transparent border-none focus:ring-0 text-sm font-black text-gray-900 dark:text-white py-0 w-full sm:w-auto">
+        <select v-model="filters.role" @change="debouncedFetch" class="bg-transparent border-none focus:ring-0 text-sm font-black text-gray-900 dark:text-white py-0 w-full sm:w-auto">
           <option value="">Semua Role</option>
           <option value="ADMIN">Admin</option>
           <option value="TEACHER">Guru/Staff</option>
@@ -57,8 +57,8 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50 dark:divide-gray-700">
-            <template v-if="paginatedData.length > 0">
-              <tr v-for="u in paginatedData" :key="u.id" class="group hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-all duration-300">
+            <template v-if="users.length > 0">
+              <tr v-for="u in users" :key="u.id" class="group hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-all duration-300">
                 <td class="px-8 py-6">
                   <div class="flex items-center gap-4">
                     <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white flex items-center justify-center text-sm font-black shadow-lg shadow-primary-500/20 uppercase border border-white/20">
@@ -98,27 +98,22 @@
               </tr>
             </template>
             <tr v-else-if="!loading" class="text-center">
-              <td colspan="5" class="px-8 py-24 italic text-gray-400 font-medium tracking-widest text-xs uppercase">{{ searchQuery || roleFilter ? 'Pencarian Tidak Ditemukan' : 'Belum ada data user tersimpan' }}</td>
+              <td colspan="5" class="px-8 py-24 italic text-gray-400 font-medium tracking-widest text-xs uppercase">{{ filters.search || filters.role ? 'Pencarian Tidak Ditemukan' : 'Belum ada data user tersimpan' }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Pagination Bar -->
-      <div v-if="totalPages > 1" class="px-8 py-5 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="px-8 py-5 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
         <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-          Menampilkan <span class="text-primary-600">{{ startRow }}-{{ endRow }}</span> dari <span class="text-gray-900 dark:text-white">{{ filteredData.length }}</span> data
+          Menampilkan <span class="text-primary-600">{{ users.length ? (meta.page - 1) * meta.page_size + 1 : 0 }}-{{ Math.min(meta.page * meta.page_size, meta.total) }}</span> dari <span class="text-gray-900 dark:text-white">{{ meta.total }}</span> data
         </span>
         <div class="flex gap-2">
-          <button @click="currentPage--" :disabled="currentPage === 1" class="pagination-btn-standard">
+          <button @click="changePage(meta.page - 1)" :disabled="meta.page === 1" class="pagination-btn-standard">
             Kembali
           </button>
-          <button v-for="p in visiblePages" :key="p" @click="currentPage = p"
-                  class="w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm active:scale-95 border"
-                  :class="p === currentPage ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300'">
-            {{ p }}
-          </button>
-          <button @click="currentPage++" :disabled="currentPage === totalPages" class="pagination-btn-standard">
+          <button @click="changePage(meta.page + 1)" :disabled="meta.page === meta.total_pages || meta.total_pages === 0" class="pagination-btn-standard">
             Lanjut
           </button>
         </div>
@@ -181,7 +176,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import api from '../utils/api'
 
 const users = ref([])
@@ -189,11 +184,9 @@ const loading = ref(true)
 const showModal = ref(false)
 const submitting = ref(false)
 const editingUser = ref(null)
+const meta = ref({ page: 1, total_pages: 1, total: 0, page_size: 10 })
 
-const searchQuery = ref('')
-const roleFilter = ref('')
-const currentPage = ref(1)
-const perPage = 10
+const filters = ref({ search: '', role: '', page: 1, page_size: 10 })
 
 const form = ref({ full_name: '', username: '', password: '', role: 'TEACHER', is_active: true })
 const roleLabels = { ADMIN: 'Admin', TEACHER: 'Guru/Staff' }
@@ -204,48 +197,27 @@ const roleBadgeClass = (role) => ({
   TEACHER: 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400',
 }[role] || 'bg-gray-50 text-gray-800')
 
-// Search and Filter logic
-const filteredData = computed(() => {
-  let result = users.value
-  
-  if (roleFilter.value) {
-    result = result.filter(u => u.role === roleFilter.value)
-  }
-  
-  const q = searchQuery.value.toLowerCase().trim()
-  if (q) {
-    result = result.filter(u => 
-      u.full_name?.toLowerCase().includes(q) || 
-      u.username?.toLowerCase().includes(q)
-    )
-  }
-  
-  return result
-})
+let searchTimeout
+const debouncedFetch = () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => { filters.value.page = 1; fetchUsers() }, 500)
+}
 
-// Pagination logic
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredData.value.length / perPage)))
-const startRow = computed(() => (currentPage.value - 1) * perPage + 1)
-const endRow = computed(() => Math.min(currentPage.value * perPage, filteredData.value.length))
-const paginatedData = computed(() => filteredData.value.slice((currentPage.value - 1) * perPage, currentPage.value * perPage))
-
-const visiblePages = computed(() => {
-  const pages = []
-  const start = Math.max(1, currentPage.value - 2)
-  const end = Math.min(totalPages.value, currentPage.value + 2)
-  for (let i = start; i <= end; i++) pages.push(i)
-  return pages
-})
-
-// Reset pagination on filter change
-watch([searchQuery, roleFilter], () => {
-  currentPage.value = 1
-})
+const changePage = (p) => { filters.value.page = p; fetchUsers() }
 
 async function fetchUsers() {
   loading.value = true
-  try { const { data } = await api.get('/users'); users.value = data.data || [] } 
-  catch (e) { console.error('Gagal ambil data user:', e) } 
+  try { 
+    const { data } = await api.get('/users', { params: filters.value })
+    if (data.success) {
+      users.value = data.data.items || []
+      meta.value = data.data.meta || { page: 1, total_pages: 1, total: 0, page_size: 10 }
+    }
+  } 
+  catch (e) { 
+    console.error('Gagal ambil data user:', e) 
+    users.value = []
+  } 
   finally { loading.value = false }
 }
 

@@ -115,11 +115,11 @@
         </table>
 
         <!-- Modern Pagination Bar -->
-        <div v-if="meta.total_pages > 1" class="px-8 py-6 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="px-8 py-6 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
           <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">HALAMAN <span class="text-primary-600">{{ meta.page }}</span> DARI <span class="text-gray-900 dark:text-white">{{ meta.total_pages }}</span></span>
           <div class="flex gap-2">
             <button @click="changePage(meta.page - 1)" :disabled="meta.page === 1" class="pagination-btn-standard">KEMBALI</button>
-            <button @click="changePage(meta.page + 1)" :disabled="meta.page === meta.total_pages" class="pagination-btn-standard">LANJUT</button>
+            <button @click="changePage(meta.page + 1)" :disabled="meta.page === meta.total_pages || meta.total_pages === 0" class="pagination-btn-standard">LANJUT</button>
           </div>
         </div>
       </div>
@@ -194,9 +194,9 @@ const fetchStudents = async () => {
   try {
     const { data } = await api.get('/students', { params: filters.value })
     if (data.success) {
-      // Backend returns array for student list directly in data
+      // Backend returns structure with items and meta
       students.value = Array.isArray(data.data) ? data.data : (data.data.items || [])
-      meta.value = data.meta || { page: 1, total_pages: 1 }
+      meta.value = data.data.meta || { page: 1, total_pages: 1 }
     }
   } catch (e) {
     console.error('Gagal memuat siswa:', e)

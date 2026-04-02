@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -22,10 +23,44 @@ func NewUserHandler(db *pgxpool.Pool) *UserHandler {
 }
 
 func (h *UserHandler) List(c *gin.Context) {
-	rows, err := h.db.Query(context.Background(),
-		`SELECT id, username, full_name, role, nip, email, phone, is_active, last_login, created_at, updated_at
-		 FROM users ORDER BY created_at DESC`,
-	)
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	search := c.Query("search")
+	role := c.Query("role")
+
+	if page < 1 { page = 1 }
+	if pageSize < 1 || pageSize > 100 { pageSize = 10 }
+	offset := (page - 1) * pageSize
+
+	query := `SELECT id, username, full_name, role, nip, email, phone, is_active, last_login, created_at, updated_at FROM users WHERE 1=1`
+	countQuery := `SELECT COUNT(*) FROM users WHERE 1=1`
+	var args []interface{}
+	argIdx := 1
+
+	if search != "" {
+		searchStr := "%" + search + "%"
+		query += fmt.Sprintf(" AND (username ILIKE $%d OR full_name ILIKE $%d)", argIdx, argIdx)
+		countQuery += fmt.Sprintf(" AND (username ILIKE $%d OR full_name ILIKE $%d)", argIdx, argIdx)
+		args = append(args, searchStr)
+		argIdx++
+	}
+
+	if role != "" {
+		query += fmt.Sprintf(" AND role = $%d", argIdx)
+		countQuery += fmt.Sprintf(" AND role = $%d", argIdx)
+		args = append(args, role)
+		argIdx++
+	}
+
+	// Get total count
+	var total int
+	err := h.db.QueryRow(context.Background(), countQuery, args...).Scan(&total)
+	if err != nil { total = 0 }
+
+	query += fmt.Sprintf(" ORDER BY created_at DESC LIMIT $%d OFFSET $%d", argIdx, argIdx+1)
+	args = append(args, pageSize, offset)
+
+	rows, err := h.db.Query(context.Background(), query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal mengambil data user"))
 		return
@@ -45,7 +80,17 @@ func (h *UserHandler) List(c *gin.Context) {
 		users = append(users, u)
 	}
 
-	c.JSON(http.StatusOK, utils.SuccessResponse(users, ""))
+	if users == nil { users = []models.User{} }
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{
+		"items": users,
+		"meta": gin.H{
+			"page":        page,
+			"page_size":   pageSize,
+			"total":       total,
+			"total_pages": (total + pageSize - 1) / pageSize,
+		},
+	}, ""))
 }
 
 func (h *UserHandler) Create(c *gin.Context) {

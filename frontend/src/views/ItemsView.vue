@@ -159,9 +159,9 @@
         </table>
         
         <!-- Pagination Premium -->
-        <div v-if="itemStore.meta.total_pages > 1" class="px-8 py-6 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="px-8 py-6 bg-gray-50/50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
           <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-            Menampilkan <span class="text-primary-600">{{ (itemStore.meta.page - 1) * itemStore.meta.page_size + 1 }}-{{ Math.min(itemStore.meta.page * itemStore.meta.page_size, itemStore.meta.total) }}</span> dari <span class="text-gray-900 dark:text-white">{{ itemStore.meta.total }}</span> aset
+            Menampilkan <span class="text-primary-600">{{ itemStore.items.length ? (itemStore.meta.page - 1) * itemStore.meta.page_size + 1 : 0 }}-{{ Math.min(itemStore.meta.page * itemStore.meta.page_size, itemStore.meta.total) }}</span> dari <span class="text-gray-900 dark:text-white">{{ itemStore.meta.total }}</span> aset
           </span>
           <div class="flex gap-2">
             <button @click="changePage(itemStore.meta.page - 1)" :disabled="itemStore.meta.page === 1" class="pagination-btn-standard">

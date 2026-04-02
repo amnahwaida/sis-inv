@@ -43,8 +43,44 @@ func (h *StudentHandler) GetUniqueClasses(c *gin.Context) {
 }
 
 func (h *StudentHandler) List(c *gin.Context) {
-	query := `SELECT id, nis, full_name, class, is_active, created_at FROM students ORDER BY full_name ASC`
-	rows, err := h.db.Query(context.Background(), query)
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "15"))
+	search := c.Query("search")
+	class := c.Query("class")
+	
+	if page < 1 { page = 1 }
+	if pageSize < 1 || pageSize > 100 { pageSize = 15 }
+	offset := (page - 1) * pageSize
+
+	query := `SELECT id, nis, full_name, class, is_active, created_at FROM students WHERE 1=1`
+	countQuery := `SELECT COUNT(*) FROM students WHERE 1=1`
+	var args []interface{}
+	argIdx := 1
+
+	if search != "" {
+		searchStr := "%" + search + "%"
+		query += fmt.Sprintf(" AND (nis ILIKE $%d OR full_name ILIKE $%d)", argIdx, argIdx)
+		countQuery += fmt.Sprintf(" AND (nis ILIKE $%d OR full_name ILIKE $%d)", argIdx, argIdx)
+		args = append(args, searchStr)
+		argIdx++
+	}
+
+	if class != "" {
+		query += fmt.Sprintf(" AND class = $%d", argIdx)
+		countQuery += fmt.Sprintf(" AND class = $%d", argIdx)
+		args = append(args, class)
+		argIdx++
+	}
+
+	// Get total count
+	var total int
+	err := h.db.QueryRow(context.Background(), countQuery, args...).Scan(&total)
+	if err != nil { total = 0 }
+
+	query += fmt.Sprintf(" ORDER BY full_name ASC LIMIT $%d OFFSET $%d", argIdx, argIdx+1)
+	args = append(args, pageSize, offset)
+
+	rows, err := h.db.Query(context.Background(), query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Gagal mengambil data siswa"))
 		return
@@ -71,7 +107,16 @@ func (h *StudentHandler) List(c *gin.Context) {
 	}
 	
 	if students == nil { students = []map[string]interface{}{} }
-	c.JSON(http.StatusOK, utils.SuccessResponse(students, ""))
+	
+	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{
+		"items": students,
+		"meta": gin.H{
+			"page":        page,
+			"page_size":   pageSize,
+			"total":       total,
+			"total_pages": (total + pageSize - 1) / pageSize,
+		},
+	}, ""))
 }
 
 func (h *StudentHandler) Create(c *gin.Context) {
