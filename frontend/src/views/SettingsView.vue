@@ -24,7 +24,8 @@
                       {id:'profile', label:'Profil Pengguna', icon:'👤'}, 
                       {id:'security', label:'Keamanan & Password', icon:'🛡️'}, 
                       {id:'app', label:'Preferensi Aplikasi', icon:'📱'},
-                      {id:'branding', label:'Kustomisasi Branding', icon:'🎨', adminOnly: true}
+                      {id:'branding', label:'Kustomisasi Branding', icon:'🎨', adminOnly: true},
+                      {id:'system', label:'Data & Sistem', icon:'🛠️', adminOnly: true}
                     ].filter(t => !t.adminOnly || authStore.userRole === 'ADMIN')" 
                     :key="tab.id"
                     @click="activeTab = tab.id"
@@ -173,6 +174,58 @@
             </form>
           </div>
 
+          <!-- Data & System Management (Admin Only) -->
+          <div v-if="activeTab === 'system' && authStore.userRole === 'ADMIN'" class="p-10 space-y-10 animate-fade-in text-gray-900 dark:text-white">
+            <div>
+              <h3 class="text-xl font-black capitalize">Manajemen Data & Sistem</h3>
+              <p class="text-[10px] font-black text-primary-500 uppercase tracking-widest mt-2">Backup, Restore, dan Reset Seluruh Data</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Backup Card -->
+              <div class="p-8 bg-blue-50 dark:bg-blue-900/20 rounded-[2.5rem] border border-blue-100 dark:border-blue-800 space-y-4">
+                <div class="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg">📦</div>
+                <h4 class="text-sm font-black uppercase tracking-widest">Backup Seluruh Data</h4>
+                <p class="text-[10px] font-bold text-blue-400 leading-relaxed uppercase tracking-tight">Unduh seluruh database dan file upload dalam format ZIP untuk cadangan eksternal.</p>
+                <button @click="handleBackup" :disabled="isProcessing" class="btn-premium-action !bg-blue-600 !px-6 w-full">
+                  {{ isProcessing ? 'MEMPROSES...' : 'DOWNLOAD BACKUP .ZIP' }}
+                </button>
+              </div>
+
+              <!-- Restore Card -->
+              <div class="p-8 bg-emerald-50 dark:bg-emerald-900/20 rounded-[2.5rem] border border-emerald-100 dark:border-emerald-800 space-y-4">
+                <div class="w-12 h-12 bg-emerald-600 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg">📥</div>
+                <h4 class="text-sm font-black uppercase tracking-widest">Restore dari Backup</h4>
+                <p class="text-[10px] font-bold text-emerald-400 leading-relaxed uppercase tracking-tight">Unggah file ZIP backup untuk memulihkan seluruh kondisi sistem. Data saat ini akan terhapus!</p>
+                <input type="file" ref="restoreFile" class="hidden" accept=".zip" @change="onFileSelected" />
+                <button @click="$refs.restoreFile.click()" :disabled="isProcessing" class="btn-premium-action !bg-emerald-600 !px-6 w-full">
+                  {{ isProcessing ? 'SEDANG RESTORE...' : 'PILIH FILE & RESTORE' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Danger Zone: Reset -->
+            <div class="p-8 bg-red-50 dark:bg-red-900/10 rounded-[2.5rem] border border-red-100 dark:border-red-900/30 space-y-6">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-red-600 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg">⚠️</div>
+                <div>
+                  <h4 class="text-sm font-black uppercase tracking-widest text-red-600">Danger Zone: Reset Sistem</h4>
+                  <p class="text-[10px] font-bold text-red-400 leading-relaxed uppercase tracking-tight">MENGHAPUS SELURUH ASSET, SISWA, RIWAYAT, DAN UPLOADS. TIDAK DAPAT DIBATALKAN!</p>
+                </div>
+              </div>
+              <div class="flex flex-col md:flex-row gap-4 items-end">
+                <div class="flex-1 space-y-2">
+                  <label class="text-[10px] font-black text-red-400 uppercase tracking-widest">Ketik "HAPUS" untuk konfirmasi</label>
+                  <input v-model="resetConfirmText" class="input-field !border-red-200 !text-red-600 rounded-2xl h-14" placeholder="HAPUS" />
+                </div>
+                <button @click="handleReset" :disabled="isProcessing || resetConfirmText !== 'HAPUS'" 
+                        class="btn-premium-action !bg-red-600 !px-10 h-14 disabled:opacity-30 disabled:cursor-not-allowed">
+                  {{ isProcessing ? 'MENGHAPUS...' : 'RESET TOTAL SISTEM' }}
+                </button>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -190,6 +243,9 @@ const settingsStore = useSettingsStore()
 const activeTab = ref('profile')
 const submitting = ref(false)
 const submittingBranding = ref(false)
+const isProcessing = ref(false)
+const resetConfirmText = ref('')
+const restoreFile = ref(null)
 const isDark = ref(document.documentElement.classList.contains('dark'))
 
 const passForm = ref({ old_password: '', new_password: '', confirm_password: '' })
@@ -229,6 +285,69 @@ async function handleSaveBranding() {
     alert(e.response?.data?.error || 'Gagal memperbarui branding')
   } finally {
     submittingBranding.value = false
+  }
+}
+
+async function handleBackup() {
+  isProcessing.value = true
+  try {
+    const response = await api.get('/admin/system/backup', { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `sis_inv_backup_${new Date().toISOString().split('T')[0]}.zip`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  } catch (e) {
+    alert('Gagal mengunduh backup')
+  } finally {
+    isProcessing.value = false
+  }
+}
+
+async function onFileSelected(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  if (!confirm('PERINGATAN: Seluruh data saat ini akan dihapus dan diganti dengan data dari backup. Lanjutkan?')) {
+    event.target.value = ''
+    return
+  }
+
+  isProcessing.value = true
+  const formData = new FormData()
+  formData.append('file', file)
+
+  try {
+    await api.post('/admin/system/restore', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    alert('Sistem berhasil dipulihkan! Halaman akan dimuat ulang.')
+    window.location.reload()
+  } catch (e) {
+    alert(e.response?.data?.error || 'Gagal melakukan restore')
+  } finally {
+    isProcessing.value = false
+    event.target.value = ''
+  }
+}
+
+async function handleReset() {
+  if (resetConfirmText.value !== 'HAPUS') return
+  
+  if (!confirm('APAKAH ANDA YAKIN? Seluruh data aset, siswa, dan transaksi akan DIHAPUS PERMANEN.')) return
+
+  isProcessing.value = true
+  try {
+    await api.post('/admin/system/reset')
+    alert('Sistem telah direset ke kondisi awal. Halaman akan dimuat ulang.')
+    window.location.reload()
+  } catch (e) {
+    alert(e.response?.data?.error || 'Gagal melakukan reset')
+  } finally {
+    isProcessing.value = false
+    resetConfirmText.value = ''
   }
 }
 </script>

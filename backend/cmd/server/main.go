@@ -236,6 +236,16 @@ func main() {
 			settings.GET("", settingHandler.List)
 			settings.PUT("", middleware.RoleMiddleware("ADMIN"), settingHandler.Update)
 		}
+
+		// System Data Management (Admin only)
+		backupHandler := handlers.NewBackupHandler(db)
+		adminSystem := v1.Group("/admin/system")
+		adminSystem.Use(middleware.AuthMiddleware(), middleware.RoleMiddleware("ADMIN"))
+		{
+			adminSystem.GET("/backup", backupHandler.Backup)
+			adminSystem.POST("/restore", backupHandler.Restore)
+			adminSystem.POST("/reset", backupHandler.Reset)
+		}
 	}
 
 	// Start server
