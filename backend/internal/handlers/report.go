@@ -24,7 +24,7 @@ func (h *ReportHandler) ExportItems(c *gin.Context) {
 	ctx := context.Background()
 
 	query := `
-		SELECT i.code, i.name, c.name as category, i.location, i.condition, i.status, i.purchase_date, i.purchase_price
+		SELECT i.code, i.name, c.name as category, COALESCE(i.location, ''), i.condition, i.status, i.purchase_date, i.purchase_price
 		FROM items i
 		LEFT JOIN categories c ON i.category_id = c.id
 		ORDER BY i.name ASC
