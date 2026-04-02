@@ -8,7 +8,7 @@ SIS-INV is a premium school inventory management system designed for transparenc
 
 ### Phase 1 (Core Functionality)
 - **JWT Authentication**: Secure login/logout and session management.
-- **RBAC (Role-Based Access Control)**: Granular access for `ADMIN`, `TEACHER`, and `HEAD` roles.
+- **RBAC (Role-Based Access Control)**: Granular access for `ADMIN` and `TEACHER` roles.
 - **Data Management**: Complete CRUD for Items, Categories, Locations, Students, and Users.
 - **Borrowing Workflow**: End-to-end tracking of items borrowed by students/staff.
 - **Audit Logs**: Deep 5W1H audit trail (Who, What, Where, When, Why, How) for every critical action.

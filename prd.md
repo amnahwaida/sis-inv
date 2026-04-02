@@ -18,7 +18,7 @@
 |-------|-------------------------------|------------------------------|
 | **Student Access** | Login sendiri via browser | Tidak login, diwakili guru |
 | **Alur Pinjam Siswa** | Siswa request → Guru approve → Ambil | Guru input NIS → Scan barang → Selesai |
-| **Kompleksitas Auth** | 5 roles (termasuk STUDENT) | 4 roles (tanpa STUDENT) |
+| **Kompleksitas Auth** | 5 roles (termasuk STUDENT) | 2 roles (ADMIN, TEACHER) |
 | **Database** | Tabel users + guardian mapping | Lebih sederhana, student info di transaksi |
 | **Dev Time** | ~10 minggu | **~7 minggu** |
 | **User Management** | Kelola ratusan akun siswa | Hanya kelola akun guru/staff |
@@ -71,9 +71,8 @@
 
 | Persona | Deskripsi | Kebutuhan Utama | Device | Akses Level |
 |---------|-----------|-----------------|--------|-------------|
-| **Admin TU** | Staff Tata Usaha yang mengelola inventaris | Input barang, laporan, manajemen user | Desktop/Laptop | **FULL** |
-| **Guru/Staff** | Pengguna yang meminjam barang & menangani peminjaman siswa | Pinjam cepat, input pinjaman siswa, lihat riwayat | Mobile/Desktop | **STANDARD** |
-| **Kepala Sekolah** | Pengawas yang butuh laporan | Dashboard, laporan ringkas | Desktop/Tablet | **READ-ONLY** |
+| **Admin TU** | Staff Tata Usaha yang mengelola inventaris | Input barang, laporan, manajemen user | Desktop/Laptop | **ADMIN** |
+| **Guru/Staff** | Pengguna yang meminjam barang & menangani peminjaman siswa | Pinjam cepat, input pinjaman siswa, lihat riwayat | Mobile/Desktop | **TEACHER** |
 | **Teknisi IT** | Maintenance server | Backup, monitoring, troubleshooting | Desktop | **ADMIN** |
 
 ### 3.2 User Stories
@@ -91,10 +90,6 @@ SEBAGAI Guru (untuk siswa)
 SAYA INGIN bisa input peminjaman atas nama siswa dengan cepat
 SEHINGGA siswa tidak perlu ribet login, tapi data tetap tercatat
 
-SEBAGAI Kepala Sekolah
-SAYA INGIN lihat laporan dari browser laptop
-SEHINGGA bisa akses kapan saja tanpa install
-
 SEBAGAI Teknisi IT
 SAYA INGIN backup otomatis setiap malam
 SEHINGGA data aman jika server rusak
@@ -110,7 +105,7 @@ SEHINGGA data aman jika server rusak
 |----|-------|-----------|----------|-----------|
 | **F01** | **Autentikasi & Autorisasi** | P0 | 2 hari | All |
 | F01.1 | Login dengan username/password | P0 | | All |
-| F01.2 | Role-based access (ADMIN, TEACHER, HEAD) | P0 | | All |
+| F01.2 | Role-based access (ADMIN, TEACHER) | P0 | | All |
 | F01.3 | Session management dengan JWT | P0 | | All |
 | **F02** | **Manajemen Barang (CRUD)** | P0 | 4 hari | Admin |
 | F02.1 | Tambah barang dengan form | P0 | | Admin |
@@ -132,8 +127,8 @@ SEHINGGA data aman jika server rusak
 | F04.4 | Time-limited borrowing (max 6 hours untuk siswa) | P0 | | Teacher |
 | F04.5 | Quick return scan untuk siswa | P0 | | Teacher |
 | F04.6 | Riwayat peminjaman per siswa (view only) | P1 | | Teacher |
-| **F05** | **Dashboard & Laporan** | P1 | 3 hari | Admin/Head |
-| F05.1 | Dashboard ringkas (total, dipinjam, rusak) | P1 | | Admin/Head |
+| **F05** | **Dashboard & Laporan** | P1 | 3 hari | Admin |
+| F05.1 | Dashboard ringkas (total, dipinjam, rusak) | P1 | | Admin |
 | F05.2 | Laporan barang dipinjam saat ini | P1 | | Admin |
 | F05.3 | Laporan peminjaman per kelas/siswa | P1 | | Admin |
 | F05.4 | Export laporan ke Excel/PDF | P1 | | Admin |
@@ -182,9 +177,9 @@ SEHINGGA data aman jika server rusak
 │                         CLIENT DEVICES                          │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐        │
 │  │  Mobile  │  │ Desktop  │  │  Tablet  │  │  Laptop  │        │
-│  │ Browser  │  │ Browser  │  │ Browser  │  │ Browser  │        │
+│  │Browser  │  │ Browser  │  │ Browser  │  │ Browser  │        │
 │  │(Chrome)  │  │(Chrome)  │  │ (Safari) │  │(Firefox) │        │
-│  │ (Guru)   │  │ (Admin)  │  │ (Guru)   │  │ (Head)   │        │
+│  │ (Guru)   │  │ (Admin)  │  │ (Guru)   │  │ (Admin)  │        │
 │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘        │
 │       │             │             │             │               │
 │       └─────────────┴──────┬──────┴─────────────┘               │
@@ -263,7 +258,7 @@ CREATE TABLE users (
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(100) NOT NULL,
-    role VARCHAR(20) NOT NULL CHECK (role IN ('ADMIN', 'TEACHER', 'HEAD')),
+    role VARCHAR(20) NOT NULL CHECK (role IN ('ADMIN', 'TEACHER')),
     nip VARCHAR(50), -- NIP untuk guru/staff
     email VARCHAR(100),
     phone VARCHAR(20),
@@ -452,7 +447,7 @@ CREATE INDEX idx_audit_created ON audit_logs(created_at);
 #### Dashboard & Reports
 | Method | Endpoint | Auth | Role | Deskripsi |
 |--------|----------|------|------|-----------|
-| GET | `/api/v1/dashboard/summary` | ✅ | ADMIN, HEAD | Dashboard statistics |
+| GET | `/api/v1/dashboard/summary` | ✅ | All | Dashboard statistics |
 | GET | `/api/v1/reports/overdue` | ✅ | ADMIN | Report overdue items |
 | GET | `/api/v1/reports/active-borrowings` | ✅ | ADMIN | Currently borrowed items |
 | GET | `/api/v1/reports/by-student` | ✅ | ADMIN | Borrowing report per student |
@@ -510,20 +505,20 @@ Student Borrowing Rules (Handled by Teacher):
 
 ### 6.3 Role Permission Matrix
 
-| Feature | ADMIN | TEACHER | HEAD |
+| Feature | ADMIN | TEACHER |
 |---------|-------|---------|------|
-| Create/Edit Items | ✅ | ❌ | ❌ |
-| Delete Items | ✅ | ❌ | ❌ |
-| Borrow (Self) | ✅ | ✅ | ✅ |
-| Borrow (For Student) | ✅ | ✅ | ❌ |
-| View All Transactions | ✅ | ❌ | ✅ |
-| View Own Transactions | ✅ | ✅ | ✅ |
-| View Student Borrowings | ✅ | ✅ (by class) | ✅ |
-| Generate Reports | ✅ | ❌ | ✅ |
-| System Settings | ✅ | ❌ | ❌ |
-| Maintenance Log | ✅ | ✅ | ✅ |
-| Print QR Labels | ✅ | ❌ | ❌ |
-| Manage Users | ✅ | ❌ | ❌ |
+| Create/Edit Items | ✅ | ❌ |
+| Delete Items | ✅ | ❌ |
+| Borrow (Self) | ✅ | ✅ |
+| Borrow (For Student) | ✅ | ✅ |
+| View All Transactions | ✅ | ❌ |
+| View Own Transactions | ✅ | ✅ |
+| View Student Borrowings | ✅ | ✅ (by class) |
+| Generate Reports | ✅ | ❌ |
+| System Settings | ✅ | ❌ |
+| Maintenance Log | ✅ | ✅ |
+| Print QR Labels | ✅ | ❌ |
+| Manage Users | ✅ | ❌ |
 
 ### 6.4 Backup Strategy
 
@@ -600,7 +595,7 @@ crontab -e
 | Page | Elements | Roles | Notes |
 |------|----------|-------|-------|
 | **Login** | Username, Password, Login Button | All | Remember me option |
-| **Dashboard** | Summary cards, Quick actions, Recent activity | All | Role-based view |
+| **Dashboard** | Summary cards, Quick actions, Recent activity | All |
 | **Scan** | Camera view, Flash toggle, Manual input | All | html5-qrcode library |
 | **Item List** | Search, Filter, Table/Card view | All | Color-coded status |
 | **Item Detail** | Info, QR, History, Actions | All | Edit (Admin only) |

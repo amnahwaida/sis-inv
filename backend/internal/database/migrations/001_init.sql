@@ -2,13 +2,13 @@
 -- SIS-INV Database Schema - Migration 001
 -- ============================================================================
 
--- TABEL USERS (Hanya Admin, Guru, Kepala Sekolah - TANPA SISWA)
+-- TABEL USERS (Hanya Admin dan Guru - TANPA SISWA DAN KEPALA SEKOLAH)
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(100) NOT NULL,
-    role VARCHAR(20) NOT NULL CHECK (role IN ('ADMIN', 'TEACHER', 'HEAD')),
+    role VARCHAR(20) NOT NULL CHECK (role IN ('ADMIN', 'TEACHER')),
     nip VARCHAR(50),
     email VARCHAR(100),
     phone VARCHAR(20),

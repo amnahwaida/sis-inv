@@ -39,7 +39,7 @@ type CreateUserRequest struct {
 	Username string  `json:"username" binding:"required"`
 	Password string  `json:"password" binding:"required,min=6"`
 	FullName string  `json:"full_name" binding:"required"`
-	Role     string  `json:"role" binding:"required,oneof=ADMIN TEACHER HEAD"`
+	Role     string  `json:"role" binding:"required,oneof=ADMIN TEACHER"`
 	NIP      *string `json:"nip"`
 	Email    *string `json:"email"`
 	Phone    *string `json:"phone"`
@@ -48,7 +48,7 @@ type CreateUserRequest struct {
 type UpdateUserRequest struct {
 	Username *string `json:"username"`
 	FullName *string `json:"full_name"`
-	Role     *string `json:"role" binding:"omitempty,oneof=ADMIN TEACHER HEAD"`
+	Role     *string `json:"role" binding:"omitempty,oneof=ADMIN TEACHER"`
 	NIP      *string `json:"nip"`
 	Email    *string `json:"email"`
 	Phone    *string `json:"phone"`
