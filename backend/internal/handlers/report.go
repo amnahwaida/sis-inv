@@ -929,6 +929,12 @@ func (h *ReportHandler) ExportAuditSession(c *gin.Context) {
 	f.SetCellValue(sheet, "B4", s.StartedAt.Format("2006-01-02 15:04"))
 	f.SetCellValue(sheet, "A5", "Status:")
 	f.SetCellValue(sheet, "B5", s.Status)
+	f.SetCellValue(sheet, "A6", "Catatan Tambahan:")
+	if s.Notes != nil && *s.Notes != "" {
+		f.SetCellValue(sheet, "B6", *s.Notes)
+	} else {
+		f.SetCellValue(sheet, "B6", "-")
+	}
 
 	headerStyle, _ := f.NewStyle(&excelize.Style{
 		Font: &excelize.Font{Bold: true, Size: 14},
@@ -936,18 +942,18 @@ func (h *ReportHandler) ExportAuditSession(c *gin.Context) {
 	f.SetCellStyle(sheet, "A1", "A1", headerStyle)
 
 	// Items Table Header
-	f.SetCellValue(sheet, "A7", "LIST BARANG DITEMUKAN")
+	f.SetCellValue(sheet, "A8", "LIST BARANG DITEMUKAN")
 	tableHeaderStyle, _ := f.NewStyle(&excelize.Style{
 		Font: &excelize.Font{Bold: true, Color: "FFFFFF"},
 		Fill: excelize.Fill{Type: "pattern", Color: []string{"4F46E5"}, Pattern: 1},
 	})
 	
-	cols := []string{"No", "Kode Barang", "Nama Barang", "Kondisi Saat Scan", "Waktu Scan", "Catatan"}
+	cols := []string{"No", "Kode Barang", "Nama Barang", "Kondisi Saat Scan", "Waktu Scan", "Keterangan"}
 	for i, col := range cols {
-		cell, _ := excelize.CoordinatesToCellName(i+1, 8)
+		cell, _ := excelize.CoordinatesToCellName(i+1, 9)
 		f.SetCellValue(sheet, cell, col)
 	}
-	f.SetRowStyle(sheet, 8, 8, tableHeaderStyle)
+	f.SetRowStyle(sheet, 9, 9, tableHeaderStyle)
 
 	// Fetch Found Items
 	rows, _ := h.db.Query(ctx, 
@@ -956,7 +962,7 @@ func (h *ReportHandler) ExportAuditSession(c *gin.Context) {
 		 JOIN items i ON ai.item_id = i.id
 		 WHERE ai.session_id = $1 ORDER BY ai.scanned_at ASC`, sessionId)
 	
-	rowIdx := 9
+	rowIdx := 10
 	for rows.Next() {
 		var code, name, cond, notes string
 		var scannedAt time.Time

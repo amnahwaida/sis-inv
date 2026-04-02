@@ -75,6 +75,7 @@
               </td>
               <td class="px-8 py-6">
                 <div class="text-[11px] font-black text-gray-900 dark:text-white uppercase">{{ s.location_name }}</div>
+                <div v-if="s.notes" class="text-[9px] font-medium text-gray-400 mt-1 max-w-[150px] truncate" :title="s.notes">{{ s.notes }}</div>
               </td>
               <td class="px-8 py-6">
                 <div class="text-[11px] font-black text-gray-900 dark:text-white uppercase">{{ s.user_name }}</div>

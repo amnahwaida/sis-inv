@@ -77,6 +77,7 @@
                         <th class="px-8 py-4 text-left text-[9px] font-black text-emerald-600 uppercase tracking-widest">Nama Barang</th>
                         <th class="px-8 py-4 text-left text-[9px] font-black text-emerald-600 uppercase tracking-widest">Kondisi Fisik</th>
                         <th class="px-8 py-4 text-left text-[9px] font-black text-emerald-600 uppercase tracking-widest">Waktu Scan</th>
+                        <th class="px-8 py-4 text-left text-[9px] font-black text-emerald-600 uppercase tracking-widest">Keterangan</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50 dark:divide-gray-700">
@@ -89,6 +90,7 @@
                             </span>
                         </td>
                         <td class="px-8 py-5 text-[10px] font-bold text-gray-400">{{ formatTime(item.scanned_at) }}</td>
+                        <td class="px-8 py-5 text-[10px] font-medium text-gray-500 max-w-[150px] truncate" :title="item.notes">{{ item.notes || '-' }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -166,6 +168,11 @@
                                 {{ c === 'GOOD' ? 'BAIK' : (c === 'IN_REPAIR' ? 'SERVIS' : (c === 'DAMAGED' ? 'RUSAK' : 'HILANG')) }}
                             </button>
                         </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 pl-1">Keterangan (Opsional)</label>
+                        <textarea v-model="auditForm.notes" rows="2" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-sm font-medium focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all" placeholder="Contoh: Label barcode rusak..."></textarea>
                     </div>
 
                     <button @click="submitScanDetail" :disabled="loading" 
