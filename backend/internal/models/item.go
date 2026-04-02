@@ -9,6 +9,7 @@ type Category struct {
 	Name        string    `json:"name"`
 	Description *string   `json:"description,omitempty"`
 	ColorCode   *string   `json:"color_code,omitempty"`
+	ItemCount   int       `json:"item_count"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 
@@ -42,6 +43,7 @@ type Location struct {
 	ID          int       `json:"id"`
 	Name        string    `json:"name"`
 	Description *string   `json:"description,omitempty"`
+	ItemCount   int       `json:"item_count"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 

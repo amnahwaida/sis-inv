@@ -20,7 +20,14 @@ func NewLocationHandler(db *pgxpool.Pool) *LocationHandler {
 }
 
 func (h *LocationHandler) List(c *gin.Context) {
-	rows, err := h.db.Query(context.Background(), "SELECT id, name, description, created_at FROM locations ORDER BY name ASC")
+	query := `
+		SELECT l.id, l.name, l.description, l.created_at, COUNT(i.id) as item_count 
+		FROM locations l 
+		LEFT JOIN items i ON l.id = i.location_id 
+		GROUP BY l.id 
+		ORDER BY l.name ASC
+	`
+	rows, err := h.db.Query(context.Background(), query)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to fetch locations"))
 		return
@@ -30,7 +37,7 @@ func (h *LocationHandler) List(c *gin.Context) {
 	var locations []models.Location
 	for rows.Next() {
 		var loc models.Location
-		if err := rows.Scan(&loc.ID, &loc.Name, &loc.Description, &loc.CreatedAt); err != nil {
+		if err := rows.Scan(&loc.ID, &loc.Name, &loc.Description, &loc.CreatedAt, &loc.ItemCount); err != nil {
 			continue
 		}
 		locations = append(locations, loc)

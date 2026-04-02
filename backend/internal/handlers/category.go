@@ -20,7 +20,14 @@ func NewCategoryHandler(db *pgxpool.Pool) *CategoryHandler {
 }
 
 func (h *CategoryHandler) List(c *gin.Context) {
-	rows, err := h.db.Query(context.Background(), "SELECT id, name, description, color_code, created_at FROM categories ORDER BY name ASC")
+	query := `
+		SELECT c.id, c.name, c.description, c.color_code, c.created_at, COUNT(i.id) as item_count 
+		FROM categories c 
+		LEFT JOIN items i ON c.id = i.category_id 
+		GROUP BY c.id 
+		ORDER BY c.name ASC
+	`
+	rows, err := h.db.Query(context.Background(), query)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to fetch categories"))
 		return
@@ -30,7 +37,7 @@ func (h *CategoryHandler) List(c *gin.Context) {
 	var categories []models.Category
 	for rows.Next() {
 		var cat models.Category
-		if err := rows.Scan(&cat.ID, &cat.Name, &cat.Description, &cat.ColorCode, &cat.CreatedAt); err != nil {
+		if err := rows.Scan(&cat.ID, &cat.Name, &cat.Description, &cat.ColorCode, &cat.CreatedAt, &cat.ItemCount); err != nil {
 			continue
 		}
 		categories = append(categories, cat)
