@@ -18,3 +18,11 @@ func ToNullString(s string) sql.NullString {
 	}
 	return sql.NullString{String: s, Valid: true}
 }
+
+// StringValue returns the value of a string pointer, or an empty string if nil.
+func StringValue(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}

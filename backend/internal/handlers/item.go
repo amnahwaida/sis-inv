@@ -281,9 +281,22 @@ func (h *ItemHandler) Create(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	// 5W1H: Who (actorId), What (Created item + details), When (automatic), Where (internal/handlers/item.go), Why (user action), How (via UI)
-	auditDesc := fmt.Sprintf("Menambahkan barang baru [%s] '%s' ke lokasi %s. Kondisi: %s, Tipe Peminjam: %s. Melalui form input.", 
-		req.Code, req.Name, req.Location, req.Condition, req.BorrowerType)
+	
+	// Resolve location name for audit log
+	locName := utils.StringValue(req.Location)
+	if req.LocationID != nil {
+		var name string
+		err := h.db.QueryRow(context.Background(), "SELECT name FROM locations WHERE id = $1", *req.LocationID).Scan(&name)
+		if err == nil && name != "" {
+			locName = name
+		}
+	}
+	if locName == "" {
+		locName = "Tidak Tertera"
+	}
+
+	auditDesc := fmt.Sprintf("Menambahkan barang baru [%s] '%s' ke lokasi [%s]. Kondisi: %s, Tipe Peminjam: %s. Melalui form input.", 
+		req.Code, req.Name, locName, req.Condition, req.BorrowerType)
 	utils.LogAudit(h.db, actorId.(string), "CREATE_ITEM", "ITEM", itemID, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{"id": itemID}, "Item successfully created"))
