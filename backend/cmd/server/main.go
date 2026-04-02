@@ -227,6 +227,15 @@ func main() {
 			maintenance.PUT("/:id", maintHandler.UpdateStatus)
 			maintenance.DELETE("/:id", maintHandler.Delete)
 		}
+
+		// Settings (Admin only for PUT, All Auth for GET)
+		settingHandler := handlers.NewSettingHandler(db)
+		settings := v1.Group("/settings")
+		settings.Use(middleware.AuthMiddleware())
+		{
+			settings.GET("", settingHandler.List)
+			settings.PUT("", middleware.RoleMiddleware("ADMIN"), settingHandler.Update)
+		}
 	}
 
 	// Start server

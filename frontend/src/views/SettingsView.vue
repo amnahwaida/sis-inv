@@ -20,7 +20,12 @@
       <div class="lg:col-span-4 space-y-4">
         <div class="bg-white dark:bg-gray-800 rounded-[2.5rem] p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
           <div class="flex flex-col gap-2">
-            <button v-for="tab in [{id:'profile', label:'Profil Pengguna', icon:'👤'}, {id:'security', label:'Keamanan & Password', icon:'🛡️'}, {id:'app', label:'Preferensi Aplikasi', icon:'📱'}]" 
+            <button v-for="tab in [
+                      {id:'profile', label:'Profil Pengguna', icon:'👤'}, 
+                      {id:'security', label:'Keamanan & Password', icon:'🛡️'}, 
+                      {id:'app', label:'Preferensi Aplikasi', icon:'📱'},
+                      {id:'branding', label:'Kustomisasi Branding', icon:'🎨', adminOnly: true}
+                    ].filter(t => !t.adminOnly || authStore.userRole === 'ADMIN')" 
                     :key="tab.id"
                     @click="activeTab = tab.id"
                     :class="activeTab === tab.id ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-400'"
@@ -125,6 +130,49 @@
             </div>
           </div>
 
+          <!-- Branding Customization Form (Admin Only) -->
+          <div v-if="activeTab === 'branding' && authStore.userRole === 'ADMIN'" class="p-10 space-y-10 animate-fade-in text-gray-900 dark:text-white">
+            <div>
+              <h3 class="text-xl font-black capitalize">Kustomisasi Branding</h3>
+              <p class="text-[10px] font-black text-primary-500 uppercase tracking-widest mt-2">Ubah identitas visual teks aplikasi</p>
+            </div>
+            
+            <form @submit.prevent="handleSaveBranding" class="space-y-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Nama Aplikasi</label>
+                  <input v-model="brandingForm.app_name" class="input-field rounded-2xl h-14" placeholder="SIS-INV" required />
+                </div>
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Subtitle Aplikasi</label>
+                  <input v-model="brandingForm.app_subtitle" class="input-field rounded-2xl h-14" placeholder="Inventaris Sekolah" required />
+                </div>
+              </div>
+              
+              <div class="space-y-1">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Deskripsi (Login Page)</label>
+                <input v-model="brandingForm.app_description" class="input-field rounded-2xl h-14" placeholder="School Inventory System" required />
+              </div>
+
+              <div class="space-y-1">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Teks Footer (Login Page)</label>
+                <input v-model="brandingForm.app_footer" class="input-field rounded-2xl h-14" placeholder="SIS-INV • AMANAH & TERTIB" required />
+              </div>
+
+              <div class="space-y-1">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Catatan Keamanan (Footer)</label>
+                <input v-model="brandingForm.app_security_notice" class="input-field rounded-2xl h-14" placeholder="Terlindungi oleh Enkripsi End-to-End" required />
+              </div>
+
+              <div class="flex justify-end pt-6">
+                <button type="submit" :disabled="submittingBranding"
+                        class="btn-premium-action !px-10">
+                  {{ submittingBranding ? 'MENYIMPAN...' : 'SIMPAN PERUBAHAN BRANDING' }}
+                </button>
+              </div>
+            </form>
+          </div>
+
         </div>
       </div>
     </div>
@@ -134,14 +182,18 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import { useSettingsStore } from '../stores/settings'
 import api from '../utils/api'
 
 const authStore = useAuthStore()
+const settingsStore = useSettingsStore()
 const activeTab = ref('profile')
 const submitting = ref(false)
+const submittingBranding = ref(false)
 const isDark = ref(document.documentElement.classList.contains('dark'))
 
 const passForm = ref({ old_password: '', new_password: '', confirm_password: '' })
+const brandingForm = ref({ ...settingsStore.settings })
 
 async function handleChangePassword() {
   if (passForm.value.new_password !== passForm.value.confirm_password) {
@@ -164,5 +216,19 @@ const toggleMode = () => {
   isDark.value = !isDark.value
   document.documentElement.classList.toggle('dark')
   localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+}
+
+async function handleSaveBranding() {
+  submittingBranding.value = true
+  try {
+    const success = await settingsStore.updateSettings(brandingForm.value)
+    if (success) {
+      alert('Konfigurasi branding berhasil diperbarui!')
+    }
+  } catch (e) {
+    alert(e.response?.data?.error || 'Gagal memperbarui branding')
+  } finally {
+    submittingBranding.value = false
+  }
 }
 </script>

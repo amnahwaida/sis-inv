@@ -1,0 +1,86 @@
+nohup: ignoring input
+2026/04/02 13:01:45 ✅ Database connected successfully
+2026/04/02 13:01:45 ✅ Migration applied: 001_init.sql
+2026/04/02 13:01:45 ✅ Migration applied: 002_add_returned_to.sql
+2026/04/02 13:01:45 ✅ Migration applied: 003_add_locations_table.sql
+2026/04/02 13:01:45 ✅ Migration applied: 004_add_stock_opname.sql
+2026/04/02 13:01:45 ✅ Migration applied: 005_add_settings.sql
+2026/04/02 13:01:45 ℹ️  Admin user already exists, skipping user seed
+2026/04/02 13:01:45 ✅ 2 initial transactions seeded
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /uploads/*filepath        --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (4 handlers)
+[GIN-debug] HEAD   /uploads/*filepath        --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (4 handlers)
+[GIN-debug] GET    /api/v1/system/health     --> github.com/vannyezha/sis-inv/internal/handlers.(*SystemHandler).HealthCheck-fm (4 handlers)
+[GIN-debug] POST   /api/v1/upload            --> github.com/vannyezha/sis-inv/internal/handlers.(*UploadHandler).UploadFile-fm (5 handlers)
+[GIN-debug] POST   /api/v1/auth/login        --> github.com/vannyezha/sis-inv/internal/handlers.(*AuthHandler).Login-fm (4 handlers)
+[GIN-debug] POST   /api/v1/auth/logout       --> github.com/vannyezha/sis-inv/internal/handlers.(*AuthHandler).Logout-fm (5 handlers)
+[GIN-debug] GET    /api/v1/auth/me           --> github.com/vannyezha/sis-inv/internal/handlers.(*AuthHandler).Me-fm (5 handlers)
+[GIN-debug] PUT    /api/v1/auth/password     --> github.com/vannyezha/sis-inv/internal/handlers.(*AuthHandler).ChangePassword-fm (5 handlers)
+[GIN-debug] GET    /api/v1/users             --> github.com/vannyezha/sis-inv/internal/handlers.(*UserHandler).List-fm (6 handlers)
+[GIN-debug] POST   /api/v1/users             --> github.com/vannyezha/sis-inv/internal/handlers.(*UserHandler).Create-fm (6 handlers)
+[GIN-debug] PUT    /api/v1/users/:id         --> github.com/vannyezha/sis-inv/internal/handlers.(*UserHandler).Update-fm (6 handlers)
+[GIN-debug] DELETE /api/v1/users/:id         --> github.com/vannyezha/sis-inv/internal/handlers.(*UserHandler).Delete-fm (6 handlers)
+[GIN-debug] GET    /api/v1/students/search   --> github.com/vannyezha/sis-inv/internal/handlers.(*StudentHandler).Search-fm (5 handlers)
+[GIN-debug] GET    /api/v1/students/classes  --> github.com/vannyezha/sis-inv/internal/handlers.(*StudentHandler).GetUniqueClasses-fm (5 handlers)
+[GIN-debug] GET    /api/v1/students          --> github.com/vannyezha/sis-inv/internal/handlers.(*StudentHandler).List-fm (6 handlers)
+[GIN-debug] POST   /api/v1/students          --> github.com/vannyezha/sis-inv/internal/handlers.(*StudentHandler).Create-fm (6 handlers)
+[GIN-debug] PUT    /api/v1/students/:id      --> github.com/vannyezha/sis-inv/internal/handlers.(*StudentHandler).Update-fm (6 handlers)
+[GIN-debug] DELETE /api/v1/students/:id      --> github.com/vannyezha/sis-inv/internal/handlers.(*StudentHandler).Delete-fm (6 handlers)
+[GIN-debug] GET    /api/v1/students/export   --> github.com/vannyezha/sis-inv/internal/handlers.(*StudentHandler).ExportExcel-fm (6 handlers)
+[GIN-debug] POST   /api/v1/students/import   --> github.com/vannyezha/sis-inv/internal/handlers.(*StudentHandler).ImportExcel-fm (6 handlers)
+[GIN-debug] GET    /api/v1/items             --> github.com/vannyezha/sis-inv/internal/handlers.(*ItemHandler).List-fm (5 handlers)
+[GIN-debug] GET    /api/v1/items/:id         --> github.com/vannyezha/sis-inv/internal/handlers.(*ItemHandler).Get-fm (5 handlers)
+[GIN-debug] GET    /api/v1/items/code/:code  --> github.com/vannyezha/sis-inv/internal/handlers.(*ItemHandler).GetByCode-fm (5 handlers)
+[GIN-debug] GET    /api/v1/items/:id/history --> github.com/vannyezha/sis-inv/internal/handlers.(*ItemHandler).GetHistory-fm (5 handlers)
+[GIN-debug] POST   /api/v1/items             --> github.com/vannyezha/sis-inv/internal/handlers.(*ItemHandler).Create-fm (6 handlers)
+[GIN-debug] PUT    /api/v1/items/:id         --> github.com/vannyezha/sis-inv/internal/handlers.(*ItemHandler).Update-fm (6 handlers)
+[GIN-debug] DELETE /api/v1/items/:id         --> github.com/vannyezha/sis-inv/internal/handlers.(*ItemHandler).Delete-fm (6 handlers)
+[GIN-debug] POST   /api/v1/items/:id/qr      --> github.com/vannyezha/sis-inv/internal/handlers.(*ItemHandler).GenerateQRCode-fm (6 handlers)
+[GIN-debug] POST   /api/v1/items/import      --> github.com/vannyezha/sis-inv/internal/handlers.(*ItemHandler).ImportExcel-fm (6 handlers)
+[GIN-debug] POST   /api/v1/transactions/borrow --> github.com/vannyezha/sis-inv/internal/handlers.(*TransactionHandler).Borrow-fm (5 handlers)
+[GIN-debug] POST   /api/v1/transactions/return --> github.com/vannyezha/sis-inv/internal/handlers.(*TransactionHandler).Return-fm (5 handlers)
+[GIN-debug] GET    /api/v1/transactions/my   --> github.com/vannyezha/sis-inv/internal/handlers.(*TransactionHandler).MyBorrowings-fm (5 handlers)
+[GIN-debug] GET    /api/v1/transactions/my/history --> github.com/vannyezha/sis-inv/internal/handlers.(*TransactionHandler).MyBorrowingsHistory-fm (5 handlers)
+[GIN-debug] GET    /api/v1/transactions/student/:nis --> github.com/vannyezha/sis-inv/internal/handlers.(*TransactionHandler).GetStudentHistory-fm (5 handlers)
+[GIN-debug] GET    /api/v1/transactions/student/:nis/export --> github.com/vannyezha/sis-inv/internal/handlers.(*TransactionHandler).StudentHistoryExport-fm (5 handlers)
+[GIN-debug] GET    /api/v1/dashboard/summary --> github.com/vannyezha/sis-inv/internal/handlers.(*DashboardHandler).GetSummary-fm (5 handlers)
+[GIN-debug] GET    /api/v1/categories        --> github.com/vannyezha/sis-inv/internal/handlers.(*CategoryHandler).List-fm (5 handlers)
+[GIN-debug] POST   /api/v1/categories        --> github.com/vannyezha/sis-inv/internal/handlers.(*CategoryHandler).Create-fm (6 handlers)
+[GIN-debug] PUT    /api/v1/categories/:id    --> github.com/vannyezha/sis-inv/internal/handlers.(*CategoryHandler).Update-fm (6 handlers)
+[GIN-debug] DELETE /api/v1/categories/:id    --> github.com/vannyezha/sis-inv/internal/handlers.(*CategoryHandler).Delete-fm (6 handlers)
+[GIN-debug] GET    /api/v1/locations         --> github.com/vannyezha/sis-inv/internal/handlers.(*LocationHandler).List-fm (5 handlers)
+[GIN-debug] POST   /api/v1/locations         --> github.com/vannyezha/sis-inv/internal/handlers.(*LocationHandler).Create-fm (6 handlers)
+[GIN-debug] PUT    /api/v1/locations/:id     --> github.com/vannyezha/sis-inv/internal/handlers.(*LocationHandler).Update-fm (6 handlers)
+[GIN-debug] DELETE /api/v1/locations/:id     --> github.com/vannyezha/sis-inv/internal/handlers.(*LocationHandler).Delete-fm (6 handlers)
+[GIN-debug] GET    /api/v1/reports/export/items --> github.com/vannyezha/sis-inv/internal/handlers.(*ReportHandler).ExportItems-fm (5 handlers)
+[GIN-debug] GET    /api/v1/reports/export/transactions --> github.com/vannyezha/sis-inv/internal/handlers.(*ReportHandler).ExportTransactions-fm (5 handlers)
+[GIN-debug] GET    /api/v1/reports/export/audit --> github.com/vannyezha/sis-inv/internal/handlers.(*ReportHandler).ExportAuditLogs-fm (5 handlers)
+[GIN-debug] GET    /api/v1/reports/export/maintenance --> github.com/vannyezha/sis-inv/internal/handlers.(*ReportHandler).ExportMaintenanceLogs-fm (5 handlers)
+[GIN-debug] GET    /api/v1/reports/active-borrowings --> github.com/vannyezha/sis-inv/internal/handlers.(*ReportHandler).ActiveBorrowings-fm (5 handlers)
+[GIN-debug] GET    /api/v1/reports/overdue   --> github.com/vannyezha/sis-inv/internal/handlers.(*ReportHandler).OverdueReport-fm (5 handlers)
+[GIN-debug] GET    /api/v1/reports/history   --> github.com/vannyezha/sis-inv/internal/handlers.(*ReportHandler).TransactionHistory-fm (5 handlers)
+[GIN-debug] GET    /api/v1/reports/audit     --> github.com/vannyezha/sis-inv/internal/handlers.(*ReportHandler).AuditLogs-fm (5 handlers)
+[GIN-debug] GET    /api/v1/reports/audit-sessions --> github.com/vannyezha/sis-inv/internal/handlers.(*AuditHandler).ListSessions-fm (5 handlers)
+[GIN-debug] POST   /api/v1/reports/audit-sessions --> github.com/vannyezha/sis-inv/internal/handlers.(*AuditHandler).StartSession-fm (5 handlers)
+[GIN-debug] GET    /api/v1/reports/audit-sessions/:id --> github.com/vannyezha/sis-inv/internal/handlers.(*AuditHandler).GetSessionDetail-fm (5 handlers)
+[GIN-debug] GET    /api/v1/reports/audit-sessions/:id/export --> github.com/vannyezha/sis-inv/internal/handlers.(*ReportHandler).ExportAuditSession-fm (5 handlers)
+[GIN-debug] POST   /api/v1/reports/audit-sessions/:id/scan --> github.com/vannyezha/sis-inv/internal/handlers.(*AuditHandler).ScanItem-fm (5 handlers)
+[GIN-debug] POST   /api/v1/reports/audit-sessions/:id/close --> github.com/vannyezha/sis-inv/internal/handlers.(*AuditHandler).CloseSession-fm (5 handlers)
+[GIN-debug] GET    /api/v1/maintenance       --> github.com/vannyezha/sis-inv/internal/handlers.(*MaintenanceHandler).List-fm (5 handlers)
+[GIN-debug] POST   /api/v1/maintenance       --> github.com/vannyezha/sis-inv/internal/handlers.(*MaintenanceHandler).Create-fm (5 handlers)
+[GIN-debug] PUT    /api/v1/maintenance/:id   --> github.com/vannyezha/sis-inv/internal/handlers.(*MaintenanceHandler).UpdateStatus-fm (5 handlers)
+[GIN-debug] DELETE /api/v1/maintenance/:id   --> github.com/vannyezha/sis-inv/internal/handlers.(*MaintenanceHandler).Delete-fm (5 handlers)
+[GIN-debug] GET    /api/v1/settings          --> github.com/vannyezha/sis-inv/internal/handlers.(*SettingHandler).List-fm (5 handlers)
+[GIN-debug] PUT    /api/v1/settings          --> github.com/vannyezha/sis-inv/internal/handlers.(*SettingHandler).Update-fm (6 handlers)
+2026/04/02 13:01:45 🚀 SIS-INV API running on port 8080
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+[GIN-debug] [ERROR] listen tcp :8080: bind: address already in use
+2026/04/02 13:01:45 ❌ Failed to start server: listen tcp :8080: bind: address already in use
+exit status 1

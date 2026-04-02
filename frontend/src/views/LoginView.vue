@@ -25,8 +25,8 @@
             <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
           </div>
           <div class="space-y-1">
-            <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tighter uppercase leading-none">SIS-INV</h1>
-            <p class="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-[0.4em]">School Inventory System</p>
+            <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tighter uppercase leading-none">{{ settingsStore.settings.app_name }}</h1>
+            <p class="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-[0.4em]">{{ settingsStore.settings.app_description }}</p>
           </div>
         </div>
 
@@ -66,12 +66,12 @@
           </button>
         </form>
 
-        <p class="text-center text-[10px] text-gray-400 font-bold uppercase tracking-[0.3em] mt-12 pb-2 border-b border-gray-100 dark:border-gray-800">SIS-INV • AMANAH & TERTIB</p>
+        <p class="text-center text-[10px] text-gray-400 font-bold uppercase tracking-[0.3em] mt-12 pb-2 border-b border-gray-100 dark:border-gray-800">{{ settingsStore.settings.app_footer }}</p>
       </div>
       
       <!-- Footer Info -->
       <footer class="mt-8 text-center flex flex-col items-center gap-2">
-        <p class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Terlindungi oleh Enkripsi End-to-End</p>
+        <p class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{{ settingsStore.settings.app_security_notice }}</p>
         <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-lg shadow-emerald-500/50 animate-pulse"></div>
       </footer>
     </div>
@@ -82,9 +82,11 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useSettingsStore } from '../stores/settings'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const settingsStore = useSettingsStore()
 
 const username = ref('')
 const password = ref('')

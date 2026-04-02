@@ -13,8 +13,8 @@
           </svg>
         </div>
         <div>
-          <h1 class="text-white font-bold text-lg leading-tight">SIS-INV</h1>
-          <p class="text-gray-500 text-xs">Inventaris Sekolah</p>
+          <h1 class="text-white font-bold text-lg leading-tight">{{ settingsStore.settings.app_name }}</h1>
+          <p class="text-gray-500 text-xs">{{ settingsStore.settings.app_subtitle }}</p>
         </div>
       </div>
 
@@ -117,9 +117,11 @@
 import { ref, computed, h, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useSettingsStore } from '../stores/settings'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const settingsStore = useSettingsStore()
 const sidebarOpen = ref(false)
 const isOffline = ref(!navigator.onLine)
 const installPrompt = ref(null)
