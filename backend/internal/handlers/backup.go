@@ -121,15 +121,17 @@ func (h *BackupHandler) Restore(c *gin.Context) {
 		}
 	}
 
-	// Import Data
+	// Import Data in strict order to respect Foreign Keys
 	dataDir := filepath.Join(tempDir, "data")
-	files, _ := os.ReadDir(dataDir)
-	for _, f := range files {
-		if !strings.HasSuffix(f.Name(), ".json") {
+	importOrder := []string{"categories", "locations", "users", "students", "items", "transactions", "maintenance_logs", "audit_sessions", "audit_items", "audit_logs", "settings"}
+	
+	for _, tableName := range importOrder {
+		filePath := filepath.Join(dataDir, tableName+".json")
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
 			continue
 		}
-		tableName := strings.TrimSuffix(f.Name(), ".json")
-		content, _ := os.ReadFile(filepath.Join(dataDir, f.Name()))
+
+		content, _ := os.ReadFile(filePath)
 		var rows []map[string]interface{}
 		if err := json.Unmarshal(content, &rows); err == nil {
 			log.Printf("📥 Importing %d rows into %s...", len(rows), tableName)
@@ -218,9 +220,37 @@ func (h *BackupHandler) importRow(ctx context.Context, tx pgx.Tx, table string, 
 	i := 1
 	for k, v := range row {
 		keys = append(keys, k)
-		// Handle potential JSON and Timestamp conversion issues
-		// pgx v5 is generally more strict than v4. 
-		// If it was a JSON column, we must ensure it is passed correctly.
+		
+		// Fix UUID encoding: if it's a slice of interface{} (from JSON), 
+		// and it has 16 elements, it's likely a UUID that needs to be []byte.
+		if slice, ok := v.([]interface{}); ok && len(slice) == 16 {
+			bytes := make([]byte, 16)
+			allNumeric := true
+			for idx, val := range slice {
+				if n, ok := val.(float64); ok {
+					bytes[idx] = byte(n)
+				} else {
+					allNumeric = false
+					break
+				}
+			}
+			if allNumeric {
+				v = bytes
+			}
+		}
+
+		// Handle JSONB: if it's a map or slice (not 16-byte UUID), 
+		// convert it back to a JSON string for pgx to handle as JSONB.
+		if _, ok := v.(map[string]interface{}); ok {
+			if jsonBytes, err := json.Marshal(v); err == nil {
+				v = string(jsonBytes)
+			}
+		} else if slice, ok := v.([]interface{}); ok && len(slice) != 16 {
+			if jsonBytes, err := json.Marshal(v); err == nil {
+				v = string(jsonBytes)
+			}
+		}
+		
 		values = append(values, v)
 		placeholders = append(placeholders, fmt.Sprintf("$%d", i))
 		i++
