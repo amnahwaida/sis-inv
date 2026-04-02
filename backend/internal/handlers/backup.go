@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vannyezha/sis-inv/internal/database"
 	"github.com/vannyezha/sis-inv/internal/utils"
@@ -37,7 +39,7 @@ func (h *BackupHandler) Backup(c *gin.Context) {
 	defer zipWriter.Close()
 
 	// 1. Export Database Tables
-	tables := []string{"categories", "locations", "items", "students", "users", "transactions", "maintenance_logs", "audit_logs", "audit_sessions", "audit_details", "settings"}
+	tables := []string{"categories", "locations", "items", "students", "users", "transactions", "maintenance_logs", "audit_logs", "audit_sessions", "audit_items", "settings"}
 	
 	for _, table := range tables {
 		data, err := h.exportTable(table)
@@ -110,9 +112,13 @@ func (h *BackupHandler) Restore(c *gin.Context) {
 	defer tx.Rollback(ctx)
 
 	// Truncate tables (Order matters for FK)
-	tables := []string{"audit_details", "audit_sessions", "maintenance_logs", "transactions", "items", "students", "users", "categories", "locations", "audit_logs", "settings"}
+	tables := []string{"audit_items", "audit_sessions", "maintenance_logs", "transactions", "items", "students", "users", "categories", "locations", "audit_logs", "settings"}
 	for _, table := range tables {
-		_, _ = tx.Exec(ctx, fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table))
+		if _, err := tx.Exec(ctx, fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table)); err != nil {
+			log.Printf("❌ Failed to truncate table %s: %v", table, err)
+			c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, fmt.Sprintf("Failed to clear table %s: %v", table, err)))
+			return
+		}
 	}
 
 	// Import Data
@@ -126,14 +132,20 @@ func (h *BackupHandler) Restore(c *gin.Context) {
 		content, _ := os.ReadFile(filepath.Join(dataDir, f.Name()))
 		var rows []map[string]interface{}
 		if err := json.Unmarshal(content, &rows); err == nil {
+			log.Printf("📥 Importing %d rows into %s...", len(rows), tableName)
 			for _, row := range rows {
-				h.importRow(ctx, tx, tableName, row)
+				if err := h.importRow(ctx, tx, tableName, row); err != nil {
+					log.Printf("❌ Failed to import row into %s: %v", tableName, err)
+					c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, fmt.Sprintf("Failed to import %s: %v", tableName, err)))
+					return
+				}
 			}
 		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to commit restore"))
+		log.Printf("❌ Failed to commit restore: %v", err)
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to commit restore: "+err.Error()))
 		return
 	}
 
@@ -152,7 +164,7 @@ func (h *BackupHandler) Reset(c *gin.Context) {
 	ctx := context.Background()
 	
 	// Truncate all tables
-	tables := []string{"audit_details", "audit_sessions", "maintenance_logs", "transactions", "items", "students", "users", "categories", "locations", "audit_logs", "settings"}
+	tables := []string{"audit_items", "audit_sessions", "maintenance_logs", "transactions", "items", "students", "users", "categories", "locations", "audit_logs", "settings"}
 	for _, table := range tables {
 		_, err := h.db.Exec(ctx, fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table))
 		if err != nil {
@@ -197,7 +209,7 @@ func (h *BackupHandler) exportTable(table string) ([]byte, error) {
 	return json.Marshal(result)
 }
 
-func (h *BackupHandler) importRow(ctx context.Context, tx any, table string, row map[string]interface{}) {
+func (h *BackupHandler) importRow(ctx context.Context, tx pgx.Tx, table string, row map[string]interface{}) error {
 	// Generic insert logic
 	keys := make([]string, 0, len(row))
 	values := make([]interface{}, 0, len(row))
@@ -206,8 +218,9 @@ func (h *BackupHandler) importRow(ctx context.Context, tx any, table string, row
 	i := 1
 	for k, v := range row {
 		keys = append(keys, k)
-		// Handle potential JSON and Timestamp conversion issues if any, 
-		// but pgx is usually good with maps/interfaces if the types match.
+		// Handle potential JSON and Timestamp conversion issues
+		// pgx v5 is generally more strict than v4. 
+		// If it was a JSON column, we must ensure it is passed correctly.
 		values = append(values, v)
 		placeholders = append(placeholders, fmt.Sprintf("$%d", i))
 		i++
@@ -216,9 +229,8 @@ func (h *BackupHandler) importRow(ctx context.Context, tx any, table string, row
 	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) ON CONFLICT DO NOTHING", 
 		table, strings.Join(keys, ","), strings.Join(placeholders, ","))
 		
-	if t, ok := tx.(interface{ Exec(context.Context, string, ...interface{}) (any, error) }); ok {
-		_, _ = t.Exec(ctx, query, values...)
-	}
+	_, err := tx.Exec(ctx, query, values...)
+	return err
 }
 
 func (h *BackupHandler) unzip(src, dest string) error {

@@ -1,12 +1,12 @@
 nohup: ignoring input
-2026/04/02 13:08:59 ✅ Database connected successfully
-2026/04/02 13:08:59 ✅ Migration applied: 001_init.sql
-2026/04/02 13:08:59 ✅ Migration applied: 002_add_returned_to.sql
-2026/04/02 13:08:59 ✅ Migration applied: 003_add_locations_table.sql
-2026/04/02 13:08:59 ✅ Migration applied: 004_add_stock_opname.sql
-2026/04/02 13:08:59 ✅ Migration applied: 005_add_settings.sql
-2026/04/02 13:08:59 ℹ️  Admin user already exists, skipping user seed
-2026/04/02 13:08:59 ✅ 2 initial transactions seeded
+2026/04/02 13:15:32 ✅ Database connected successfully
+2026/04/02 13:15:32 ✅ Migration applied: 001_init.sql
+2026/04/02 13:15:32 ✅ Migration applied: 002_add_returned_to.sql
+2026/04/02 13:15:32 ✅ Migration applied: 003_add_locations_table.sql
+2026/04/02 13:15:32 ✅ Migration applied: 004_add_stock_opname.sql
+2026/04/02 13:15:32 ✅ Migration applied: 005_add_settings.sql
+2026/04/02 13:15:32 ℹ️  Admin user already exists, skipping user seed
+2026/04/02 13:15:32 ✅ 2 initial transactions seeded
 [GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
 
 [GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
@@ -80,7 +80,8 @@ nohup: ignoring input
 [GIN-debug] GET    /api/v1/admin/system/backup --> github.com/vannyezha/sis-inv/internal/handlers.(*BackupHandler).Backup-fm (6 handlers)
 [GIN-debug] POST   /api/v1/admin/system/restore --> github.com/vannyezha/sis-inv/internal/handlers.(*BackupHandler).Restore-fm (6 handlers)
 [GIN-debug] POST   /api/v1/admin/system/reset --> github.com/vannyezha/sis-inv/internal/handlers.(*BackupHandler).Reset-fm (6 handlers)
-2026/04/02 13:08:59 🚀 SIS-INV API running on port 8080
+2026/04/02 13:15:32 🚀 SIS-INV API running on port 8080
 [GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
 Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
 [GIN-debug] Listening and serving HTTP on :8080
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  signal: killed
