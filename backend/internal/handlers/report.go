@@ -1019,3 +1019,22 @@ func (h *ReportHandler) ExportAuditSession(c *gin.Context) {
 	c.Header("Content-Disposition", "attachment; filename="+fileName)
 	f.Write(c.Writer)
 }
+func (h *ReportHandler) GetAuditActions(c *gin.Context) {
+	ctx := context.Background()
+	rows, err := h.db.Query(ctx, "SELECT DISTINCT action FROM audit_logs ORDER BY action ASC")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to fetch audit actions"))
+		return
+	}
+	defer rows.Close()
+
+	actions := []string{}
+	for rows.Next() {
+		var action string
+		if err := rows.Scan(&action); err == nil {
+			actions = append(actions, action)
+		}
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(actions, ""))
+}

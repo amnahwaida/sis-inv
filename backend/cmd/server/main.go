@@ -213,6 +213,7 @@ func main() {
 			reports.GET("/overdue", reportHandler.OverdueReport)
 			reports.GET("/history", reportHandler.TransactionHistory)
 			reports.GET("/audit", reportHandler.AuditLogs)
+			reports.GET("/audit-actions", reportHandler.GetAuditActions)
 
 			// Stock Opname / Audit Sessions
 			audit := reports.Group("/audit-sessions")

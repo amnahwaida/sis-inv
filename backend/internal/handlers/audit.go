@@ -43,7 +43,14 @@ func (h *AuditHandler) StartSession(c *gin.Context) {
 		return
 	}
 
-	utils.LogAudit(h.db, userId.(string), "START_AUDIT", "AUDIT_SESSION", sessionId, "Started audit session for location ID: "+fmt.Sprint(req.LocationID), c.ClientIP())
+	// Fetch location name for better audit log
+	var locName string
+	_ = h.db.QueryRow(ctx, "SELECT name FROM locations WHERE id = $1", req.LocationID).Scan(&locName)
+	if locName == "" {
+		locName = fmt.Sprintf("ID: %d", req.LocationID)
+	}
+
+	utils.LogAudit(h.db, userId.(string), "START_AUDIT", "AUDIT_SESSION", sessionId, fmt.Sprintf("Memulai sesi opname baru di lokasi [%s]", locName), c.ClientIP())
 
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{"id": sessionId}, "Audit session started"))
 }
@@ -119,7 +126,15 @@ func (h *AuditHandler) CloseSession(c *gin.Context) {
 	}
 
 	userId, _ := c.Get("userID")
-	utils.LogAudit(h.db, userId.(string), "CLOSE_AUDIT", "AUDIT_SESSION", sessionId, "Closed audit session", c.ClientIP())
+	// Fetch location name via session for better audit log
+	var locName string
+	_ = h.db.QueryRow(ctx, `SELECT l.name FROM audit_sessions s JOIN locations l ON s.location_id = l.id WHERE s.id = $1`, sessionId).Scan(&locName)
+	
+	auditDesc := "Menutup sesi opname"
+	if locName != "" {
+		auditDesc = fmt.Sprintf("Menutup sesi opname di lokasi [%s]", locName)
+	}
+	utils.LogAudit(h.db, userId.(string), "CLOSE_AUDIT", "AUDIT_SESSION", sessionId, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Audit session closed"))
 }

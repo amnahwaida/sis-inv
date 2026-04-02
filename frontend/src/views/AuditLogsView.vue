@@ -41,13 +41,9 @@
       <select v-model="filterAction" 
               class="input-field h-12 rounded-2xl text-sm w-full sm:w-auto appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10">
         <option value="">Semua Aksi</option>
-        <option value="LOGIN">Autentikasi (LOGIN)</option>
-        <option value="LOGOUT">Autentikasi (LOGOUT)</option>
-        <option value="CREATE">Tambah Data (CREATE)</option>
-        <option value="UPDATE">Ubah Data (UPDATE)</option>
-        <option value="DELETE">Hapus Data (DELETE)</option>
-        <option value="BORROW">Peminjaman (BORROW)</option>
-        <option value="RETURN">Pengembalian (RETURN)</option>
+        <option v-for="action in availableActions" :key="action" :value="action">
+          {{ getCleanActionLabel(action) }}
+        </option>
       </select>
     </div>
 
@@ -148,6 +144,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import api from '../utils/api'
 
 const logs = ref([])
+const availableActions = ref([])
 const loading = ref(true)
 const expandedLogs = ref({})
 
@@ -187,6 +184,37 @@ async function fetchLogs() {
   } finally { 
     loading.value = false 
   }
+}
+
+async function fetchActions() {
+  try {
+    const { data } = await api.get('/reports/audit-actions')
+    if (data.success) {
+      availableActions.value = data.data
+    }
+  } catch (e) {
+    console.error('Gagal fetch audit actions:', e)
+  }
+}
+
+const getCleanActionLabel = (action) => {
+  const mapping = {
+    'LOGIN': 'Login Pengguna',
+    'LOGOUT': 'Logout Pengguna',
+    'CREATE_ITEM': 'Tambah Barang',
+    'UPDATE_ITEM': 'Ubah Barang',
+    'DELETE_ITEM': 'Hapus Barang',
+    'IMPORT_ITEMS': 'Import Barang (Excel)',
+    'START_AUDIT': 'Mulai Opname',
+    'CLOSE_AUDIT': 'Selesai Opname',
+    'BORROW_ITEM': 'Peminjaman',
+    'RETURN_ITEM': 'Pengembalian',
+    'CREATE_USER': 'Tambah User',
+    'UPDATE_USER': 'Ubah User',
+    'DELETE_USER': 'Hapus User',
+    'LOGIN_FAILED': 'Gagal Login'
+  }
+  return mapping[action] || action
 }
 
 // Debounced search
@@ -238,5 +266,8 @@ const getActionBadgeClass = (a) => {
 const formatFullDate = (d) => d ? new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(d)) : '-'
 const formatTime = (d) => d ? new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(d)) : ''
 
-onMounted(fetchLogs)
+onMounted(() => {
+  fetchLogs()
+  fetchActions()
+})
 </script>
