@@ -156,17 +156,28 @@ func (h *TransactionHandler) Borrow(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	// 5W1H: Who (actorId), What (Borrowed item + details), When (automatic), Where (internal/handlers/transaction.go), Why (Purpose), How (via UI)
+
+	// Resolve operator (teacher/admin) name for audit
+	var operatorName string
+	_ = h.db.QueryRow(context.Background(), "SELECT full_name FROM users WHERE id = $1", actorId).Scan(&operatorName)
+	if operatorName == "" {
+		operatorName = "Unknown"
+	}
+
 	var borrowerInfo string
 	if req.BorrowerType == "STUDENT" {
 		borrowerInfo = fmt.Sprintf("Siswa: %s (%s, NIS: %s)", req.StudentName, req.StudentClass, req.StudentNIS)
 	} else {
-		// Fetch staff name if possible, or use "Staff"
 		borrowerInfo = "Staff/Ybs"
 	}
 
-	auditDesc := fmt.Sprintf("Peminjaman barang [%s] '%s' kepada %s. Durasi: %d hari. Tujuan: %s.", 
-		req.ItemCode, itemName, borrowerInfo, req.ExpectedReturnDays, req.Purpose)
+	purpose := req.Purpose
+	if purpose == "" {
+		purpose = "Tidak disebutkan"
+	}
+
+	auditDesc := fmt.Sprintf("Peminjaman barang [%s] '%s' kepada %s. Durasi: %d hari. Tujuan: %s. Difasilitasi oleh: %s.", 
+		req.ItemCode, itemName, borrowerInfo, int(req.ExpectedReturnDays), purpose, operatorName)
 	utils.LogAudit(h.db, actorId.(string), "BORROW_ITEM", "ITEM", itemId, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{
