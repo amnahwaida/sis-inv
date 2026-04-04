@@ -212,6 +212,13 @@ const getCleanActionLabel = (action) => {
     'CREATE_USER': 'Tambah User',
     'UPDATE_USER': 'Ubah User',
     'DELETE_USER': 'Hapus User',
+    'DISABLE_USER': 'Nonaktifkan User',
+    'CREATE_STUDENT': 'Tambah Siswa',
+    'UPDATE_STUDENT': 'Ubah Data Siswa',
+    'DELETE_STUDENT': 'Hapus Siswa',
+    'ACTIVATE_STUDENT': 'Aktifkan Siswa',
+    'DEACTIVATE_STUDENT': 'Nonaktifkan Siswa',
+    'IMPORT_STUDENTS': 'Import Siswa (Excel)',
     'LOGIN_FAILED': 'Gagal Login'
   }
   return mapping[action] || action

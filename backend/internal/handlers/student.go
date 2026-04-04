@@ -203,11 +203,26 @@ func (h *StudentHandler) Update(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	auditDesc := "Updated student profile."
-	if len(changes) > 0 {
-		auditDesc = "Updated student. Changes: " + strings.Join(changes, " | ")
+
+	// Determine the correct action and description
+	action := "UPDATE_STUDENT"
+	var auditDesc string
+
+	if req.IsActive != oldActive {
+		if req.IsActive {
+			action = "ACTIVATE_STUDENT"
+			auditDesc = fmt.Sprintf("Mengaktifkan kembali siswa: %s (NIS: %s, Kelas: %s).", req.FullName, nis, req.Class)
+		} else {
+			action = "DEACTIVATE_STUDENT"
+			auditDesc = fmt.Sprintf("Menonaktifkan siswa: %s (NIS: %s, Kelas: %s). Siswa tidak lagi dapat melakukan peminjaman.", oldName, oldNis, oldClass)
+		}
+	} else if len(changes) > 0 {
+		auditDesc = fmt.Sprintf("Memperbarui data siswa: %s (NIS: %s). Perubahan: %s", oldName, oldNis, strings.Join(changes, " | "))
+	} else {
+		auditDesc = fmt.Sprintf("Memperbarui data siswa: %s (NIS: %s). Tidak ada perubahan terdeteksi.", oldName, oldNis)
 	}
-	utils.LogAudit(h.db, actorId.(string), "UPDATE_STUDENT", "STUDENT", id, auditDesc, c.ClientIP())
+
+	utils.LogAudit(h.db, actorId.(string), action, "STUDENT", id, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Siswa berhasil diperbarui"))
 }
@@ -221,9 +236,13 @@ func (h *StudentHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	// Get student info for audit
-	var stName, stNis string
-	err = h.db.QueryRow(context.Background(), "SELECT full_name, nis FROM students WHERE id = $1", id).Scan(&stName, &stNis)
+	// Get student info for audit BEFORE deleting
+	var stName, stNis, stClass string
+	err = h.db.QueryRow(context.Background(), "SELECT full_name, nis, COALESCE(class, '') FROM students WHERE id = $1", id).Scan(&stName, &stNis, &stClass)
+	if err != nil {
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Data siswa tidak ditemukan"))
+		return
+	}
 
 	_, err = h.db.Exec(context.Background(), "DELETE FROM students WHERE id = $1", id)
 	if err != nil {
@@ -232,12 +251,9 @@ func (h *StudentHandler) Delete(c *gin.Context) {
 	}
 
 	actorId, _ := c.Get("userID")
-	
-	// Fetch student class for audit
-	var stClass string
-	h.db.QueryRow(context.Background(), "SELECT class FROM students WHERE id = $1", id).Scan(&stClass)
-
-	auditDesc := fmt.Sprintf("Menghapus data siswa: %s (NIS: %s, Kelas: %s) dari sistem.", stName, stNis, stClass)
+	klsInfo := stClass
+	if klsInfo == "" { klsInfo = "Tidak Tertera" }
+	auditDesc := fmt.Sprintf("Menghapus data siswa: %s (NIS: %s, Kelas: %s) dari sistem.", stName, stNis, klsInfo)
 	utils.LogAudit(h.db, actorId.(string), "DELETE_STUDENT", "STUDENT", "00000000-0000-0000-0000-000000000000", auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Siswa berhasil dihapus"))
