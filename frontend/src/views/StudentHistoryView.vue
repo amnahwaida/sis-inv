@@ -52,7 +52,8 @@
         <div class="flex-1 text-center md:text-left space-y-2">
           <div class="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
             <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight">{{ studentInfo.full_name }}</h2>
-            <span class="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-xl w-fit mx-auto md:mx-0">Aktif</span>
+            <span v-if="studentInfo.is_active !== false" class="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-xl w-fit mx-auto md:mx-0">Aktif</span>
+            <span v-else class="px-3 py-1 bg-red-50 dark:bg-red-900/30 text-red-500 text-[10px] font-black uppercase tracking-widest rounded-xl w-fit mx-auto md:mx-0">Non-Aktif</span>
           </div>
           <div class="flex items-center justify-center md:justify-start gap-x-6 gap-y-2 text-gray-400 font-bold text-xs uppercase tracking-widest flex-wrap">
             <span class="flex items-center gap-2">

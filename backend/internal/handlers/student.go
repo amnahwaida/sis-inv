@@ -270,7 +270,7 @@ func (h *StudentHandler) Search(c *gin.Context) {
 	includeInactive := c.Query("include_inactive") == "true"
 	
 	query := `
-		SELECT nis, full_name, class 
+		SELECT nis, full_name, class, is_active 
 		FROM students 
 		WHERE (nis ILIKE $1 OR full_name ILIKE $1)`
 	
@@ -286,21 +286,23 @@ func (h *StudentHandler) Search(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	var students []map[string]string
+	var students []map[string]interface{}
 	for rows.Next() {
 		var nis, name, class string
-		if err := rows.Scan(&nis, &name, &class); err == nil {
-			students = append(students, map[string]string{
+		var isActive bool
+		if err := rows.Scan(&nis, &name, &class, &isActive); err == nil {
+			students = append(students, map[string]interface{}{
 				"nis":       nis,
 				"nisn":      nis, // Alias for compatibility
 				"full_name": name,
 				"class":     class,
+				"is_active": isActive,
 			})
 		}
 	}
 
 	if students == nil {
-		students = []map[string]string{}
+		students = []map[string]interface{}{}
 	}
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(students, ""))
