@@ -222,7 +222,7 @@ func (h *StudentHandler) Update(c *gin.Context) {
 		auditDesc = fmt.Sprintf("Memperbarui data siswa: %s (NIS: %s). Tidak ada perubahan terdeteksi.", oldName, oldNis)
 	}
 
-	utils.LogAudit(h.db, actorId.(string), action, "STUDENT", id, auditDesc, c.ClientIP())
+	utils.LogAudit(h.db, actorId.(string), action, "STUDENT", "00000000-0000-0000-0000-000000000000", auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Siswa berhasil diperbarui"))
 }
