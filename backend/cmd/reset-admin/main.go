@@ -28,9 +28,9 @@ func main() {
 	if dbPort == "" { dbPort = "5432" }
 
 	adminUser := os.Getenv("ADMIN_DEFAULT_USERNAME")
-	if adminUser == "" { adminUser = "vannyezha" }
+	if adminUser == "" { adminUser = "admin" }
 	adminPass := os.Getenv("ADMIN_DEFAULT_PASSWORD")
-	if adminPass == "" { adminPass = "sandika12" }
+	if adminPass == "" { adminPass = "password123" }
 
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", dbUser, dbPass, dbHost, dbPort, dbName)
 	
@@ -60,15 +60,16 @@ func main() {
 		fmt.Printf("⚠️  User '%s' not found. Creating new admin user...\n", adminUser)
 		_, err = db.Exec(ctx, 
 			"INSERT INTO users (username, full_name, role, password_hash, is_active) VALUES ($1, $2, 'ADMIN', $3, true)",
-			adminUser, "Default Admin", hash)
+			adminUser, "System Admin", hash)
 		if err != nil {
 			log.Fatalf("❌ Failed to create admin user: %v", err)
 		}
-		fmt.Printf("✅ Admin user '%s' created with default password.\n", adminUser)
+		fmt.Printf("✅ Admin user '%s' created as defined in .env.\n", adminUser)
 	} else {
-		fmt.Printf("✅ Admin user '%s' reset to role ADMIN and default password.\n", adminUser)
+		fmt.Printf("✅ Admin user '%s' reset to role ADMIN and credentials from .env.\n", adminUser)
 	}
 
-	fmt.Println("\nUsername:", adminUser)
-	fmt.Println("Password:", adminPass)
+	fmt.Println("\n[CREDENTIALS USED]")
+	fmt.Println("Username:", adminUser)
+	fmt.Println("Password:", "(hidden - see .env file)")
 }

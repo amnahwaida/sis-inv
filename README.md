@@ -116,40 +116,45 @@ go build -o server cmd/server/main.go
 
 ## 🛠️ Maintenance & Safety
 
-Powerful terminal-based scripts for system maintenance, located in the `/scripts` directory.
+Powerful terminal-based scripts for system maintenance, located in the `/scripts` directory. **Run these scripts from the project root.**
 
 ### 1. Database Backup
 ```bash
 ./scripts/backup.sh
 ```
-Creates a timestamped, compressed SQL backup in the `/backups` directory. Automatically handles 30-day retention.
+- **What it does**: Creates a full, compressed SQL dump of the database using `pg_dump` inside the Docker container.
+- **Result**: A new compressed file appears in the `/backups` directory (e.g., `backups/db_20240405_120000.sql.gz`).
+- **Retention**: It automatically purges backups older than 30 days to save disk space.
 
 ### 2. Database Restore
 ```bash
-./scripts/restore.sh backups/db_filename.sql.gz
+./scripts/restore.sh backups/your_backup_file.sql.gz
 ```
-Restores the database from a backup file. **Requires confirmation** as it overwrites current data.
+- **What it does**: Streams the contents of a backup file back into the active database container.
+- **Requirement**: Requires the path to a valid `.sql` or `.sql.gz` file.
+- **Safety**: Prompts for manual confirmation before the process begins. **Caution: This overwrites all current data.**
 
 ### 3. Emergency Admin Reset
 ```bash
 ./scripts/reset_admin.sh
 ```
-The "Safety Valve": Resets the administrator account to the default role (`ADMIN`) and password (`sandika12`) if you accidentally lock yourself out.
+- **What it does**: Forcefully promotes the default user to `ADMIN` and resets their access.
+- **Credentials**: Uses the `ADMIN_DEFAULT_USERNAME` and `ADMIN_DEFAULT_PASSWORD` defined in your `.env` file.
+- **Usage**: Use this as a "Safety Valve" if you accidentally demote yourself or lose admin access.
 
 ---
 
 ## 📂 Project Structure
-- `/backend`: Go Gin source code, migration logic, and internal packages.
-- `/frontend`: Vue 3 source code, Pinia stores, and assets.
+- `/backend`: Go Gin source code, migration logic, and internal API packages.
+- `/frontend`: Vue 3 source code, Pinia stores, and PWA assets.
+- `/scripts`: Shell and Go-based maintenance tools.
+- `/backups`: Local storage for automated and manual database snapshots.
 - `docker-compose.yml`: Database and system infrastructure configuration.
-- `prd.md`: Product Requirements Document (Historical Reference).
-- `CHANGELOG.md`: Detailed history of Phase 2 improvements.
 
 ---
 
 ## 🔑 Default Credentials
-- **Username:** `admin`
-- **Password:** `admin123` (Change this in Settings after login!)
+Default access is determined by the `ADMIN_DEFAULT_USERNAME` and `ADMIN_DEFAULT_PASSWORD` keys in your **`.env`** file. Please refer to that file for your initial login details or after running a reset.
 
 ---
 🚀 *SIS-INV - Empowering School Inventory Transparency.*
