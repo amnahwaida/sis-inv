@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -46,6 +47,32 @@ func (h *UploadHandler) UploadFile(c *gin.Context) {
 		fmt.Printf("❌ Save error: %v\n", err)
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to save file on server"))
 		return
+	}
+
+	// Compress if it is an image
+	extLow := strings.ToLower(ext)
+	if extLow == ".jpg" || extLow == ".jpeg" || extLow == ".png" {
+		tempDst := dst + ".compressed"
+		// Compress with quality 75 for JPEG, PNG will use default compression
+		if err := utils.CompressImage(dst, tempDst, 75); err == nil {
+			// If compression was successful and generated a file, replace the original
+			if info, err := os.Stat(tempDst); err == nil && info.Size() > 0 {
+				// Only replace if the compressed file is actually smaller (safeguard)
+				originalInfo, _ := os.Stat(dst)
+				if info.Size() < originalInfo.Size() {
+					os.Remove(dst)
+					os.Rename(tempDst, dst)
+				} else {
+					// Compressed is larger or equal (rare but possible), just keep original
+					os.Remove(tempDst)
+				}
+			} else {
+				os.Remove(tempDst)
+			}
+		} else {
+			fmt.Printf("⚠️ Compression failed for %s: %v\n", filename, err)
+			os.Remove(tempDst)
+		}
 	}
 
 	// Return the relative URL
