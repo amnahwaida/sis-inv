@@ -215,16 +215,22 @@ const pwaStore = usePwaStore()
 const sidebarOpen = ref(false)
 const isOffline = ref(!navigator.onLine)
 
-const isDark = ref(localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches))
+const userThemeKey = computed(() => `theme_${authStore.user?.username || 'default'}`)
+
+const isDark = ref(
+  localStorage.getItem(userThemeKey.value) === 'dark' || 
+  (!localStorage.getItem(userThemeKey.value) && localStorage.getItem('theme') === 'dark') || 
+  (!localStorage.getItem(userThemeKey.value) && !('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+)
 
 const toggleDarkMode = () => {
   isDark.value = !isDark.value
   if (isDark.value) {
     document.documentElement.classList.add('dark')
-    localStorage.setItem('theme', 'dark')
+    localStorage.setItem(userThemeKey.value, 'dark')
   } else {
     document.documentElement.classList.remove('dark')
-    localStorage.setItem('theme', 'light')
+    localStorage.setItem(userThemeKey.value, 'light')
   }
 }
 

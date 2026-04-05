@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -131,6 +132,13 @@ func (h *CategoryHandler) Update(c *gin.Context) {
 		return
 	}
 
+	actorId, _ := c.Get("userID")
+
+	// Fetch previous values
+	var oldName string
+	var oldDesc, oldColor *string
+	_ = h.db.QueryRow(context.Background(), "SELECT name, description, color_code FROM categories WHERE id = $1", id).Scan(&oldName, &oldDesc, &oldColor)
+
 	_, err := h.db.Exec(context.Background(),
 		"UPDATE categories SET name = $1, description = $2, color_code = $3 WHERE id = $4",
 		req.Name, req.Description, req.ColorCode, id,
@@ -141,8 +149,33 @@ func (h *CategoryHandler) Update(c *gin.Context) {
 		return
 	}
 
-	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "UPDATE_CATEGORY", "CATEGORY", id, fmt.Sprintf("Memperbarui data kategori barang: '%s'. Melalui menu kustomisasi.", req.Name), c.ClientIP())
+	auditDesc := fmt.Sprintf("Memperbarui data kategori barang: '%s'. Melalui menu kustomisasi.", req.Name)
+	var changes []string
+	if oldName != req.Name {
+		changes = append(changes, fmt.Sprintf("Nama: '%s' -> '%s'", oldName, req.Name))
+	}
+	
+	oldD := ""
+	if oldDesc != nil { oldD = *oldDesc }
+	newD := ""
+	if req.Description != nil { newD = *req.Description }
+	if oldD != newD {
+		changes = append(changes, fmt.Sprintf("Deskripsi: '%s' -> '%s'", oldD, newD))
+	}
+
+	oldC := ""
+	if oldColor != nil { oldC = *oldColor }
+	newC := ""
+	if req.ColorCode != nil { newC = *req.ColorCode }
+	if oldC != newC {
+		changes = append(changes, fmt.Sprintf("Warna: '%s' -> '%s'", oldC, newC))
+	}
+
+	if len(changes) > 0 {
+		auditDesc += " Perubahan: " + strings.Join(changes, ", ")
+	}
+
+	utils.LogAudit(h.db, actorId.(string), "UPDATE_CATEGORY", "CATEGORY", id, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Category updated successfully"))
 }
@@ -163,16 +196,17 @@ func (h *CategoryHandler) Delete(c *gin.Context) {
 		return
 	}
 
+	actorId, _ := c.Get("userID")
+	// Fetch name for audit log
+	var catName string
+	_ = h.db.QueryRow(context.Background(), "SELECT name FROM categories WHERE id = $1", id).Scan(&catName)
+
 	_, err = h.db.Exec(context.Background(), "DELETE FROM categories WHERE id = $1", id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to delete category"))
 		return
 	}
 
-	actorId, _ := c.Get("userID")
-	// Fetch name for audit log
-	var catName string
-	_ = h.db.QueryRow(context.Background(), "SELECT name FROM categories WHERE id = $1", id).Scan(&catName)
 	utils.LogAudit(h.db, actorId.(string), "DELETE_CATEGORY", "CATEGORY", idStr, fmt.Sprintf("Menghapus kategori barang: '%s' dari sistem.", catName), c.ClientIP())
 	
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Category deleted successfully"))

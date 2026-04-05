@@ -132,6 +132,7 @@ func main() {
 			items.GET("/:id", itemHandler.Get)
 			items.GET("/code/:code", itemHandler.GetByCode)
 			items.GET("/:id/history", itemHandler.GetHistory)
+			items.GET("/:id/history/export", itemHandler.ExportHistory)
 			
 			// Only Admins can modify items
 			adminItems := items.Group("")

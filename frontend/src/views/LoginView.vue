@@ -107,7 +107,7 @@
       
       <!-- Footer Info -->
       <footer class="mt-8 text-center flex flex-col items-center gap-2">
-        <p class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{{ settingsStore.settings.app_security_notice }}</p>
+        <p class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest" v-html="settingsStore.settings.app_security_notice"></p>
         <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-lg shadow-emerald-500/50 animate-pulse"></div>
       </footer>
     </div>

@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     user_id UUID REFERENCES users(id),
     action VARCHAR(50) NOT NULL,
     entity_type VARCHAR(50),
-    entity_id UUID,
+    entity_id VARCHAR(50),
     old_value JSONB,
     new_value JSONB,
     ip_address VARCHAR(45),

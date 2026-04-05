@@ -148,13 +148,18 @@ func (h *UserHandler) Update(c *gin.Context) {
 		return
 	}
 
-	// Validate if user is disabling the last active admin
-	if req.IsActive != nil && !*req.IsActive && oldActive && oldRole == "ADMIN" {
-		var activeAdminCount int
-		err := h.db.QueryRow(ctx, "SELECT COUNT(*) FROM users WHERE role = 'ADMIN' AND is_active = true").Scan(&activeAdminCount)
-		if err == nil && activeAdminCount <= 1 {
-			c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Pencegahan Sistem: Minimal harus ada 1 akun Admin yang aktif"))
-			return
+	// Validate if user is leaving the ADMIN role or getting disabled
+	if oldRole == "ADMIN" && oldActive {
+		isDemoting := req.Role != nil && *req.Role != "ADMIN"
+		isDisabling := req.IsActive != nil && !*req.IsActive
+
+		if isDemoting || isDisabling {
+			var activeAdminCount int
+			err := h.db.QueryRow(ctx, "SELECT COUNT(*) FROM users WHERE role = 'ADMIN' AND is_active = true").Scan(&activeAdminCount)
+			if err == nil && activeAdminCount <= 1 {
+				c.JSON(http.StatusBadRequest, utils.ErrorResponse(http.StatusBadRequest, "Pencegahan Sistem: Minimal harus ada 1 akun Admin yang aktif"))
+				return
+			}
 		}
 	}
 

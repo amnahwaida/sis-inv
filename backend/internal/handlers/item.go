@@ -576,6 +576,126 @@ func (h *ItemHandler) GetHistory(c *gin.Context) {
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(history, ""))
 }
+
+func (h *ItemHandler) ExportHistory(c *gin.Context) {
+	id := c.Param("id")
+
+	// 1. Fetch item header info
+	var itemCode, itemName string
+	err := h.db.QueryRow(context.Background(), "SELECT code, name FROM items WHERE id = $1", id).Scan(&itemCode, &itemName)
+	if err != nil {
+		c.JSON(http.StatusNotFound, utils.ErrorResponse(http.StatusNotFound, "Item not found"))
+		return
+	}
+
+	// 2. Fetch history
+	query := `
+		SELECT t.borrower_type, 
+		       COALESCE(u.full_name, t.student_name) as borrower_name,
+		       t.student_class,
+		       staff.full_name as staff_name,
+		       COALESCE(receiver.full_name, '') as returned_by_name,
+		       t.borrowed_at, t.returned_at, t.status, t.return_condition, t.purpose, t.return_notes
+		FROM transactions t
+		LEFT JOIN users u ON t.user_id = u.id
+		LEFT JOIN users staff ON t.borrowed_by = staff.id
+		LEFT JOIN users receiver ON t.returned_to = receiver.id
+		WHERE t.item_id = $1
+		ORDER BY t.borrowed_at DESC
+	`
+	rows, err := h.db.Query(context.Background(), query, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to fetch item history"))
+		return
+	}
+	defer rows.Close()
+
+	f := excelize.NewFile()
+	defer func() {
+		if err := f.Close(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+
+	sheetName := "Riwayat Peminjaman"
+	index, _ := f.NewSheet(sheetName)
+	f.DeleteSheet("Sheet1")
+
+	// Write title
+	f.SetCellValue(sheetName, "A1", fmt.Sprintf("Riwayat Peminjaman Barang: %s (%s)", itemName, itemCode))
+	styleTitle, _ := f.NewStyle(&excelize.Style{Font: &excelize.Font{Bold: true, Size: 14}})
+	f.SetCellStyle(sheetName, "A1", "A1", styleTitle)
+
+	// Headers
+	headers := []string{"No", "Tipe Peminjam", "Nama Peminjam", "Kelas", "Petugas", "Penerima Kembali", "Tgl Pinjam", "Tgl Kembali", "Status", "Kondisi Kembali", "Tujuan", "Catatan Kembali"}
+	for i, head := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 3)
+		f.SetCellValue(sheetName, cell, head)
+	}
+	styleHeader, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true, Color: "FFFFFF"},
+		Fill: excelize.Fill{Type: "pattern", Color: []string{"4F46E5"}, Pattern: 1},
+		Alignment: &excelize.Alignment{Horizontal: "center"},
+	})
+	f.SetRowStyle(sheetName, 3, 3, styleHeader)
+
+	rowIdx := 4
+	for rows.Next() {
+		var borrowerType, borrowerName, staffName, returnedByName, status string
+		var studentClass, returnCondition, purpose, returnNotes *string
+		var borrowedAt time.Time
+		var returnedAt *time.Time
+
+		if err := rows.Scan(
+			&borrowerType, &borrowerName, &studentClass, &staffName, &returnedByName,
+			&borrowedAt, &returnedAt, &status, &returnCondition, &purpose, &returnNotes,
+		); err != nil {
+			continue
+		}
+
+		classStr := "-"
+		if studentClass != nil { classStr = *studentClass }
+		retDateStr := "-"
+		if returnedAt != nil { retDateStr = returnedAt.Format("2006-01-02 15:04:05") }
+		retCondStr := "-"
+		if returnCondition != nil { retCondStr = *returnCondition }
+		purposeStr := "-"
+		if purpose != nil { purposeStr = *purpose }
+		retNotesStr := "-"
+		if returnNotes != nil { retNotesStr = *returnNotes }
+
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowIdx), rowIdx-3)
+		f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowIdx), borrowerType)
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", rowIdx), borrowerName)
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", rowIdx), classStr)
+		f.SetCellValue(sheetName, fmt.Sprintf("E%d", rowIdx), staffName)
+		f.SetCellValue(sheetName, fmt.Sprintf("F%d", rowIdx), returnedByName)
+		f.SetCellValue(sheetName, fmt.Sprintf("G%d", rowIdx), borrowedAt.Format("2006-01-02 15:04:05"))
+		f.SetCellValue(sheetName, fmt.Sprintf("H%d", rowIdx), retDateStr)
+		f.SetCellValue(sheetName, fmt.Sprintf("I%d", rowIdx), status)
+		f.SetCellValue(sheetName, fmt.Sprintf("J%d", rowIdx), retCondStr)
+		f.SetCellValue(sheetName, fmt.Sprintf("K%d", rowIdx), purposeStr)
+		f.SetCellValue(sheetName, fmt.Sprintf("L%d", rowIdx), retNotesStr)
+
+		rowIdx++
+	}
+
+	f.SetActiveSheet(index)
+
+	fileName := fmt.Sprintf("SIS-INV_Riwayat-%s_%s.xlsx", itemCode, time.Now().Format("20060102_150405"))
+	c.Header("Content-Type", "application/octet-stream")
+	c.Header("Content-Disposition", "attachment; filename="+fileName)
+	c.Header("Content-Transfer-Encoding", "binary")
+
+	if err := f.Write(c.Writer); err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to generate Excel file"))
+	}
+
+	actorId, _ := c.Get("userID")
+	auditDesc := fmt.Sprintf("Mengekspor riwayat peminjaman spesifik untuk barang '%s' (%s) ke Excel.", itemName, itemCode)
+	utils.LogAudit(h.db, actorId.(string), "EXPORT_ITEM_HISTORY", "ITEM", id, auditDesc, c.ClientIP())
+}
+
 func (h *ItemHandler) ImportExcel(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {

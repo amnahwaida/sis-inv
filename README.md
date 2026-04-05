@@ -111,11 +111,30 @@ cd backend
 go build -o server cmd/server/main.go
 ```
 
-**Full Environment Build:**
+
+---
+
+## 🛠️ Maintenance & Safety
+
+Powerful terminal-based scripts for system maintenance, located in the `/scripts` directory.
+
+### 1. Database Backup
 ```bash
-# Use Docker to containerize the entire stack
-docker compose build
+./scripts/backup.sh
 ```
+Creates a timestamped, compressed SQL backup in the `/backups` directory. Automatically handles 30-day retention.
+
+### 2. Database Restore
+```bash
+./scripts/restore.sh backups/db_filename.sql.gz
+```
+Restores the database from a backup file. **Requires confirmation** as it overwrites current data.
+
+### 3. Emergency Admin Reset
+```bash
+./scripts/reset_admin.sh
+```
+The "Safety Valve": Resets the administrator account to the default role (`ADMIN`) and password (`sandika12`) if you accidentally lock yourself out.
 
 ---
 

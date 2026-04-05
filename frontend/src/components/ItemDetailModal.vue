@@ -80,12 +80,19 @@
 
           <!-- History Section -->
           <div class="space-y-3">
-            <h4 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-              <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Riwayat Peminjaman
-            </h4>
+            <div class="flex items-center justify-between mb-2">
+              <h4 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Riwayat Peminjaman
+              </h4>
+              <button v-if="history.length > 0" @click="downloadHistory" :disabled="isDownloading" class="text-xs font-bold bg-green-50 text-green-600 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors disabled:opacity-50">
+                <svg v-if="!isDownloading" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <div v-else class="animate-spin h-3.5 w-3.5 border-2 border-green-600 border-t-transparent rounded-full"></div>
+                {{ isDownloading ? 'Mengunduh...' : 'Download Excel' }}
+              </button>
+            </div>
             
             <div v-if="loadingHistory" class="flex justify-center py-8">
               <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -203,6 +210,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useItemStore } from '../stores/item'
+import api from '../utils/api'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -214,6 +222,7 @@ defineEmits(['close'])
 const itemStore = useItemStore()
 const history = ref([])
 const loadingHistory = ref(false)
+const isDownloading = ref(false)
 const expandedHistoryIds = ref(new Set())
 
 watch(() => props.isOpen, async (newVal) => {
@@ -242,6 +251,26 @@ const loadHistory = async () => {
     console.error('Failed to load history', e)
   } finally {
     loadingHistory.value = false
+  }
+}
+
+const downloadHistory = async () => {
+  if (!props.itemData?.id || isDownloading.value) return;
+  isDownloading.value = true;
+  try {
+    const response = await api.get(`/items/${props.itemData.id}/history/export`, { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `SIS-INV_Riwayat-${props.itemData.code}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (e) {
+    alert('Gagal mendownload riwayat peminjaman')
+    console.error(e)
+  } finally {
+    isDownloading.value = false;
   }
 }
 

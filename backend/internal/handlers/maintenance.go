@@ -266,6 +266,9 @@ func (h *MaintenanceHandler) UpdateStatus(c *gin.Context) {
 	_ = h.db.QueryRow(ctx, "SELECT name FROM items WHERE id = $1", itemId).Scan(&itemName)
 	
 	auditDesc := fmt.Sprintf("Memperbarui status perbaikan barang '%s'. Status: %s.", itemName, req.Status)
+	if req.Status == "DONE" && req.Notes != "" {
+		auditDesc += fmt.Sprintf(" Keterangan Selesai: %s.", req.Notes)
+	}
 	if len(changes) > 0 {
 		auditDesc += " Perubahan: " + strings.Join(changes, " | ")
 	}

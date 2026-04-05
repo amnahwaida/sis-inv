@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -129,6 +130,13 @@ func (h *LocationHandler) Update(c *gin.Context) {
 		return
 	}
 
+	actorId, _ := c.Get("userID")
+
+	// Fetch previous values
+	var oldName string
+	var oldDesc *string
+	_ = h.db.QueryRow(context.Background(), "SELECT name, description FROM locations WHERE id = $1", id).Scan(&oldName, &oldDesc)
+
 	_, err := h.db.Exec(context.Background(),
 		"UPDATE locations SET name = $1, description = $2 WHERE id = $3",
 		req.Name, req.Description, id,
@@ -139,8 +147,25 @@ func (h *LocationHandler) Update(c *gin.Context) {
 		return
 	}
 
-	actorId, _ := c.Get("userID")
-	utils.LogAudit(h.db, actorId.(string), "UPDATE_LOCATION", "LOCATION", id, fmt.Sprintf("Memperbarui data lokasi penyimpanan: '%s'. Melalui menu kustomisasi.", req.Name), c.ClientIP())
+	auditDesc := fmt.Sprintf("Memperbarui data lokasi penyimpanan: '%s'. Melalui menu kustomisasi.", req.Name)
+	var changes []string
+	if oldName != req.Name {
+		changes = append(changes, fmt.Sprintf("Nama: '%s' -> '%s'", oldName, req.Name))
+	}
+	
+	oldD := ""
+	if oldDesc != nil { oldD = *oldDesc }
+	newD := ""
+	if req.Description != nil { newD = *req.Description }
+	if oldD != newD {
+		changes = append(changes, fmt.Sprintf("Deskripsi: '%s' -> '%s'", oldD, newD))
+	}
+
+	if len(changes) > 0 {
+		auditDesc += " Perubahan: " + strings.Join(changes, ", ")
+	}
+
+	utils.LogAudit(h.db, actorId.(string), "UPDATE_LOCATION", "LOCATION", id, auditDesc, c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Location updated successfully"))
 }
@@ -164,16 +189,17 @@ func (h *LocationHandler) Delete(c *gin.Context) {
 		return
 	}
 
+	actorId, _ := c.Get("userID")
+	// Fetch name for audit log
+	var locName string
+	_ = h.db.QueryRow(context.Background(), "SELECT name FROM locations WHERE id = $1", id).Scan(&locName)
+
 	_, err = h.db.Exec(context.Background(), "DELETE FROM locations WHERE id = $1", id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(http.StatusInternalServerError, "Failed to delete location"))
 		return
 	}
 
-	actorId, _ := c.Get("userID")
-	// Fetch name for audit log
-	var locName string
-	_ = h.db.QueryRow(context.Background(), "SELECT name FROM locations WHERE id = $1", id).Scan(&locName)
 	utils.LogAudit(h.db, actorId.(string), "DELETE_LOCATION", "LOCATION", idStr, fmt.Sprintf("Menghapus lokasi penyimpanan: '%s' dari sistem.", locName), c.ClientIP())
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(nil, "Location deleted successfully"))

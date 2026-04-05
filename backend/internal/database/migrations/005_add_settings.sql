@@ -13,5 +13,5 @@ INSERT INTO settings (key, value) VALUES
 ('app_subtitle', 'Inventaris Sekolah'),
 ('app_description', 'School Inventory System'),
 ('app_footer', 'SIS-INV • AMANAH & TERTIB'),
-('app_security_notice', 'Terlindungi oleh Enkripsi End-to-End')
+('app_security_notice', 'Crafted with ❤️ by <a href="mailto:vannyezhaa@gmail.com" class="hover:underline text-primary-500">vannyezhaa</a> – Business & Collaboration: +6285159982101')
 ON CONFLICT (key) DO NOTHING;

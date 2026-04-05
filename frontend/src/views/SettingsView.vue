@@ -176,8 +176,8 @@
                   <input v-model="brandingForm.app_footer" class="input-field rounded-2xl h-14" placeholder="SIS-INV • AMANAH & TERTIB" required />
                 </div>
                 <div class="space-y-1">
-                  <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Catatan Keamanan (Footer)</label>
-                  <input v-model="brandingForm.app_security_notice" class="input-field rounded-2xl h-14" placeholder="Terlindungi oleh Enkripsi End-to-End" required />
+                  <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Credit</label>
+                  <input v-model="brandingForm.app_security_notice" class="input-field rounded-2xl h-14" placeholder="Crafted with ❤️ by vannyezhaa..." required />
                 </div>
               </div>
 
@@ -475,7 +475,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useSettingsStore } from '../stores/settings'
 import api from '../utils/api'
@@ -549,10 +549,11 @@ async function handleChangePassword() {
   }
 }
 
+const userThemeKey = computed(() => `theme_${authStore.user?.username || 'default'}`)
 const toggleMode = () => {
   isDark.value = !isDark.value
   document.documentElement.classList.toggle('dark')
-  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+  localStorage.setItem(userThemeKey.value, isDark.value ? 'dark' : 'light')
 }
 
 async function handleSaveBranding() {
