@@ -172,8 +172,8 @@ Powerful terminal-based scripts for system maintenance, located in the `/scripts
 ./scripts/reset_admin.sh
 ```
 - **What it does**: Forcefully promotes the default user to `ADMIN` and resets their access.
+- **Docker Support**: **Fully Docker-native.** If your containers are running, it will execute the reset directly inside the `sisinv_backend` container without requiring Go to be installed on your computer.
 - **Credentials**: Uses the `ADMIN_DEFAULT_USERNAME` and `ADMIN_DEFAULT_PASSWORD` defined in your `.env` file.
-- **Usage**: Use this as a "Safety Valve" if you accidentally demote yourself or lose admin access.
 
 ---
 

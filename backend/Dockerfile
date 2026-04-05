@@ -16,8 +16,9 @@ RUN go mod download
 # Copy the source code
 COPY . .
 
-# Build the application
+# Build the applications
 RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/server/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o reset-admin ./cmd/reset-admin/main.go
 
 # Stage 2: Run the binary
 FROM alpine:latest
@@ -27,8 +28,9 @@ WORKDIR /app
 # Install ca-certificates for secure connections (Cloudflare, etc)
 RUN apk --no-cache add ca-certificates tzdata
 
-# Copy binary and migrations from builder
+# Copy binaries and migrations from builder
 COPY --from=builder /app/main .
+COPY --from=builder /app/reset-admin .
 COPY --from=builder /app/internal/database/migrations ./internal/database/migrations
 
 # Create uploads directory (needed for file storage)
