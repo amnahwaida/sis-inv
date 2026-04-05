@@ -47,56 +47,82 @@ SIS-INV is a premium school inventory management system designed for transparenc
 
 ---
 
-## 🚀 Getting Started
 
-### 1. Prerequisites
-Ensure you have the following installed:
-- [Docker & Docker Compose](https://docs.docker.com/get-docker/)
-- [Go 1.22+](https://go.dev/dl/)
-- [Node.js 22.12+](https://nodejs.org/)
+## 🐳 Docker Deployment (Recommended)
 
-### 2. Environment Configuration
-Copy the example environment file and update the variables:
+The easiest way to deploy the complete SIS-INV stack (Backend, Frontend, Database, and Backups) is using Docker Compose.
+
+### 1. Configure the Environment
+Ensure your `.env` file is ready with all necessary variables:
 ```bash
 cp .env.example .env
+# Edit .env and set:
+# DB_PASSWORD, JWT_SECRET, and TUNNEL_TOKEN
 ```
 
-**Key variables to update in `.env`:**
-- `JWT_SECRET`: Change this to a random long string for security.
-- `TUNNEL_TOKEN`: Your Cloudflare Tunnel token (required for `docker-compose` tunnel service).
-- `DB_PASSWORD`: Set a strong password for your PostgreSQL database.
-- `ADMIN_DEFAULT_PASSWORD`: Set the default password used for administrative resets.
-
-### 3. Infrastructure Setup
-Spin up the PostgreSQL database and Cloudflare Tunnel:
+### 2. Launch the Full Stack
+Run the following command from the project root to build and start all services in the background:
 ```bash
-# From the project root
-docker compose up -d
+docker compose up -d --build
 ```
-*The database runs on port `5432` by default. If the `TUNNEL_TOKEN` is provided, the tunnel will start automatically.*
 
-### 4. Backend (API) Setup
+**This will spin up 5 active containers:**
+- `sisinv_db`: PostgreSQL 15 database.
+- `sisinv_backend`: The Go API server.
+- `sisinv_frontend`: The Vue 3 application (served via Nginx).
+- `sisinv_backup`: Automated daily backup service.
+- `cloudflared_tunnel`: Local-to-Internet tunnel via Cloudflare.
+
+### 3. Verification
+Check the status of your services:
+```bash
+docker compose ps
+```
+The application will be accessible at `http://localhost` (port 80) or via your custom Cloudflare domain.
+
+### 4. Updating the Application
+When you pull new changes from GitHub, simply rebuild and restart the containers:
+```bash
+git pull origin main
+docker compose up -d --build
+```
+
+---
+
+## 🛠️ Manual Development Setup
+
+If you prefer to run services individually for development:
+
+### 1. Prerequisites
+- [Go 1.25+](https://go.dev/dl/)
+- [Node.js 22.12+](https://nodejs.org/)
+- [PostgreSQL 15+](https://www.postgresql.org/)
+
+### 2. Infrastructure (Database Only)
+You can still use Docker just for the database service:
+```bash
+docker compose up -d db
+```
+
+### 3. Backend (API) Setup
 ```bash
 cd backend
 go mod tidy
 go run cmd/server/main.go
 ```
-*API serves at `http://localhost:8080`.*
 
-### 5. Frontend Setup
+### 4. Frontend Setup
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-*Frontend serves at `http://localhost:5173`. CORS is pre-configured for this port.*
 
 ---
 
-## 📦 Build & Deploy
+## 📦 Production Builds (Manual)
 
-### Production Build
-To create highly optimized production bundles:
+To manually create optimized production bundles without Docker:
 
 **Frontend Build:**
 ```bash
@@ -110,7 +136,6 @@ npm run build
 cd backend
 go build -o server cmd/server/main.go
 ```
-
 
 ---
 
