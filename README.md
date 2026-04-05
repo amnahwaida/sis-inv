@@ -118,15 +118,23 @@ go build -o server cmd/server/main.go
 
 Powerful terminal-based scripts for system maintenance, located in the `/scripts` directory. **Run these scripts from the project root.**
 
-### 1. Database Backup
+### 1. Database Backup (Standard/Rotating)
 ```bash
 ./scripts/backup.sh
 ```
-- **What it does**: Creates a full, compressed SQL dump of the database using `pg_dump` inside the Docker container.
-- **Result**: A new compressed file appears in the `/backups` directory (e.g., `backups/db_20240405_120000.sql.gz`).
-- **Retention**: It automatically purges backups older than 30 days to save disk space.
+- **What it does**: Creates a full, compressed SQL dump using `pg_dump` inside the Docker container.
+- **Result**: Files are saved in `/backups/` (e.g., `backups/db_20240405_120000.sql.gz`).
+- **Retention**: **Automatic 30-day rotation**. Older files are purged daily to save space. Best for automated daily cron jobs.
 
-### 2. Database Restore
+### 2. Database Backup (Persistent/Archive)
+```bash
+./scripts/backup_full.sh
+```
+- **What it does**: Performs a complete database dump intended for permanent storage.
+- **Result**: Files are saved in a separate `/backups/archives/` directory.
+- **Retention**: **NO automatic deletion**. These files will remain on your disk indefinitely until you manually remove them. Ideal for backing up before major system changes or for historical records.
+
+### 3. Database Restore
 ```bash
 ./scripts/restore.sh backups/your_backup_file.sql.gz
 ```
